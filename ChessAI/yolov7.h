@@ -32,8 +32,8 @@ private:
 	const int netHeight = 640;  //ONNX图片输入高度
 	const int strideSize = 3;   //stride size
 	const float netStride[4] = { 8, 16.0,32,64 };
-	float boxThreshold = 0.8;
-	float classThreshold = 0.8;   //置信度
+	float boxThreshold = 0.35;
+	float classThreshold = 0.35;   //置信度
 	float nmsThreshold = 0.45;
 	float nmsScoreThreshold = boxThreshold * classThreshold;
 	std::vector<std::string> className = { "red_che", "red_ma", "red_xiang", "red_shi", "red_shuai", "red_pao", "red_bing", "black_che", "black_ma", "black_xiang",

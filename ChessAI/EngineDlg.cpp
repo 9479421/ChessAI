@@ -58,33 +58,6 @@ BOOL EngineDlg::OnInitDialog()
 
 
 
-	char programPath[MAX_PATH];
-	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
-	strcat(programPath, "\\chess.json");
-	//如果没有该文件，默认写入的内容
-	//qJsonArray* jsonArray = new qJsonArray();
-	//qJsonObject json;
-	//json.setString("name", "pikaFish");
-	//json.setString("author", "皮卡鱼");
-	//json.setString("path", "./engine/pikafish-avx2.exe");
-	//json.setString("threadNum", "16");
-	//jsonArray->addJsonObject(json);
-
-	//json.clear();
-	//json.setString("name", "小虫引擎");
-	//json.setString("author", "pit");
-	//json.setString("path", "./engine/cdsadsad-avx2.exe");
-	//json.setString("threadNum", "16");
-	//jsonArray->addJsonObject(json);
-
-
-	//Utils::writeFile(CString(programPath), CString(jsonArray->toString().c_str()));
-	//
-
-	//读入内容
-	//jsonArray->clear();
-
-
 	for (size_t i = 0; i < engineConfigList.size(); i++)
 	{
 		int row = m_engineList.GetItemCount();
@@ -92,21 +65,6 @@ BOOL EngineDlg::OnInitDialog()
 		m_engineList.SetItemText(row, 1, CA2W(engineConfigList[i].path.c_str()));
 		m_engineList.SetItemText(row, 2, CA2W(engineConfigList[i].author.c_str()));
 	}
-
-	//qJsonArray* jsonArray = qJson::parseJsonArray(std::string(CW2A(Utils::readFile(CString(programPath)))));
-	//for (int i = 0; i < jsonArray->size(); i++)
-	//{
-	//	int row = m_engineList.GetItemCount();
-	//	std::string name = jsonArray->getJsonObject(i).getString("name");
-	//	std::string path = jsonArray->getJsonObject(i).getString("path");
-	//	std::string author = jsonArray->getJsonObject(i).getString("author");
-	//	m_engineList.InsertItem(row, CA2W(name.c_str()));
-	//	m_engineList.SetItemText(row, 1, CA2W(path.c_str()));
-	//	m_engineList.SetItemText(row, 2, CA2W(author.c_str()));
-	//	engineConfigList.push_back(EngineConfig(name, path, author, "16"));
-	//}
-	//printf("jsonArray:%s", jsonArray->toString().c_str());
-
 
 
 	return TRUE;
@@ -142,7 +100,7 @@ void EngineDlg::reReadEngineConfigList() {
 	//写入文件
 	char programPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
-	strcat(programPath, "\\chess.json");
+	strcat(programPath, "\\engine.json");
 
 	qJsonArray* jsonArray = new qJsonArray();
 	for (int i = 0; i < engineConfigList.size(); i++)

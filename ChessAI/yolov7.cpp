@@ -35,6 +35,7 @@ bool Yolo::Detect(cv::Mat& SrcImg, cv::dnn::Net& net, std::vector<Output>& outpu
 		cv::Mat resizeImg = cv::Mat::zeros(maxLen, maxLen, CV_8UC3);
 		SrcImg.copyTo(resizeImg(cv::Rect(0, 0, col, row)));
 		netInputImg = resizeImg;
+
 	}
 
 
@@ -91,7 +92,10 @@ bool Yolo::Detect(cv::Mat& SrcImg, cv::dnn::Net& net, std::vector<Output>& outpu
 		result.confidence = confidences[idx];
 		result.box = boxes[idx];
 		/*result.name = className[result.id];*/
-		output.push_back(result);
+		if (confidences[idx] > 0.8)
+		{
+			output.push_back(result);
+		}
 	}
 
 	for (int i = 0; i < output.size(); i++) {

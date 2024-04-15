@@ -12,7 +12,7 @@ template<typename T1, typename T2>
 class obj
 {
 public:
-	int type; // 0 str     1 digital   2  jsonobject  3 jsonarray      -1考虑搞成Null后面再说
+	int type; // 0 str     1 digital   2  jsonobject  3 jsonarray  4 bool    -1考虑搞成Null后面再说
 	std::string string;
 	double digital;
 	T1 jsonObject;
@@ -51,6 +51,10 @@ public:
 	void setFloat(std::string key, float value);
 	void setJsonArray(std::string key, qJsonArray value);
 	qJsonArray getJsonArray(std::string key);
+
+	bool getBool(std::string key);
+	void setBool(std::string key, bool value);
+
 	std::string toString();
 private:
 	std::map<std::string, obj<qJsonObject, qJsonArray>> maps_obj;
@@ -69,9 +73,11 @@ public:
 	int getInt(int idx);
 	double getDouble(int idx);
 	double getFloat(int idx);
+	bool getBool(int idx);
 	int size();
 	void addString(std::string str);
 	void addDigital(double value);
+	void addBool(bool value);
 	std::string toString();
 
 public:

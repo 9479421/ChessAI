@@ -127,19 +127,22 @@ public:
 		return stepIdx;
 	}
 
-	std::string calcStep(std::string fen) {
+	std::pair<std::string,std::string> calcStep(std::string fen) {
 		process.addCmdLine("position fen " + fen);
 		process.addCmdLine("go depth 16");
 
 		std::string runStep;
+		std::string result;
 		try {
-			std::string result = process.execute("bestmove");
+			result =  process.execute("bestmove");
 			if (result.empty())
 			{
 				process.exit();
 				process.createProcess(this->enginePath);
-				return "";
+				
+				goto end;
 			}
+
 			printf("result:%s\n", result.c_str());
 			int idx1 = result.find("bestmove"); //±¨´í
 			int idx2 = result.find("ponder");
@@ -155,7 +158,9 @@ public:
 		catch (std::exception e) {
 
 		}
-		return runStep;
+		end:
+
+		return std::make_pair(runStep, result);
 	}
 
 	void uci() {

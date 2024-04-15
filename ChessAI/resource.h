@@ -26,29 +26,48 @@
 #define IDC_BUTTON4                     1036
 #define IDC_BUTTON_CHOOSEWINDOW         1036
 #define IDC_CHECK1                      1038
+#define IDC_CHECK_SHOWRECT              1038
 #define IDC_CHECK2                      1039
+#define IDC_CHECK_SHOWARROW             1039
 #define IDC_CHECK3                      1040
+#define IDC_CHECK_PRECSION              1040
+#define IDC_CHECK_PRECISION             1040
+#define IDC_CHECK_SHOWPRECISION         1040
 #define IDC_CHECK4                      1041
+#define IDC_CHECK_SHOWNAME              1041
 #define IDC_CHECK5                      1042
+#define IDC_CHECK_FRONT                 1042
 #define IDC_EDIT1                       1043
+#define IDC_EDIT_ENGINEINFO             1043
 #define IDC_CHECK6                      1044
+#define IDC_CHECK_AUTOPLAY              1044
 #define IDC_COMBO1                      1045
 #define IDC_COMBO_SCHEMELIST            1045
 #define IDC_CHECK7                      1046
+#define IDC_CHECK_AUTONEXT              1046
 #define IDC_MFCCOLORBUTTON1             1049
+#define IDC_MFCCOLORBUTTON_RECT_RED     1049
 #define IDC_LOGO                        1050
 #define IDC_STATIC_NAME                 1051
 #define IDC_COMBO2                      1052
 #define IDC_COMBO_ENGINELIST            1052
 #define IDC_MFCCOLORBUTTON3             1053
+#define IDC_MFCCOLORBUTTON2             1053
+#define IDC_MFCCOLORBUTTON_RECT_BLACK   1053
 #define IDC_MFCCOLORBUTTON4             1054
+#define IDC_MFCCOLORBUTTON_FONT_RED     1054
 #define IDC_MFCCOLORBUTTON5             1055
+#define IDC_MFCCOLORBUTTON_FONT_BLACK   1055
 #define IDC_MFCCOLORBUTTON6             1056
+#define IDC_MFCCOLORBUTTON_ARROW_RED    1056
 #define IDC_MFCCOLORBUTTON7             1057
+#define IDC_MFCCOLORBUTTON_ARROW_BLACK  1057
 #define IDC_EDIT2                       1058
 #define IDC_EDIT_FEN                    1058
 #define IDC_COMBO3                      1059
+#define IDC_COMBO_THINKTIME             1059
 #define IDC_COMBO4                      1060
+#define IDC_COMBO_THINKDEPTH            1060
 #define IDC_COMBO5                      1061
 #define IDC_BUTTON_MANAGEENGINE         1062
 #define IDC_LIST_ENGINE                 1066
@@ -66,14 +85,20 @@
 #define ID_NEWENGINE                    32779
 #define ID_MANAGEENGINE                 32780
 #define ID_DELETEENGINE                 32781
+#define ID_32782                        32782
+#define ID_32783                        32783
+#define ID_32784                        32784
+#define ID_32785                        32785
+#define ID_32786                        32786
+#define ID_COPYFEN                      32787
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        166
-#define _APS_NEXT_COMMAND_VALUE         32782
-#define _APS_NEXT_CONTROL_VALUE         1070
+#define _APS_NEXT_RESOURCE_VALUE        169
+#define _APS_NEXT_COMMAND_VALUE         32788
+#define _APS_NEXT_CONTROL_VALUE         1071
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

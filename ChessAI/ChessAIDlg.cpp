@@ -16,7 +16,7 @@
 
 
 #include "yolov7.h"
-#include "d3d9.h"
+//#include "d3d9.h"
 #include "http.h"
 #include "Engine.h"
 #include "Process.h"
@@ -25,7 +25,7 @@
 #include "qJson.h"
 #include<tlhelp32.h>
 
-
+#include "Gdi.h"
 
 #include"Game.h"
 
@@ -35,6 +35,9 @@
 
 
 Game game(gameWidth, gameHeight);
+
+HANDLE drawThreadHandle;
+
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
@@ -86,8 +89,22 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_LIST_NAVIGATION, m_navigation);
 	DDX_Control(pDX, IDC_COMBO_ENGINELIST, m_engineList);
 	DDX_Control(pDX, IDC_COMBO_SCHEMELIST, m_schemeList);
-	DDX_Control(pDX, IDC_EDIT_FEN, m_fen);
-	DDX_Control(pDX, IDC_BUTTON_COPYFEN, m_copyfen);
+	DDX_Control(pDX, IDC_MFCCOLORBUTTON_RECT_RED, m_rectRed);
+	DDX_Control(pDX, IDC_MFCCOLORBUTTON_RECT_BLACK, m_rectBlack);
+	DDX_Control(pDX, IDC_CHECK_SHOWRECT, m_showRect);
+	DDX_Control(pDX, IDC_CHECK_SHOWARROW, m_showArrow);
+	DDX_Control(pDX, IDC_EDIT_ENGINEINFO, m_engineInfo);
+	DDX_Control(pDX, IDC_COMBO_THINKTIME, m_thinkTime);
+	DDX_Control(pDX, IDC_COMBO_THINKDEPTH, m_thinkDepth);
+	DDX_Control(pDX, IDC_CHECK_FRONT, m_front);
+	DDX_Control(pDX, IDC_CHECK_AUTOPLAY, m_autoPlay);
+	DDX_Control(pDX, IDC_CHECK_AUTONEXT, m_autoNext);
+	DDX_Control(pDX, IDC_MFCCOLORBUTTON_FONT_RED, m_fontRed);
+	DDX_Control(pDX, IDC_MFCCOLORBUTTON_FONT_BLACK, m_fontBlack);
+	DDX_Control(pDX, IDC_MFCCOLORBUTTON_ARROW_RED, m_arrowRed);
+	DDX_Control(pDX, IDC_MFCCOLORBUTTON_ARROW_BLACK, m_arrowBlack);
+	DDX_Control(pDX, IDC_CHECK_SHOWPRECISION, m_showPrecision);
+	DDX_Control(pDX, IDC_CHECK_SHOWNAME, m_showName);
 }
 
 BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
@@ -103,6 +120,9 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_MANAGEENGINE, &CChessAIDlg::OnBnClickedButtonManageengine)
 	ON_BN_CLICKED(IDC_BUTTON5, &CChessAIDlg::OnBnClickedButton5)
 	ON_WM_LBUTTONUP()
+	ON_COMMAND(ID_COPYFEN, &CChessAIDlg::OnCopyfen)
+	ON_WM_DESTROY()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -178,17 +198,17 @@ std::string calcFEN(T maps[10][9]) {
 	}
 	return fen;
 }
-
-
-DWORD WINAPI readfenThread(LPVOID lpParam) {
-	while (true)
-	{
-		CChessAIDlg* dlg = (CChessAIDlg*)lpParam;
-		dlg->m_fen.SetWindowTextW(CA2W(calcFEN(game.maps).c_str()));
-		Sleep(100);
-	}
-	return 0;
-}
+//
+//
+//DWORD WINAPI readfenThread(LPVOID lpParam) {
+//	while (true)
+//	{
+//		CChessAIDlg* dlg = (CChessAIDlg*)lpParam;
+//		dlg->m_fen.SetWindowTextW(CA2W(calcFEN(game.maps).c_str()));
+//		Sleep(100);
+//	}
+//	return 0;
+//}
 
 
 std::string validateVersion();
@@ -285,31 +305,88 @@ BOOL CChessAIDlg::OnInitDialog()
 	m_navigation.InsertColumn(4, L"注释", LVCFMT_LEFT, 110, 0);
 
 
+	//读取连线配置
+
 
 
 
 	//读取引擎目录配置，没有的话写入新的
 	char programPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
-	strcat(programPath, "\\chess.json");
+	std::string programPathStr = programPath;
 
-	std::ifstream f(programPath);
+
+	std::string enginePath = programPathStr + "\\engine.json";
+	std::string openbookPath = programPathStr + "\\openbook.json";
+	std::string settingPath = programPathStr + "\\setting.json";
+
+
+	//setting
+	std::ifstream f;
+	f.open(settingPath.c_str());
+	if (!f.good())
+	{
+		qJsonObject json;
+		json.setString("thinkTime", "3");
+		json.setString("thinkDepth", "20");
+		json.setBool("isFront", true);
+
+		json.setInt("rectRedColor", RGB(255, 0, 0));
+		json.setInt("rectBlackColor", RGB(0, 0, 0));
+		json.setInt("fontRedColor", RGB(255, 255, 255));
+		json.setInt("fontBlackColor", RGB(255, 255, 255));
+		json.setInt("arrowRedColor", RGB(255, 0, 0));
+		json.setInt("arrowBlackColor", RGB(0, 0, 0));
+
+		json.setBool("autoPlay", false);
+		json.setBool("autoNext", false);
+		json.setBool("showRect", true);
+		json.setBool("showArrow", true);
+		json.setBool("showPrecision", false);
+		json.setBool("showName", false);
+
+		Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
+	}
+	f.close();
+	//读入文件
+	qJsonObject json = qJson::parseJsonObject(std::string(CW2A(Utils::readFile(CString(settingPath.c_str())))));
+	m_thinkTime.SetWindowTextW(CA2W(json.getString("thinkTime").c_str()));
+	m_thinkDepth.SetWindowTextW(CA2W(json.getString("thinkDepth").c_str()));
+	m_front.SetCheck(json.getBool("isFront"));
+	
+	m_rectRed.SetColor(json.getInt("rectRedColor"));
+	m_rectBlack.SetColor(json.getInt("rectBlackColor"));
+	m_fontRed.SetColor(json.getInt("fontRedColor"));
+	m_fontBlack.SetColor(json.getInt("fontBlackColor"));
+	m_arrowRed.SetColor(json.getInt("arrowRedColor"));
+	m_arrowBlack.SetColor(json.getInt("arrowBlackColor"));
+
+	m_autoPlay.SetCheck(json.getBool("autoPlay"));
+	m_autoNext.SetCheck(json.getBool("autoNext"));
+	m_showRect.SetCheck(json.getBool("showRect"));
+	m_showArrow.SetCheck(json.getBool("showArrow"));
+	m_showPrecision.SetCheck(json.getBool("showPrecision"));
+	m_showName.SetCheck(json.getBool("showName"));
+
+	//engine
+	f.open(enginePath.c_str());
 	if (!f.good())
 	{
 		//如果没有该文件，默认写入的内容
-		qJsonArray* jsonArray = new qJsonArray();
+		qJsonArray jsonArray;
 		qJsonObject json;
 		json.setString("name", "pikaFish");
 		json.setString("author", "皮卡鱼");
 		json.setString("path", "./engine/pikafish-avx2.exe");
 		json.setString("threadNum", "16");
-		jsonArray->addJsonObject(json);
+		jsonArray.addJsonObject(json);
 
-		Utils::writeFile(CString(programPath), CString(jsonArray->toString().c_str()));
+		Utils::writeFile(CString(enginePath.c_str()), CString(jsonArray.toString().c_str()));
 	}
+	f.close();
 
 	//读入文件
-	qJsonArray jsonArray = qJson::parseJsonArray(std::string(CW2A(Utils::readFile(CString(programPath)))));
+	qJsonArray jsonArray = qJson::parseJsonArray(std::string(CW2A(Utils::readFile(CString(enginePath.c_str())))));
 	for (int i = 0; i < jsonArray.size(); i++)
 	{
 		std::string name = jsonArray.getJsonObject(i).getString("name");
@@ -343,20 +420,15 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 
-	//
-	m_fen.SetWindowTextW(L"rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w");
-
-
-
 	//游戏
 	game.setChessSource("./pic/红车.png", "./pic/红馬.png", "./pic/红相.png", "./pic/红仕.png", "./pic/红帅.png", "./pic/红炮.png", "./pic/红兵.png",
 		"./pic/黑车.png", "./pic/黑馬.png", "./pic/黑象.png", "./pic/黑士.png", "./pic/黑将.png", "./pic/黑炮.png", "./pic/黑卒.png", '\0');
 	game.setBoardSource("./pic/棋盘.png", 260, 31, 546, 58, 58, 57, 57);
-	game.init(GetDC(),390, 86);//计算出棋盘每个点的坐标
+	game.init(GetDC(),388, 83);//计算出棋盘每个点的坐标
 	game.begin(false); //摆棋
 	
 	//自动计算FEN线程
-	CreateThread(NULL,0, (LPTHREAD_START_ROUTINE)&readfenThread, this, 0, NULL);
+	//CreateThread(NULL,0, (LPTHREAD_START_ROUTINE)&readfenThread, this, 0, NULL);
 
 
 
@@ -368,7 +440,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 
-d3d9 d3d;
+GdiClass::Gdi d3d;
 Yolo yolo;
 
 cv::dnn::Net net;
@@ -398,8 +470,10 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		Utils::saveBitMap(L"1.png", bitmap);
 		cv::Mat img = cv::imread("1.png");
 
+
 		DeleteObject(bitmap);
 		DeleteObject(bitmap_small);
+
 
 		int width = img.size().width;
 		int height = img.size().height;
@@ -407,6 +481,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		std::vector<Output> result;
 		yolo.Detect(img, net, result);
+
 
 		//开始冒泡排序坐标y
 		for (int i = 0; i < result.size(); i++)
@@ -468,25 +543,76 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 		std::string fen = calcFEN(maps);
-		stepIdx stepIdx = Engine::getStepIdx(engine.calcStep(fen), fen);
+		std::pair<std::string, std::string> step_process = engine.calcStep(fen); //最佳走法以及计算过程
+
+		stepIdx stepIdx = Engine::getStepIdx(step_process.first, fen);//获得最佳走法的坐标系
+
+		//把过程打印出来
+		CString engineInfo;
+		//dlg->m_engineInfo.GetWindowTextW(engineInfo);
+		engineInfo.Append(  CA2W( ("\n" + step_process.second ).c_str()) );
+		dlg->m_engineInfo.SetWindowTextW(engineInfo);
+		//dlg->m_engineInfo.setline;
+		dlg->SendDlgItemMessage(IDC_EDIT_ENGINEINFO, WM_VSCROLL, SB_BOTTOM, 0); //滚动条始终在底部
 
 		d3d.clear();
-		//绘制棋子方框
-		for (int i = 0; i < result.size(); i++)
+
+		if (dlg->m_showRect.GetCheck())
 		{
-			d3d.drawHollowRect(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 4.0f, D3DCOLOR_XRGB(255, 0, 0));
+			//绘制棋子方框
+			for (int i = 0; i < result.size(); i++)
+			{
+				COLORREF color;
+				if (result[i].id <= 6)
+				{
+					color = dlg->m_rectRed.GetColor();
+				}
+				else {
+
+					color = dlg->m_rectBlack.GetColor();
+				}
+
+				d3d.drawHollowHalfRect(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color);
+			}
 		}
-		//绘制最佳行棋路线
-		d3d.drawLine(maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2,
-			maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2,
-			maps[stepIdx.endX][stepIdx.endY].box.x,
-			maps[stepIdx.endX][stepIdx.endY].box.y,
-			4.0f,
-			D3DCOLOR_XRGB(255, 0, 0)
-		);
+		if (dlg->m_showArrow.GetCheck())
+		{
+			COLORREF color;
+			if (fen.find("w")!=std::string::npos)
+			{
+				//红棋
+				color = dlg->m_arrowRed.GetColor();
+			}
+			else {
+				color = dlg->m_arrowBlack.GetColor();
+			}
 
+			//绘制最佳行棋路线
+			d3d.drawLine(maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2,
+				maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2,
+				maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width/2,
+				maps[stepIdx.endX][stepIdx.endY].box.y,
+				4.0f,
+				color //D3DCOLOR_XRGB(GetRValue(color), GetGValue(color), GetBValue(color)
+			);
+		}
+		if (dlg->m_showPrecision.GetCheck()) {
+			for (int i = 0; i < result.size(); i++)
+			{
+				COLORREF color;
+				if (result[i].id <= 6)
+				{
+					color = dlg->m_fontRed.GetColor();
+				}
+				else {
 
-		Sleep(100);
+					color = dlg->m_fontBlack.GetColor();
+				}
+				d3d.drawWord(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color, std::to_string(result[i].confidence));
+			}
+		}
+
+		Sleep(10);
 
 	}
 
@@ -592,11 +718,11 @@ void CChessAIDlg::OnBnClickedButtonStart()
 
 	RECT rect;
 	::GetWindowRect(gameHwnd, &rect);
-	d3d.initD3d(rect.right - rect.left, rect.bottom - rect.top);
+	d3d.init(rect.right - rect.left, rect.bottom - rect.top);
 	d3d.showWindow(gameHwnd);
 
 
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)drawThread, this, 0, NULL);
+	drawThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)drawThread, this, 0, NULL);
 	//printf("123");
 }
 
@@ -704,4 +830,64 @@ end:
 
 
 	CDialogEx::OnLButtonUp(nFlags, point);
+}
+
+
+void CChessAIDlg::OnCopyfen()
+{
+
+	MessageBoxA(NULL, ("当前局面FEN:\n" + calcFEN(game.maps) + "\n复制成功！").c_str(), "复制局面", 0);
+	// TODO: 在此添加命令处理程序代码
+}
+
+
+void CChessAIDlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+
+	// TODO: 在此处添加消息处理程序代码
+
+	//保存配置
+	char programPath[MAX_PATH];
+	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
+	std::string programPathStr = programPath;
+	std::string settingPath = programPathStr + "\\setting.json";
+
+	qJsonObject json;
+
+	CString thinkTime;
+	m_thinkTime.GetWindowTextW(thinkTime);
+	CString thinkDepth;
+	m_thinkDepth.GetWindowTextW(thinkDepth);
+	json.setString("thinkTime", std::string(CW2A(thinkTime)));
+	json.setString("thinkDepth", std::string(CW2A(thinkDepth)));
+
+	json.setBool("isFront", m_front.GetCheck());
+
+	json.setInt("rectRedColor", m_rectRed.GetColor());
+	json.setInt("rectBlackColor", m_rectBlack.GetColor());
+	json.setInt("fontRedColor", m_fontRed.GetColor());
+	json.setInt("fontBlackColor", m_fontBlack.GetColor());
+	json.setInt("arrowRedColor", m_arrowRed.GetColor());
+	json.setInt("arrowBlackColor", m_arrowBlack.GetColor());
+
+	json.setBool("autoPlay", m_autoPlay.GetCheck());
+	json.setBool("autoNext", m_autoNext.GetCheck());
+	json.setBool("showRect", m_showRect.GetCheck());
+	json.setBool("showArrow", m_showArrow.GetCheck());
+	json.setBool("showPrecision", m_showPrecision.GetCheck());
+	json.setBool("showName", m_showName.GetCheck());
+	Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
+
+
+}
+
+
+void CChessAIDlg::OnClose()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CloseHandle(drawThreadHandle);
+
+
+	CDialogEx::OnClose();
 }

@@ -2,3 +2,4 @@
 last/
 ChessAI/*.dll
 ChessAI/*.onnx
+x64/

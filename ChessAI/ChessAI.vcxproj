@@ -87,8 +87,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;C:\Users\Administrator\Desktop\opencv4.50_CUDA10.1\include</IncludePath>
-    <LibraryPath>$(WindowsSDK_LibraryPath_x64);$(VC_LibraryPath_x64);C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x64;C:\Users\Administrator\Desktop\opencv4.5.0_CUDA10.1\x64\vc15\lib</LibraryPath>
+    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;F:\opencv4.50_CUDA10.1\include</IncludePath>
+    <LibraryPath>$(WindowsSDK_LibraryPath_x64);$(VC_LibraryPath_x64);C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x64;F:\opencv4.50_CUDA10.1\x64\vc15\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -201,6 +201,7 @@
     <ClInclude Include="EngineDlg.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="Gdi.h" />
     <ClInclude Include="http.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Pojo.h" />
@@ -222,6 +223,7 @@
     <ClCompile Include="d3d9.cpp" />
     <ClCompile Include="EngineDlg.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Gdi.cpp" />
     <ClCompile Include="http.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
