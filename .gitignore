@@ -1,0 +1,4 @@
+.vs/
+last/
+ChessAI/*.dll
+ChessAI/*.onnx

@@ -1,0 +1,5 @@
+ChessAI/best.onnx filter=lfs diff=lfs merge=lfs -text
+ChessAI/opencv_world455d.dll filter=lfs diff=lfs merge=lfs -text
+x64/Debug/ChessAI.pdb filter=lfs diff=lfs merge=lfs -text
+opencv_world455d.dll filter=lfs diff=lfs merge=lfs -text
+x64/Debug/ChessAI.pdb filter=lfs diff=lfs merge=lfs -text
