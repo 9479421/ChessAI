@@ -4,7 +4,7 @@
 #include<string>
 #include<vector>
 #include<gdiplus.h>
-
+#include"Utils.h"
 using namespace Gdiplus;
 
 
@@ -18,6 +18,7 @@ public:
 
 	}
 	void setName(std::string name);
+	void setId(int id);
 	void setStatus(int status); //0是默认状态 1是选中
 public:
 	int x;
@@ -77,5 +78,8 @@ public:
 	//缩放比例
 	double rateX;
 	double rateY;
+
+public:
+	char className[14] = { 'R', 'N', 'B', 'A', 'K', 'C', 'P', 'r', 'n', 'b','a', 'k', 'c', 'p' };
 };
 

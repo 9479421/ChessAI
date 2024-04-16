@@ -196,6 +196,7 @@
     <ClInclude Include="ChessAI.h" />
     <ClInclude Include="ChessAIDlg.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="ConnectDlg.h" />
     <ClInclude Include="d3d9.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="EngineDlg.h" />
@@ -220,6 +221,7 @@
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp" />
     <ClCompile Include="ChessAIDlg.cpp" />
+    <ClCompile Include="ConnectDlg.cpp" />
     <ClCompile Include="d3d9.cpp" />
     <ClCompile Include="EngineDlg.cpp" />
     <ClCompile Include="Game.cpp" />

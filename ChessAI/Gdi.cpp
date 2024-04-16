@@ -4,10 +4,13 @@ using namespace GdiClass;
 
 HWND hwnd;
 unsigned threadId;
+HANDLE threadHandle;
+
 std::vector<hollowRect> hollowRects;
 std::vector<hollowRect> hollowHalfRects;
 std::vector<line> lines;
 std::vector<word> words;
+
 double GdiClass::calcFC(double a, double b, double c, bool add) {
 
 	printf("aaa %lf", b * b - 4 * a * c);
@@ -208,6 +211,9 @@ void GdiClass::render() {
 		rect.top = top;
 		rect.right = left + width;
 		rect.bottom = top + height;
+
+		SetTextColor(ps.hdc, color);
+		//TextOutA(ps.hdc, left, top, text.c_str(), text.size());
 		DrawTextA(ps.hdc, text.c_str(), text.length(), &rect, DT_CENTER);
 
 		SelectObject(ps.hdc, oldPen);
@@ -228,9 +234,12 @@ LRESULT __stdcall GdiClass::Wndproc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 
 		break;
 	case WM_DESTROY:
-		//CleanUp();
-		PostQuitMessage(0);
-		break;
+		//PostQuitMessage(0);
+		return 0;
+	case WM_CLOSE:
+		DestroyWindow(hwnd);
+		CloseWindow(hwnd);
+		return 0;
 	case WM_PAINT:
 		render();
 		//ValidateRect(hwnd, NULL);
@@ -269,7 +278,7 @@ boolean Gdi::init(int width, int height)
 	return true;
 }
 
-void Gdi::drawHollowRect(int left, int top, int width, int height, float weight, D3DCOLOR color)
+void Gdi::drawHollowRect(int left, int top, int width, int height, float weight, COLORREF color)
 {
 	hollowRect hr;
 	hr.left = left;
@@ -281,7 +290,7 @@ void Gdi::drawHollowRect(int left, int top, int width, int height, float weight,
 	hollowRects.push_back(hr);
 }
 
-void Gdi::drawHollowHalfRect(int left, int top, int width, int height, float weight, D3DCOLOR color)
+void Gdi::drawHollowHalfRect(int left, int top, int width, int height, float weight, COLORREF color)
 {
 	hollowRect hr;
 	hr.left = left;
@@ -296,9 +305,11 @@ void Gdi::drawHollowHalfRect(int left, int top, int width, int height, float wei
 unsigned __stdcall GdiClass::showWindowThread(LPVOID lpParam) {
 	ShowWindow(hwnd, TRUE);
 	UpdateWindow(hwnd);
-	SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE); //…Ë÷√ªÊ÷∆¥∞ø⁄Ω˚÷πΩÿÕº
+	//SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE); //…Ë÷√ªÊ÷∆¥∞ø⁄Ω˚÷πΩÿÕº
 
 	HWND gameHwnd = (HWND)lpParam;
+
+
 	while (true)
 	{
 		RECT rect;
@@ -309,6 +320,7 @@ unsigned __stdcall GdiClass::showWindowThread(LPVOID lpParam) {
 		InvalidateRect(::hwnd, NULL, TRUE);
 		Sleep(100);
 	}
+	
 
 	UnregisterClassA("ChessAI", NULL);
 	return 0;
@@ -316,8 +328,15 @@ unsigned __stdcall GdiClass::showWindowThread(LPVOID lpParam) {
 
 boolean Gdi::showWindow(HWND hwnd)
 {
-	_beginthreadex(NULL, 0, showWindowThread, hwnd, 0, &threadId);
+	
+	threadHandle = (HANDLE)_beginthreadex(NULL, 0, showWindowThread, hwnd, 0, &threadId);
+	//MSG msg = {};
+	//while (GetMessage(&msg, NULL, 0, 0)) {
 
+
+	//	TranslateMessage(&msg);
+	//	DispatchMessage(&msg);
+	//}
 	return true;
 }
 
@@ -329,11 +348,8 @@ void Gdi::clear()
 	words.clear();
 }
 
-void Gdi::resize(int width, int height)
-{
-}
 
-void Gdi::drawLine(int start_left, int start_top, int end_left, int end_top, float weight, D3DCOLOR color)
+void Gdi::drawLine(int start_left, int start_top, int end_left, int end_top, float weight, COLORREF color)
 {
 	line l;
 	l.start_left = start_left;
@@ -345,7 +361,7 @@ void Gdi::drawLine(int start_left, int start_top, int end_left, int end_top, flo
 	lines.push_back(l);
 }
 
-void Gdi::drawWord(int left, int top, int width, int height, float weight, D3DCOLOR color, std::string text)
+void Gdi::drawWord(int left, int top, int width, int height, float weight, COLORREF color, std::string text)
 {
 	word w;
 	w.left = left;
@@ -356,4 +372,14 @@ void Gdi::drawWord(int left, int top, int width, int height, float weight, D3DCO
 	w.color = color;
 	w.text = text;
 	words.push_back(w);
+}
+
+void GdiClass::Gdi::exit()
+{
+	clear();
+
+	TerminateThread(threadHandle,NULL);
+
+	SendMessage(hwnd,WM_CLOSE,0,0);
+	
 }

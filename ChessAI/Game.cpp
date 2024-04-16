@@ -66,6 +66,25 @@ void Pot::setName(std::string name)
 		}
 	}
 }
+void Pot::setId(int id)
+{
+	if (id < -1 || id > 13)
+	{
+		return; //非法
+	}
+	if (id == -1)  //什么也不放
+	{
+		this->id = -1;
+		return;
+	}
+
+	this->id = id;
+	this->name = nameList[id];
+	this->path = Game::chessPathList[id];
+	this->image.Destroy();
+	this->image.Load(CA2W(Game::chessPathList[id].c_str()));
+
+}
 
 void Pot::setStatus(int status)
 {
@@ -136,7 +155,55 @@ void Game::setBoardSource(std::string boardPath, int centerX, int topcenterY, in
 
 void Game::setFen(std::string fen)
 {
+	//清空
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 9; j++)
+		{
+			maps[i][j].id = -1;
+		}
+	}
 
+	std::string situation;
+	int idx = fen.find(" ");
+	situation = fen.substr(0,idx);
+
+
+
+	if (fen.find("w") == std::string::npos) {
+		//执黑棋先走
+		std::reverse(fen.begin(), fen.end());
+	}
+
+
+	int num = 0;
+
+	std::vector<std::string> rows = Utils::splitStr(situation, "/");
+
+	for (int i = 0; i < rows.size(); i++)
+	{
+		int col = 0;
+		for (int j = 0; j < rows[i].size(); j++)
+		{
+			if (rows[i].at(j) >= '0' && rows[i].at(j) <= '9')
+			{
+				col += (rows[i][j] - '0');
+			}
+			else {
+				for (int m = 0; m < sizeof(className); m++)
+				{
+					if (className[m] == rows[i].at(j))
+					{
+						maps[i][col++].setId(m);
+					}
+				}
+
+			}
+		}
+	}
+
+
+	show();
 }
 
 void Game::setChess(int x, int y, std::string name)

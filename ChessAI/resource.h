@@ -14,9 +14,9 @@
 #define IDB_BITMAP1                     162
 #define IDD_DIALOG_ENGINE               163
 #define IDR_MENU2                       165
+#define IDD_DIALOG_CONNECT              169
 #define IDC_TAB                         1002
-#define IDC_BUTTON2                     1005
-#define IDC_BUTTON_START                1005
+#define IDC_BUTTON_CONNECT              1005
 #define IDC_BUTTON5                     1006
 #define IDC_BUTTON6                     1007
 #define IDC_BUTTON_BOARDPIC             1007
@@ -74,6 +74,7 @@
 #define IDC_LIST_NAVIGATION             1068
 #define IDC_BUTTON1                     1069
 #define IDC_BUTTON_COPYFEN              1069
+#define IDC_STATIC_PICTURE              1071
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -91,14 +92,16 @@
 #define ID_32785                        32785
 #define ID_32786                        32786
 #define ID_COPYFEN                      32787
+#define ID_32788                        32788
+#define ID_INPUTFEN                     32789
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        169
-#define _APS_NEXT_COMMAND_VALUE         32788
-#define _APS_NEXT_CONTROL_VALUE         1071
+#define _APS_NEXT_RESOURCE_VALUE        174
+#define _APS_NEXT_COMMAND_VALUE         32790
+#define _APS_NEXT_CONTROL_VALUE         1074
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -29,14 +29,20 @@
 
 #include"Game.h"
 
+
+ConnectDlg connectDlg;
+
+
+
 //游戏大小，这个是可自由调节的
 #define gameWidth 375  //521 / 1.2
 #define gameHeight 413 //577 / 1.2
 
 
 Game game(gameWidth, gameHeight);
-
 HANDLE drawThreadHandle;
+DWORD drawThreadId;
+bool isConnecting = false;
 
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
@@ -77,34 +83,22 @@ CChessAIDlg::CChessAIDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CHESSAI_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+
+
 }
 
 void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LOGO, m_logo);
 	DDX_Control(pDX, IDC_BUTTON_CHOOSEWINDOW, m_choosewindow);
 	DDX_Control(pDX, IDC_BUTTON_MANAGEENGINE, m_manageengine);
 	DDX_Control(pDX, IDC_BUTTON_BOARDPIC, m_boardpic);
 	DDX_Control(pDX, IDC_LIST_NAVIGATION, m_navigation);
 	DDX_Control(pDX, IDC_COMBO_ENGINELIST, m_engineList);
-	DDX_Control(pDX, IDC_COMBO_SCHEMELIST, m_schemeList);
-	DDX_Control(pDX, IDC_MFCCOLORBUTTON_RECT_RED, m_rectRed);
-	DDX_Control(pDX, IDC_MFCCOLORBUTTON_RECT_BLACK, m_rectBlack);
-	DDX_Control(pDX, IDC_CHECK_SHOWRECT, m_showRect);
-	DDX_Control(pDX, IDC_CHECK_SHOWARROW, m_showArrow);
+
 	DDX_Control(pDX, IDC_EDIT_ENGINEINFO, m_engineInfo);
-	DDX_Control(pDX, IDC_COMBO_THINKTIME, m_thinkTime);
-	DDX_Control(pDX, IDC_COMBO_THINKDEPTH, m_thinkDepth);
-	DDX_Control(pDX, IDC_CHECK_FRONT, m_front);
-	DDX_Control(pDX, IDC_CHECK_AUTOPLAY, m_autoPlay);
-	DDX_Control(pDX, IDC_CHECK_AUTONEXT, m_autoNext);
-	DDX_Control(pDX, IDC_MFCCOLORBUTTON_FONT_RED, m_fontRed);
-	DDX_Control(pDX, IDC_MFCCOLORBUTTON_FONT_BLACK, m_fontBlack);
-	DDX_Control(pDX, IDC_MFCCOLORBUTTON_ARROW_RED, m_arrowRed);
-	DDX_Control(pDX, IDC_MFCCOLORBUTTON_ARROW_BLACK, m_arrowBlack);
-	DDX_Control(pDX, IDC_CHECK_SHOWPRECISION, m_showPrecision);
-	DDX_Control(pDX, IDC_CHECK_SHOWNAME, m_showName);
+	
+	DDX_Control(pDX, IDC_STATIC_PICTURE, m_picture);
 }
 
 BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
@@ -116,13 +110,16 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_WM_NCPAINT()
 	ON_WM_NCCALCSIZE()
 	ON_WM_NCHITTEST()
-	ON_BN_CLICKED(IDC_BUTTON_START, &CChessAIDlg::OnBnClickedButtonStart)
 	ON_BN_CLICKED(IDC_BUTTON_MANAGEENGINE, &CChessAIDlg::OnBnClickedButtonManageengine)
 	ON_BN_CLICKED(IDC_BUTTON5, &CChessAIDlg::OnBnClickedButton5)
 	ON_WM_LBUTTONUP()
 	ON_COMMAND(ID_COPYFEN, &CChessAIDlg::OnCopyfen)
 	ON_WM_DESTROY()
 	ON_WM_CLOSE()
+	//ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CChessAIDlg::OnBnClickedButtonConnect)
+	ON_BN_CLICKED(IDC_CHECK_FRONT, &CChessAIDlg::OnBnClickedCheckFront)
+	ON_COMMAND(ID_INPUTFEN, &CChessAIDlg::OnInputfen)
+	ON_BN_CLICKED(IDC_BUTTON_CHOOSEWINDOW, &CChessAIDlg::OnBnClickedButtonChoosewindow)
 END_MESSAGE_MAP()
 
 
@@ -155,6 +152,8 @@ std::string calcFEN(T maps[10][9]) {
 		int blankNums = 0;
 		for (int j = 0; j < 9; j++)
 		{
+
+			//双重校验
 			if (maps[i][j].id == 4)
 			{
 				if (i <= 4) {
@@ -164,6 +163,17 @@ std::string calcFEN(T maps[10][9]) {
 					isRed = true;
 				}
 			}
+			if (maps[i][j].id == 11)
+			{
+				if (i >= 5) {
+					isRed = false;
+				}
+				else {
+					isRed = true;
+				}
+			}
+
+
 			if (maps[i][j].id == -1) {
 				blankNums++;
 				if (blankNums != 0 && j == 8)
@@ -243,15 +253,18 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	// 设置此对话框的图标。  当应用程序主窗口不是对话框时，框架将自动
 	//  执行此操作
-	SetIcon(m_hIcon, TRUE);			// 设置大图标
-	SetIcon(m_hIcon, FALSE);		// 设置小图标
+	//SetIcon(m_hIcon, TRUE);			// 设置大图标
+	//SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
 
+	//打开连线窗口
+	connectDlg.Create(IDD_DIALOG_CONNECT);
+	connectDlg.ShowWindow(SW_SHOW);
+
+
 	//设置控制台支持中文
 	setlocale(LC_ALL, "Chinese-simplified");
-
-
 	AllocConsole();//控制台调试窗口开启  
 	freopen("CONOUT$", "w", stdout);//开启中文控制台输出支持  
 
@@ -291,7 +304,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 	
-	q.SubclassWindow(GetDlgItem(IDC_BUTTON_START)->m_hWnd);  //子类化
+	//q.SubclassWindow(GetDlgItem(IDC_BUTTON_CONNECT)->m_hWnd);  //子类化
 
 	m_choosewindow.SetStyle(QButton::Win10);
 	m_boardpic.SetStyle(QButton::Win10);
@@ -303,10 +316,6 @@ BOOL CChessAIDlg::OnInitDialog()
 	m_navigation.InsertColumn(2, L"分数", LVCFMT_LEFT, 60, 0);
 	m_navigation.InsertColumn(3, L"时间", LVCFMT_LEFT, 80, 0);
 	m_navigation.InsertColumn(4, L"注释", LVCFMT_LEFT, 110, 0);
-
-
-	//读取连线配置
-
 
 
 
@@ -350,23 +359,23 @@ BOOL CChessAIDlg::OnInitDialog()
 	f.close();
 	//读入文件
 	qJsonObject json = qJson::parseJsonObject(std::string(CW2A(Utils::readFile(CString(settingPath.c_str())))));
-	m_thinkTime.SetWindowTextW(CA2W(json.getString("thinkTime").c_str()));
-	m_thinkDepth.SetWindowTextW(CA2W(json.getString("thinkDepth").c_str()));
-	m_front.SetCheck(json.getBool("isFront"));
+	connectDlg.m_thinkTime.SetWindowTextW(CA2W(json.getString("thinkTime").c_str()));
+	connectDlg.m_thinkDepth.SetWindowTextW(CA2W(json.getString("thinkDepth").c_str()));
+	connectDlg.m_front.SetCheck(json.getBool("isFront"));
 	
-	m_rectRed.SetColor(json.getInt("rectRedColor"));
-	m_rectBlack.SetColor(json.getInt("rectBlackColor"));
-	m_fontRed.SetColor(json.getInt("fontRedColor"));
-	m_fontBlack.SetColor(json.getInt("fontBlackColor"));
-	m_arrowRed.SetColor(json.getInt("arrowRedColor"));
-	m_arrowBlack.SetColor(json.getInt("arrowBlackColor"));
+	connectDlg.m_rectRed.SetColor(json.getInt("rectRedColor"));
+	connectDlg.m_rectBlack.SetColor(json.getInt("rectBlackColor"));
+	connectDlg.m_fontRed.SetColor(json.getInt("fontRedColor"));
+	connectDlg.m_fontBlack.SetColor(json.getInt("fontBlackColor"));
+	connectDlg.m_arrowRed.SetColor(json.getInt("arrowRedColor"));
+	connectDlg.m_arrowBlack.SetColor(json.getInt("arrowBlackColor"));
 
-	m_autoPlay.SetCheck(json.getBool("autoPlay"));
-	m_autoNext.SetCheck(json.getBool("autoNext"));
-	m_showRect.SetCheck(json.getBool("showRect"));
-	m_showArrow.SetCheck(json.getBool("showArrow"));
-	m_showPrecision.SetCheck(json.getBool("showPrecision"));
-	m_showName.SetCheck(json.getBool("showName"));
+	connectDlg.m_autoPlay.SetCheck(json.getBool("autoPlay"));
+	connectDlg.m_autoNext.SetCheck(json.getBool("autoNext"));
+	connectDlg.m_showRect.SetCheck(json.getBool("showRect"));
+	connectDlg.m_showArrow.SetCheck(json.getBool("showArrow"));
+	connectDlg.m_showPrecision.SetCheck(json.getBool("showPrecision"));
+	connectDlg.m_showName.SetCheck(json.getBool("showName"));
 
 	//engine
 	f.open(enginePath.c_str());
@@ -404,9 +413,9 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 	//方案
-	m_schemeList.InsertString(m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
-	m_schemeList.InsertString(m_schemeList.GetCount(),_T("JJ象棋"));
-	m_schemeList.SetCurSel(0);
+	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
+	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(),_T("JJ象棋"));
+	connectDlg.m_schemeList.SetCurSel(0);
 
 	if (IsProcessExists("QQChess2021.exe"))
 	{
@@ -424,14 +433,8 @@ BOOL CChessAIDlg::OnInitDialog()
 	game.setChessSource("./pic/红车.png", "./pic/红馬.png", "./pic/红相.png", "./pic/红仕.png", "./pic/红帅.png", "./pic/红炮.png", "./pic/红兵.png",
 		"./pic/黑车.png", "./pic/黑馬.png", "./pic/黑象.png", "./pic/黑士.png", "./pic/黑将.png", "./pic/黑炮.png", "./pic/黑卒.png", '\0');
 	game.setBoardSource("./pic/棋盘.png", 260, 31, 546, 58, 58, 57, 57);
-	game.init(GetDC(),388, 83);//计算出棋盘每个点的坐标
+	game.init(GetDC(),30, 80);//计算出棋盘每个点的坐标
 	game.begin(false); //摆棋
-	
-	//自动计算FEN线程
-	//CreateThread(NULL,0, (LPTHREAD_START_ROUTINE)&readfenThread, this, 0, NULL);
-
-
-
 
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -463,10 +466,22 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 	while (true) {
 
+		if (isConnecting == false)
+		{
+			d3d.exit();
+			ExitThread(NULL);
+			//TerminateThread(drawThreadHandle,NULL);
+		}
+
+
+		//问题出在这里 gameHwnd失效了
+
 		HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd,false);
 		//显示缩略图
-		HBITMAP bitmap_small = Utils::stretchBitMap(bitmap, 300, 280);
-		//mainDlg->m_chessboard.SetBitmap(bitmap_small);
+		HBITMAP bitmap_small = Utils::stretchBitMap(bitmap, 243, 243);
+		dlg->m_picture.SetBitmap(bitmap_small);
+
+
 		Utils::saveBitMap(L"1.png", bitmap);
 		cv::Mat img = cv::imread("1.png");
 
@@ -543,6 +558,10 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 		std::string fen = calcFEN(maps);
+
+		game.setFen(fen);
+
+
 		std::pair<std::string, std::string> step_process = engine.calcStep(fen); //最佳走法以及计算过程
 
 		stepIdx stepIdx = Engine::getStepIdx(step_process.first, fen);//获得最佳走法的坐标系
@@ -557,7 +576,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		d3d.clear();
 
-		if (dlg->m_showRect.GetCheck())
+		if (connectDlg.m_showRect.GetCheck())
 		{
 			//绘制棋子方框
 			for (int i = 0; i < result.size(); i++)
@@ -565,26 +584,26 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				COLORREF color;
 				if (result[i].id <= 6)
 				{
-					color = dlg->m_rectRed.GetColor();
+					color = connectDlg.m_rectRed.GetColor();
 				}
 				else {
 
-					color = dlg->m_rectBlack.GetColor();
+					color = connectDlg.m_rectBlack.GetColor();
 				}
 
 				d3d.drawHollowHalfRect(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color);
 			}
 		}
-		if (dlg->m_showArrow.GetCheck())
+		if (connectDlg.m_showArrow.GetCheck())
 		{
 			COLORREF color;
 			if (fen.find("w")!=std::string::npos)
 			{
 				//红棋
-				color = dlg->m_arrowRed.GetColor();
+				color = connectDlg.m_arrowRed.GetColor();
 			}
 			else {
-				color = dlg->m_arrowBlack.GetColor();
+				color = connectDlg.m_arrowBlack.GetColor();
 			}
 
 			//绘制最佳行棋路线
@@ -596,17 +615,17 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				color //D3DCOLOR_XRGB(GetRValue(color), GetGValue(color), GetBValue(color)
 			);
 		}
-		if (dlg->m_showPrecision.GetCheck()) {
+		if (connectDlg.m_showPrecision.GetCheck()) {
 			for (int i = 0; i < result.size(); i++)
 			{
 				COLORREF color;
 				if (result[i].id <= 6)
 				{
-					color = dlg->m_fontRed.GetColor();
+					color = connectDlg.m_fontRed.GetColor();
 				}
 				else {
 
-					color = dlg->m_fontBlack.GetColor();
+					color = connectDlg.m_fontBlack.GetColor();
 				}
 				d3d.drawWord(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color, std::to_string(result[i].confidence));
 			}
@@ -688,42 +707,8 @@ HBRUSH CChessAIDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
 	pDC->SetBkColor(RGB(255, 255, 255));
 	pDC->SetTextColor(RGB(0,0,0));
-	
-	if (pWnd->GetDlgCtrlID()==IDC_STATIC_NAME)
-	{
-		CFont font;
-		font.CreateFontW(38, 0, 0, 0, 700, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"微软雅黑");
-		CFont *oldFont = pDC->SelectObject(&font);
 
-		font.DeleteObject();
-	}
 	return hbr;
-}
-
-
-void CChessAIDlg::OnBnClickedButtonStart()
-{
-
-	// 检查OpenCV是否支持CUDA  
-	std::cout << cv::cuda::getCudaEnabledDeviceCount() << std::endl;
-	//return;
-
-
-	gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
-
-
-	//HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd);
-	//this->m_chessboard.SetBitmap(Utils::stretchBitMap(bitmap,300,280));
-	//return;
-
-	RECT rect;
-	::GetWindowRect(gameHwnd, &rect);
-	d3d.init(rect.right - rect.left, rect.bottom - rect.top);
-	d3d.showWindow(gameHwnd);
-
-
-	drawThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)drawThread, this, 0, NULL);
-	//printf("123");
 }
 
 
@@ -856,27 +841,27 @@ void CChessAIDlg::OnDestroy()
 	qJsonObject json;
 
 	CString thinkTime;
-	m_thinkTime.GetWindowTextW(thinkTime);
+	connectDlg.m_thinkTime.GetWindowTextW(thinkTime);
 	CString thinkDepth;
-	m_thinkDepth.GetWindowTextW(thinkDepth);
+	connectDlg.m_thinkDepth.GetWindowTextW(thinkDepth);
 	json.setString("thinkTime", std::string(CW2A(thinkTime)));
 	json.setString("thinkDepth", std::string(CW2A(thinkDepth)));
 
-	json.setBool("isFront", m_front.GetCheck());
+	json.setBool("isFront", connectDlg.m_front.GetCheck());
 
-	json.setInt("rectRedColor", m_rectRed.GetColor());
-	json.setInt("rectBlackColor", m_rectBlack.GetColor());
-	json.setInt("fontRedColor", m_fontRed.GetColor());
-	json.setInt("fontBlackColor", m_fontBlack.GetColor());
-	json.setInt("arrowRedColor", m_arrowRed.GetColor());
-	json.setInt("arrowBlackColor", m_arrowBlack.GetColor());
+	json.setInt("rectRedColor", connectDlg.m_rectRed.GetColor());
+	json.setInt("rectBlackColor", connectDlg.m_rectBlack.GetColor());
+	json.setInt("fontRedColor", connectDlg.m_fontRed.GetColor());
+	json.setInt("fontBlackColor", connectDlg.m_fontBlack.GetColor());
+	json.setInt("arrowRedColor", connectDlg.m_arrowRed.GetColor());
+	json.setInt("arrowBlackColor", connectDlg.m_arrowBlack.GetColor());
 
-	json.setBool("autoPlay", m_autoPlay.GetCheck());
-	json.setBool("autoNext", m_autoNext.GetCheck());
-	json.setBool("showRect", m_showRect.GetCheck());
-	json.setBool("showArrow", m_showArrow.GetCheck());
-	json.setBool("showPrecision", m_showPrecision.GetCheck());
-	json.setBool("showName", m_showName.GetCheck());
+	json.setBool("autoPlay", connectDlg.m_autoPlay.GetCheck());
+	json.setBool("autoNext", connectDlg.m_autoNext.GetCheck());
+	json.setBool("showRect", connectDlg.m_showRect.GetCheck());
+	json.setBool("showArrow", connectDlg.m_showArrow.GetCheck());
+	json.setBool("showPrecision", connectDlg.m_showPrecision.GetCheck());
+	json.setBool("showName", connectDlg.m_showName.GetCheck());
 	Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 
 
@@ -890,4 +875,73 @@ void CChessAIDlg::OnClose()
 
 
 	CDialogEx::OnClose();
+}
+
+void CChessAIDlg::Connect()
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+
+	if (isConnecting)
+	{
+		isConnecting = false;
+		connectDlg.m_connect.SetWindowTextW(L"连线");
+		//CloseHandle(drawThreadHandle);
+		//TerminateThread(drawThreadHandle, 0);
+
+		return;
+	}
+	else {
+		isConnecting = true;
+		connectDlg.m_connect.SetWindowTextW(L"取消");
+	}
+
+
+	// 检查OpenCV是否支持CUDA  
+	std::cout << cv::cuda::getCudaEnabledDeviceCount() << std::endl;
+
+	gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
+
+
+	drawThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)drawThread, this, 0, &drawThreadId);
+
+	RECT rect;
+	::GetWindowRect(gameHwnd, &rect);
+	d3d.init(rect.right - rect.left, rect.bottom - rect.top);
+	d3d.showWindow(gameHwnd);
+
+}
+
+
+void CChessAIDlg::OnBnClickedCheckFront()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (connectDlg.m_front.GetCheck())
+	{
+		CRect rect;
+		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
+		//::SetWindowPos(gameHwnd, HWND_TOPMOST, 0,0,0,0,NULL);
+		::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy,NULL);
+	}
+	else {
+		CRect rect;
+		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
+		//::SetWindowPos(gameHwnd, HWND_NOTOPMOST, 0,0,0,0, NULL);
+		::SetWindowPos(::GetParent(gameHwnd), HWND_NOTOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
+		
+	}
+}
+
+
+void CChessAIDlg::OnInputfen()
+{
+	// TODO: 在此添加命令处理程序代码
+	game.setFen("1nbakabnr/r8/4c2c1/p1p1p1p1p/9/9/P1P1P1P1P/2N3CC1/9/R1BAKABNR w");
+}
+
+
+void CChessAIDlg::OnBnClickedButtonChoosewindow()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	Connect();
 }

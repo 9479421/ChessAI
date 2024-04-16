@@ -48,15 +48,15 @@ namespace GdiClass{
 	{
 	public:
 		boolean init(int width, int height);
-		void drawHollowRect(int left, int top, int width, int height, float weight, D3DCOLOR color);
-		void drawHollowHalfRect(int left, int top, int width, int height, float weight, D3DCOLOR color);
+		void drawHollowRect(int left, int top, int width, int height, float weight, COLORREF color);
+		void drawHollowHalfRect(int left, int top, int width, int height, float weight, COLORREF color);
 		boolean showWindow(HWND hwnd);
 		void clear();
-		void resize(int width, int height);
 
-		void drawLine(int start_left, int start_top, int end_left, int end_top, float weight, D3DCOLOR color);
-		void drawWord(int left, int top, int width, int height, float weight, D3DCOLOR color, std::string text);
+		void drawLine(int start_left, int start_top, int end_left, int end_top, float weight, COLORREF color);
+		void drawWord(int left, int top, int width, int height, float weight, COLORREF color, std::string text);
 
+		void exit();
 	private:
 
 

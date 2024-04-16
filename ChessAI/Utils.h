@@ -42,6 +42,9 @@ public:
 	static void writeFile(CString path,CString content);
 	static std::list<File> enumFiles(CString path);
 	static std::list<CString> splitStr(CString str,CString splitStr);
+
+	static std::vector<std::string> splitStr(std::string str, std::string splitStr);
+
 	static void copyFile(CString filePath,CString distPath);
 	static CString getTimeStamp(bool isMilliSecond = FALSE);
 	static bool HBitmap2Mat(HBITMAP& hBmp, cv::Mat& mat);

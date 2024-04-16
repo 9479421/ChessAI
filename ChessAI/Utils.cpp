@@ -306,6 +306,32 @@ std::list<CString> Utils::splitStr(CString str, CString splitStr)
 	return strList;
 }
 
+std::vector<std::string> Utils::splitStr(std::string str, std::string splitStr)
+{
+	std::vector<std::string> strList;
+	int idx = 0;
+	int position = 0;
+	do
+	{
+		position = str.find(splitStr, idx);
+		if (position == -1)
+		{
+			std::string tmp = str.substr(idx);
+			if (tmp.size() > 0) //结尾的\r\n不予计入空文本
+			{
+				strList.push_back(tmp);
+			}
+			break;
+		}
+		else {
+			std::string tmp = str.substr(idx, position - idx);
+			strList.push_back(tmp);
+			idx = position + splitStr.size();
+		}
+	} while (true);
+	return strList;
+}
+
 void Utils::copyFile(CString filePath, CString distPath)
 {
 	system(CW2A(L"copy " + filePath + L" " + distPath));

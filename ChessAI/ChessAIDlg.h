@@ -9,6 +9,9 @@
 #include "QButton.h"
 
 #include "EngineDlg.h"
+
+#include "ConnectDlg.h"
+
 // CChessAIDlg 对话框
 class CChessAIDlg : public CDialogEx
 {
@@ -38,39 +41,31 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	QStatusBar m_Statusbar;			//状态栏类
-	QRoundPicture m_logo;
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	QButton m_choosewindow;
 	QButton m_manageengine;
-	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnBnClickedButtonManageengine();
 
 	EngineDlg engineDlg;
 	QButton m_boardpic;
 	CListCtrl m_navigation;
 	CComboBox m_engineList;
-	CComboBox m_schemeList;
+	//CComboBox m_schemeList;
 	afx_msg void OnBnClickedButton5();
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 
 	HBRUSH hbr;
 	afx_msg void OnCopyfen();
-	CMFCColorButton m_rectRed;
-	CMFCColorButton m_rectBlack;
-	CButton m_showRect;
-	CButton m_showArrow;
+	
 	CEdit m_engineInfo;
-	CComboBox m_thinkTime;
-	CComboBox m_thinkDepth;
-	CButton m_front;
-	CButton m_autoPlay;
-	CButton m_autoNext;
-	CMFCColorButton m_fontRed;
-	CMFCColorButton m_fontBlack;
-	CMFCColorButton m_arrowRed;
-	CMFCColorButton m_arrowBlack;
-	CButton m_showPrecision;
-	CButton m_showName;
+	
 	afx_msg void OnDestroy();
 	afx_msg void OnClose();
+	//QButton m_connect;
+
+	void Connect();
+	CStatic m_picture;
+	afx_msg void OnBnClickedCheckFront();
+	afx_msg void OnInputfen();
+	afx_msg void OnBnClickedButtonChoosewindow();
 };
