@@ -63,9 +63,18 @@ public:
 	afx_msg void OnClose();
 	//QButton m_connect;
 
-	void Connect();
+	LRESULT  Connect(WPARAM wParam, LPARAM lParam);
 	CStatic m_picture;
-	afx_msg void OnBnClickedCheckFront();
+	LRESULT ClickedCheckFront(WPARAM wParam, LPARAM lParam);
+	void ClickedCheckFront1();
 	afx_msg void OnInputfen();
 	afx_msg void OnBnClickedButtonChoosewindow();
+	QButton m_back;
+	QButton m_next;
+	CMFCButton m_swap;
+	CMFCButton m_begin;
+	CMFCButton m_exec;
+	CStatic m_bottom;
+	afx_msg void OnBnClickedMfcbuttonSwap();
+	afx_msg void OnBnClickedMfcbuttonBegin();
 };

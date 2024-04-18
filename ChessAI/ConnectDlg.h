@@ -56,5 +56,8 @@ public:
 	
 	afx_msg void OnBnClickedButtonConnect();
 
-	CChessAIDlg* mainDlg;
+	afx_msg void OnDestroy();
+	afx_msg void OnBnClickedCheckFront();
+	CStatic m_bottom;
+	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 };

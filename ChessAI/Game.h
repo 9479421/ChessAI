@@ -21,6 +21,7 @@ public:
 	void setId(int id);
 	void setStatus(int status); //0是默认状态 1是选中
 public:
+	//坐标
 	int x;
 	int y;
 	int id = -1;	//-1无棋 -2是标记刚走过棋  0 红车 1 红馬 2 红相 3 红仕 4 红帅 5 红炮 6 红兵 7 黑车 8 黑马 9 黑象 10 黑士 11 黑将
@@ -29,7 +30,34 @@ public:
 	CImage image;
 	int status = 0; //0是正常状态  1是选中没走状态  2是走完的状态
 public:
-	std::vector <std::string> nameList = { "红车","红馬","红相","红仕","红帅","红炮","红兵","黑车","黑馬","黑象","黑士","黑将","黑炮","黑卒" };
+	std::string nameList[14]{ "红车","红馬","红相","红仕","红帅","红炮","红兵","黑车","黑馬","黑象","黑士","黑将","黑炮","黑卒" };
+
+};
+
+class moveInfo
+{
+public:
+
+	moveInfo(std::string step,std::string qpstep,std::string fen) {
+		this->step = step;
+		this->qpstep = qpstep;
+		this->fen = fen;
+	}
+	~moveInfo() {}
+	std::string getStep() {
+		return step;
+	}
+	std::string getQpStep() {
+		return qpstep;
+	}
+	std::string getFen() {
+		return fen;
+	}
+
+private:
+	std::string step;
+	std::string qpstep;
+	std::string fen;
 };
 
 
@@ -42,12 +70,13 @@ public:
 	void setBoardSource(std::string boardPath, int centerX, int topcenterY, int bottomcenterY, int gapX, int gapY, int chessWidth, int chessHeight);
 	void setFen(std::string fen);
 	void setChess(int x, int y, std::string name);
-	void moveChess(int x, int y, std::string step);
+	void moveChess(std::string step);
 	//初始化，摆棋
 	void init(CDC* dc, int destX, int destY);
 	//绘制出来
 	void begin(boolean isRed);
 	void show();
+	void changeTeam();
 public:
 	CImage gameImage;//缓存区
 	Pot maps[10][9]; //游戏棋子
@@ -57,7 +86,12 @@ public:
 
 	static std::vector<std::string> chessPathList;
 
-	boolean isRed;
+	bool isRed;
+	std::vector<moveInfo> stepList;
+
+	//到谁走棋了
+	bool toWhoMove; //true是红 false黑
+
 public:
 	//最终绘制往的DC
 	CDC* dc;
@@ -81,5 +115,7 @@ public:
 
 public:
 	char className[14] = { 'R', 'N', 'B', 'A', 'K', 'C', 'P', 'r', 'n', 'b','a', 'k', 'c', 'p' };
+
+
 };
 

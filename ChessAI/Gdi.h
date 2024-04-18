@@ -57,6 +57,7 @@ namespace GdiClass{
 		void drawWord(int left, int top, int width, int height, float weight, COLORREF color, std::string text);
 
 		void exit();
+		
 	private:
 
 

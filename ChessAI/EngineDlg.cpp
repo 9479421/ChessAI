@@ -48,7 +48,7 @@ BOOL EngineDlg::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	// TODO:  在此添加额外的初始化
-	m_engineList.SetExtendedStyle(m_engineList.GetExtendedStyle() | LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	m_engineList.SetExtendedStyle(m_engineList.GetExtendedStyle()  | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
 
 	m_engineList.InsertColumn(0, L"引擎名", LVCFMT_LEFT, 140, 0);

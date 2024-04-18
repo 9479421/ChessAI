@@ -253,7 +253,10 @@
     <Image Include="C:\Users\Administrator\Desktop\1.bmp" />
     <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.bmp" />
     <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.png" />
+    <Image Include="res\begin.ico" />
     <Image Include="res\ChessAI.ico" />
+    <Image Include="res\exec.ico" />
+    <Image Include="res\swap.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

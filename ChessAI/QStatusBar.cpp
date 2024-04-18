@@ -10,6 +10,6 @@ BOOL QStatusBar::OnEraseBkgnd(CDC* pDC)
 {
 	CRect rect;
 	GetClientRect(&rect);
-	pDC->FillSolidRect(rect, RGB(192, 192, 192)); //RGB(231, 82, 128)
+	pDC->FillSolidRect(rect, RGB(220, 220, 220)); //RGB(231, 82, 128)
 	return TRUE;
 }

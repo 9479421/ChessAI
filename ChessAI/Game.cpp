@@ -52,13 +52,15 @@ void Pot::setName(std::string name)
 	if (name.compare("") == 0)  //什么也不放
 	{
 		this->id = -1;
+		this->status = 0;
 		return;
 	}
 
-	for (int i = 0; i < nameList.size(); i++)
+	for (int i = 0; i < sizeof(nameList) / sizeof(std::string); i++)
 	{
 		if (nameList[i].compare(name) == 0) {
 			this->id = i;
+			this->status = 0;
 			this->name = name;
 			this->path = Game::chessPathList[i];
 			this->image.Destroy();
@@ -75,10 +77,12 @@ void Pot::setId(int id)
 	if (id == -1)  //什么也不放
 	{
 		this->id = -1;
+		this->status = 0;
 		return;
 	}
 
 	this->id = id;
+	this->status = 0;
 	this->name = nameList[id];
 	this->path = Game::chessPathList[id];
 	this->image.Destroy();
@@ -166,18 +170,25 @@ void Game::setFen(std::string fen)
 
 	std::string situation;
 	int idx = fen.find(" ");
-	situation = fen.substr(0,idx);
+	situation = fen.substr(0, idx);
 
 
 
 	if (fen.find("w") == std::string::npos) {
-		//执黑棋先走
-		std::reverse(fen.begin(), fen.end());
+		toWhoMove = false; //执黑棋先走
+	}
+	else {
+		toWhoMove = true; //红棋先走
 	}
 
 
-	int num = 0;
+	if (!isRed)
+	{
+		std::reverse(situation.begin(), situation.end());
+	}
 
+
+	//fen to maps
 	std::vector<std::string> rows = Utils::splitStr(situation, "/");
 
 	for (int i = 0; i < rows.size(); i++)
@@ -221,12 +232,16 @@ int getNumsByRowFlag(std::string rowFlag) {
 	return -1;
 }
 
-void Game::moveChess(int x, int y, std::string step)
-{
-	stepIdx stepIdx;
+template<typename T>
+extern std::string calcFEN(T maps[10][9], int type);
 
+
+void Game::moveChess(std::string step)
+{
+
+	stepIdx stepIdx;
 	int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
-	if (step.size() == 4)
+	if (step.size() == 4)  //ab转坐标
 	{
 		std::string s1 = step.substr(0, 1);
 		std::string s2 = step.substr(1, 1);
@@ -244,13 +259,104 @@ void Game::moveChess(int x, int y, std::string step)
 			stepIdx.set(col_begin, 8 - row_begin, col_end, 8 - row_end);
 		}
 
-		printf("(%d.%d)==>(%d.%d)\n", row_begin, col_begin, row_end, col_end);
+		//printf("(%d.%d)==>(%d.%d)\n", row_begin, col_begin, row_end, col_end);
 		stepIdx.print();
 
-		//移动棋
+		//判断规则
+
+		//记录走之前后的fen 以及走法
+		//step转qpstep
+		std::string nums[9] = {"1","2","3","4","5","6","7","8","9"};
+		std::string NUMS[9] = {"一","二","三","四","五","六","七","八","九"};
+		std::string qpstep;
+
+		for (int i = 0; i < 10; i++)
+		{
+			if (i != stepIdx.beginX) {
+				if (maps[i][stepIdx.beginY].id == maps[stepIdx.beginX][stepIdx.beginY].id)
+				{
+					if (i < stepIdx.beginX) {
+						qpstep = toWhoMove?"后":"前";
+					}
+					else {
+						qpstep = toWhoMove?"前":"后";
+					}
+					qpstep += maps[stepIdx.beginX][stepIdx.beginY].name.substr(2);
+					break;
+				}
+
+			}
+			
+			if (i == 9) //还没找到
+			{
+				if (toWhoMove) {
+					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) +  (toWhoMove? NUMS[8 - stepIdx.beginY] : nums[8 - stepIdx.beginY] );
+				}
+				else {
+					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + (toWhoMove ? NUMS[stepIdx.beginY ] : nums[stepIdx.beginY ]);
+				}
+			}
+		}
+		if (stepIdx.endX == stepIdx.beginX) //平
+		{
+			
+			qpstep += "平" + (toWhoMove ? NUMS[9 - stepIdx.endY - 1] : nums[9 - stepIdx.endY-1]);
+		}
+		else if (stepIdx.endY == stepIdx.beginY) //进/退
+		{
+			if (stepIdx.beginX > stepIdx.endX) //退
+			{
+				qpstep +=( toWhoMove?"进":"退") + (toWhoMove ? NUMS[stepIdx.beginX - stepIdx.endX -1] : nums[stepIdx.beginX - stepIdx.endX - 1]);
+			}
+			else {
+				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[stepIdx.endX - stepIdx.beginX - 1] : nums[stepIdx.endX - stepIdx.beginX - 1]);
+			}
+		}
+		else
+		{ 
+			//马象等
+			if (stepIdx.beginX > stepIdx.endX) //退
+			{
+				qpstep += (toWhoMove ? "进" : "退")+ (toWhoMove ? NUMS[8-stepIdx.endY] : nums[8- stepIdx.endY]);
+			}
+			else {
+				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[ stepIdx.endY] : nums[stepIdx.endY]);
+			}
+		}
+		
+
+
+		stepList.push_back(moveInfo(step, qpstep, calcFEN(maps, 1)));
+
+
+		//出棋
 		maps[stepIdx.endX][stepIdx.endY].setName(maps[stepIdx.beginX][stepIdx.beginY].name);
-		maps[stepIdx.beginX][stepIdx.beginY].id = -1;
+		maps[stepIdx.beginX][stepIdx.beginY].setName("");
+
+
+		//把对面的方框取消掉
+		for (int i = 0; i < 10; i++) {
+			for (int j = 0; j < 9; j++)
+			{
+				if ((i == stepIdx.beginX && j == stepIdx.beginY) || (i == stepIdx.endX && j == stepIdx.endY))
+				{
+
+				}
+				else {
+					maps[i][j].status = 0;
+				}
+			}
+		}
+
+
+		maps[stepIdx.endX][stepIdx.endY].status = 1;
+		maps[stepIdx.beginX][stepIdx.beginY].status = 1;
 		show();
+
+
+
+
+		toWhoMove = !toWhoMove; //换人走
 	}
 }
 
@@ -284,12 +390,18 @@ void Game::begin(boolean isRed)
 {
 	this->isRed = isRed;
 
+
+	//红棋先走
+	this->toWhoMove = true;
+	this->stepList.clear(); //清空走过的步子
+
 	//初始化棋子
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 9; j++)
 		{
 			maps[i][j].id = -1;
+			maps[i][j].status = 0;
 		}
 	}
 
@@ -375,9 +487,6 @@ void Game::begin(boolean isRed)
 		maps[6][6].setName("黑卒");
 		maps[6][8].setName("黑卒");
 	}
-
-
-
 }
 
 void Game::show()
@@ -409,42 +518,45 @@ void Game::show()
 	{
 		for (int j = 0; j < 9; j++)
 		{
+			int left = maps[i][j].x - chessWidth / 2;
+			int top = maps[i][j].y - chessHeight / 2;
+			int right = maps[i][j].x + chessWidth / 2;
+			int bottom = maps[i][j].y + chessHeight / 2;
+
+
+
+			if (maps[i][j].status == 1)
+			{
+				CGdiObject* oldStockObject = gameCdc.SelectStockObject(NULL_BRUSH);
+
+				CPen pen;
+				pen.CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+
+				CPen* oldPen = gameCdc.SelectObject(&pen);
+				gameCdc.Rectangle(CRect(left, top, right, bottom));
+
+
+				pen.DeleteObject();
+
+				gameCdc.SelectObject(oldPen);
+				gameCdc.SelectObject(oldStockObject);
+			}
+
+
 			if (maps[i][j].id != -1)
 			{
-				int left = maps[i][j].x - chessWidth / 2;
-				int top = maps[i][j].y - chessHeight / 2;
-				int right = maps[i][j].x + chessWidth / 2;
-				int bottom = maps[i][j].y + chessHeight / 2;
-
 
 				Gdiplus::Image image(CA2W(maps[i][j].path.c_str()));
 				graphics.DrawImage(&image, Gdiplus::Rect(left, top, right - left, bottom - top));
 
 
-				if (maps[i][j].status == 1)
-				{
-
-					CGdiObject* oldStockObject = gameCdc.SelectStockObject(NULL_BRUSH);
-
-					CPen pen;
-					pen.CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
-
-					CPen* oldPen = gameCdc.SelectObject(&pen);
-					gameCdc.Rectangle(CRect(left, top, right, bottom));
-
-
-					pen.DeleteObject();
-
-					gameCdc.SelectObject(oldPen);
-					gameCdc.SelectObject(oldStockObject);
-				}
 			}
 		}
 	}
 
-	
 
-	gameImage.Draw(dc->m_hDC, CRect(destX, destY, destX + gameWidth, destY+gameHeight)); //源大小复制
+
+	gameImage.Draw(dc->m_hDC, CRect(destX, destY, destX + gameWidth, destY + gameHeight)); //源大小复制
 
 
 	gameImage.ReleaseDC();
@@ -457,5 +569,30 @@ void Game::show()
 
 	//关闭Gdiplus
 	GdiplusShutdown(gdiplusToken);
+}
+
+
+
+void Game::changeTeam()
+{
+	this->isRed = !this->isRed;
+	//颠倒maps
+
+	Pot tmp[10][9];
+	memcpy(tmp, maps, sizeof(maps));
+
+
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 9; j++)
+		{
+			maps[i][j] = tmp[9 - i][8 - j];
+			maps[i][j].x = tmp[i][j].x;
+			maps[i][j].y = tmp[i][j].y;
+		}
+	}
+
+
+	show();
 }
 

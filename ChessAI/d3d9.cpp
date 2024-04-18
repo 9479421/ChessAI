@@ -29,10 +29,6 @@ std::vector<word> words;
 #define h2a 180 / 3.1415926
 #define a2h 3.1415926 / 180 
 double calcFC(double a, double b, double c, bool add) {
-
-	printf("aaa %lf", b * b - 4 * a * c);
-	printf("bbb  %lf", std::sqrt(b * b - 4 * a * c));
-
 	if (add)
 	{
 		return (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);

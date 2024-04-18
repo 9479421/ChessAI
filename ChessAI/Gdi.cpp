@@ -11,11 +11,8 @@ std::vector<hollowRect> hollowHalfRects;
 std::vector<line> lines;
 std::vector<word> words;
 
+
 double GdiClass::calcFC(double a, double b, double c, bool add) {
-
-	printf("aaa %lf", b * b - 4 * a * c);
-	printf("bbb  %lf", std::sqrt(b * b - 4 * a * c));
-
 	if (add)
 	{
 		return (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
@@ -28,16 +25,26 @@ double GdiClass::calcFC(double a, double b, double c, bool add) {
 void GdiClass::render() {
 	PAINTSTRUCT ps;
 	BeginPaint(hwnd, &ps);
+	
 
-	SetBkMode(ps.hdc, TRANSPARENT);
+
 	//清空先
 	RECT rect;
 	GetClientRect(hwnd, &rect);
+
+
+
+	HDC hMemDC = CreateCompatibleDC(ps.hdc);
+	HBITMAP hMemBitmap = CreateCompatibleBitmap(ps.hdc, rect.right, rect.bottom);
+	SelectObject(hMemDC, hMemBitmap);
+	SetBkMode(hMemDC, TRANSPARENT);
+
 	HBRUSH brush = CreateSolidBrush(RGB(1, 2, 3));
-	FillRect(ps.hdc, &rect, brush);
+	FillRect(hMemDC, &rect, brush);
 
 
-	HBRUSH oldBrush = (HBRUSH)SelectObject(ps.hdc, brush);
+	HBRUSH oldBrush = (HBRUSH)SelectObject(hMemDC, brush);
+
 
 	//绘制空心矩形
 	for (int i = 0; i < hollowRects.size(); i++)
@@ -67,41 +74,41 @@ void GdiClass::render() {
 
 
 		HPEN pen = CreatePen(PS_SOLID, weight,color);
-		HPEN oldPen = (HPEN)SelectObject(ps.hdc, pen);
+		HPEN oldPen = (HPEN)SelectObject(hMemDC, pen);
 
-		MoveToEx(ps.hdc, left, top + height / 5, NULL);
-		LineTo(ps.hdc, left, top);
-		MoveToEx(ps.hdc, left, top ,NULL);
-		LineTo(ps.hdc, left + width / 5, top);
+		MoveToEx(hMemDC, left, top + height / 5, NULL);
+		LineTo(hMemDC, left, top);
+		MoveToEx(hMemDC, left, top ,NULL);
+		LineTo(hMemDC, left + width / 5, top);
 
 
-		MoveToEx(ps.hdc, left + width * 4 / 5, top, NULL);
-		LineTo(ps.hdc, left + width, top);
-		MoveToEx(ps.hdc, left + width, top, NULL);
-		LineTo(ps.hdc, left + width, top + height / 5);
+		MoveToEx(hMemDC, left + width * 4 / 5, top, NULL);
+		LineTo(hMemDC, left + width, top);
+		MoveToEx(hMemDC, left + width, top, NULL);
+		LineTo(hMemDC, left + width, top + height / 5);
 
-		MoveToEx(ps.hdc, left + width, top + height * 4 / 5, NULL);
-		LineTo(ps.hdc, left + width, top + height);
-		MoveToEx(ps.hdc, left + width, top + height, NULL);
-		LineTo(ps.hdc, left + width * 4 / 5, top + height);
+		MoveToEx(hMemDC, left + width, top + height * 4 / 5, NULL);
+		LineTo(hMemDC, left + width, top + height);
+		MoveToEx(hMemDC, left + width, top + height, NULL);
+		LineTo(hMemDC, left + width * 4 / 5, top + height);
 
-		MoveToEx(ps.hdc, left, top + height * 4 / 5, NULL);
-		LineTo(ps.hdc, left, top + height);
-		MoveToEx(ps.hdc, left, top + height, NULL);
-		LineTo(ps.hdc, left + width / 5, top + height);
+		MoveToEx(hMemDC, left, top + height * 4 / 5, NULL);
+		LineTo(hMemDC, left, top + height);
+		MoveToEx(hMemDC, left, top + height, NULL);
+		LineTo(hMemDC, left + width / 5, top + height);
 
 
 
 		//趁着画笔颜色没变回去之前 绘制
 		HBRUSH pBrush = CreateSolidBrush(color);
-		HBRUSH pOldBrush = (HBRUSH)SelectObject(ps.hdc, pBrush);
-		Rectangle(ps.hdc, left, top - 4, left + width + weight, top + 1);
-		SelectObject(ps.hdc, pOldBrush);
+		HBRUSH pOldBrush = (HBRUSH)SelectObject(hMemDC, pBrush);
+		Rectangle(hMemDC, left, top - 4, left + width + weight, top + 1);
+		SelectObject(hMemDC, pOldBrush);
 		DeleteObject(pBrush);
 
 
 
-		SelectObject(ps.hdc, oldPen);
+		SelectObject(hMemDC, oldPen);
 		DeleteObject(pen);
 
 
@@ -177,18 +184,18 @@ void GdiClass::render() {
 
 
 		HPEN pen = CreatePen(PS_SOLID, weight, color);
-		HPEN oldPen = (HPEN)SelectObject(ps.hdc, pen);
+		HPEN oldPen = (HPEN)SelectObject(hMemDC, pen);
 
-		MoveToEx(ps.hdc, start_left, start_top, NULL);
-		LineTo(ps.hdc, end_left, end_top);
+		MoveToEx(hMemDC, start_left, start_top, NULL);
+		LineTo(hMemDC, end_left, end_top);
 
-		MoveToEx(ps.hdc, x1, y1, NULL);
-		LineTo(ps.hdc, end_left, end_top);
-		MoveToEx(ps.hdc, end_left, end_top, NULL);
-		LineTo(ps.hdc, x2, y2);
+		MoveToEx(hMemDC, x1, y1, NULL);
+		LineTo(hMemDC, end_left, end_top);
+		MoveToEx(hMemDC, end_left, end_top, NULL);
+		LineTo(hMemDC, x2, y2);
 
 
-		SelectObject(ps.hdc, oldPen);
+		SelectObject(hMemDC, oldPen);
 		DeleteObject(pen);
 	}
 	//绘制文字
@@ -204,7 +211,7 @@ void GdiClass::render() {
 
 
 		HPEN pen = CreatePen(PS_SOLID, weight, color);
-		HPEN oldPen = (HPEN)SelectObject(ps.hdc, pen);
+		HPEN oldPen = (HPEN)SelectObject(hMemDC, pen);
 
 		RECT rect;
 		rect.left = left;
@@ -212,17 +219,28 @@ void GdiClass::render() {
 		rect.right = left + width;
 		rect.bottom = top + height;
 
-		SetTextColor(ps.hdc, color);
+		SetTextColor(hMemDC, color);
 		//TextOutA(ps.hdc, left, top, text.c_str(), text.size());
-		DrawTextA(ps.hdc, text.c_str(), text.length(), &rect, DT_CENTER);
+		DrawTextA(hMemDC, text.c_str(), text.length(), &rect, DT_CENTER);
 
-		SelectObject(ps.hdc, oldPen);
+		SelectObject(hMemDC, oldPen);
 		DeleteObject(pen);
 	}
 
 
-	SelectObject(ps.hdc, oldBrush);
-	DeleteObject(brush); //清理对象  
+	SelectObject(hMemDC, oldBrush);
+	DeleteObject(brush); //清理对象
+
+
+	BitBlt(ps.hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, hMemDC, 0, 0, SRCCOPY);
+
+
+	// 图已经画出来了.删除位图
+	DeleteObject(hMemBitmap);
+	// 删掉内存hMemDC
+	DeleteDC(hMemDC);
+
+
 	EndPaint(hwnd, &ps);
 }
 

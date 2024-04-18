@@ -97,8 +97,14 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_COMBO_ENGINELIST, m_engineList);
 
 	DDX_Control(pDX, IDC_EDIT_ENGINEINFO, m_engineInfo);
-	
+
 	DDX_Control(pDX, IDC_STATIC_PICTURE, m_picture);
+	DDX_Control(pDX, IDC_BUTTON_BACK, m_back);
+	DDX_Control(pDX, IDC_BUTTON_NEXT, m_next);
+	DDX_Control(pDX, IDC_MFCBUTTON_SWAP, m_swap);
+	DDX_Control(pDX, IDC_MFCBUTTON_BEGIN, m_begin);
+	DDX_Control(pDX, IDC_MFCBUTTON_EXEC, m_exec);
+	DDX_Control(pDX, IDC_STATIC_BOTTOM, m_bottom);
 }
 
 BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
@@ -116,10 +122,16 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_COMMAND(ID_COPYFEN, &CChessAIDlg::OnCopyfen)
 	ON_WM_DESTROY()
 	ON_WM_CLOSE()
-	//ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CChessAIDlg::OnBnClickedButtonConnect)
-	ON_BN_CLICKED(IDC_CHECK_FRONT, &CChessAIDlg::OnBnClickedCheckFront)
+
+
+	ON_MESSAGE(10086, &CChessAIDlg::Connect) //连线函数
+	ON_MESSAGE(10087, &CChessAIDlg::ClickedCheckFront)
+
+
 	ON_COMMAND(ID_INPUTFEN, &CChessAIDlg::OnInputfen)
 	ON_BN_CLICKED(IDC_BUTTON_CHOOSEWINDOW, &CChessAIDlg::OnBnClickedButtonChoosewindow)
+	ON_BN_CLICKED(IDC_MFCBUTTON_SWAP, &CChessAIDlg::OnBnClickedMfcbuttonSwap)
+	ON_BN_CLICKED(IDC_MFCBUTTON_BEGIN, &CChessAIDlg::OnBnClickedMfcbuttonBegin)
 END_MESSAGE_MAP()
 
 
@@ -144,7 +156,7 @@ bool IsProcessExists(std::string processName) {
 }
 
 template<typename T>
-std::string calcFEN(T maps[10][9]) {
+std::string calcFEN(T maps[10][9],int type/*0是自动加我方先走  1是红先走  2是黑先走 */) {
 	std::string fen;
 	boolean isRed = false;
 	for (int i = 0; i < 10; i++)
@@ -198,7 +210,16 @@ std::string calcFEN(T maps[10][9]) {
 			{
 				std::reverse(fen.begin(), fen.end());
 			}
-			fen += isRed ? " w" : " b";
+			if (type == 0)
+			{
+				fen += isRed ? " w" : " b";
+			}
+			else if (type == 1) {
+				fen += " w";
+			}
+			else if (type == 2) {
+				fen += " b";
+			}
 			//这里默认跳出循环了
 		}
 		else {
@@ -208,17 +229,6 @@ std::string calcFEN(T maps[10][9]) {
 	}
 	return fen;
 }
-//
-//
-//DWORD WINAPI readfenThread(LPVOID lpParam) {
-//	while (true)
-//	{
-//		CChessAIDlg* dlg = (CChessAIDlg*)lpParam;
-//		dlg->m_fen.SetWindowTextW(CA2W(calcFEN(game.maps).c_str()));
-//		Sleep(100);
-//	}
-//	return 0;
-//}
 
 
 std::string validateVersion();
@@ -273,6 +283,29 @@ BOOL CChessAIDlg::OnInitDialog()
 	hbr = CreateSolidBrush(SkinColors::white);
 
 
+	//菜单按钮图标
+	m_begin.SetIcon((HICON)LoadImage(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_BEGIN),
+		IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR | LR_CREATEDIBSECTION));
+	m_begin.m_bDontUseWinXPTheme = TRUE;
+	m_begin.m_bTransparent = FALSE;
+	m_begin.SetFaceColor(RGB(255, 255, 255));
+	m_begin.m_bDrawFocus = FALSE;
+
+	m_swap.SetIcon((HICON)LoadImage(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_SWAP),
+		IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR | LR_CREATEDIBSECTION));
+	m_swap.m_bTransparent = FALSE;
+	m_swap.m_bDontUseWinXPTheme = TRUE;
+	m_swap.SetFaceColor(RGB(255, 255, 255));
+	m_swap.m_bDrawFocus = FALSE;
+
+	m_exec.SetIcon((HICON)LoadImage(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_EXEC),
+		IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR | LR_CREATEDIBSECTION));
+	m_exec.m_bTransparent = FALSE;
+	m_exec.m_bDontUseWinXPTheme = TRUE;
+	m_exec.SetFaceColor(RGB(255, 255, 255));
+	m_exec.m_bDrawFocus = FALSE;
+
+
 	//创建菜单栏
 	CMenu menu;
 	menu.LoadMenuW(IDR_MENU1);
@@ -289,21 +322,24 @@ BOOL CChessAIDlg::OnInitDialog()
 	//menu.Detach();//防止窗口创建后menu2被释放，再按选项
 
 
-	////设置状态栏
-	m_Statusbar.Create(this);                  //创造状态栏
-	UINT id[] = { 1000, 1001 };//一个id 是1000  一个是1001创建两个状态栏
-	m_Statusbar.SetIndicators(id, 2);//这个2好像是你id数组的大小也就是下面有几个状态栏，这里是两个
-	m_Statusbar.SetPaneInfo(0, 1000, SBPS_NORMAL, 100);//这里是设置状态栏 第一个参数0代表第一个状态栏 1的话是第二个，第二个参数是状态栏id，第三个是风格，第四个是宽度
-	m_Statusbar.SetPaneInfo(1, 1001, SBPS_STRETCH, 10);//同上这个风格是自动增加的，最后一个参数写不写没什么意思
-	//下面代码是取得本窗口矩形区域...把状态栏放在底部
-	RECT clientRect;
-	GetClientRect(&clientRect);
-	m_Statusbar.MoveWindow(0, clientRect.bottom - 30, clientRect.right, 30, TRUE);//这里设置了状态栏高度
-	//m_Statusbar.SetPaneText(0,  CA2W(("当前版本：V" + validateVersion()).c_str()), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
-	m_Statusbar.SetPaneText(1, _T("这里是窗口初始化自带状态文本"), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
+	//////设置状态栏
+	//m_Statusbar.Create(this);                  //创造状态栏
+	//UINT id[] = { 1000, 1001 };//一个id 是1000  一个是1001创建两个状态栏
+	//m_Statusbar.SetIndicators(id, 2);//这个2好像是你id数组的大小也就是下面有几个状态栏，这里是两个
+	//m_Statusbar.SetPaneInfo(0, 1000, SBPS_NORMAL, 100);//这里是设置状态栏 第一个参数0代表第一个状态栏 1的话是第二个，第二个参数是状态栏id，第三个是风格，第四个是宽度
+	//m_Statusbar.SetPaneInfo(1, 1001, SBPS_STRETCH, 10);//同上这个风格是自动增加的，最后一个参数写不写没什么意思
+	////下面代码是取得本窗口矩形区域...把状态栏放在底部
+	//RECT clientRect;
+	//GetClientRect(&clientRect);
+	//m_Statusbar.MoveWindow(0, clientRect.bottom - 30, clientRect.right, 30, TRUE);//这里设置了状态栏高度
+	////m_Statusbar.SetPaneText(0,  CA2W(("当前版本：V" + validateVersion()).c_str()), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
+	//m_Statusbar.SetPaneText(1, _T("这里是窗口初始化自带状态文本"), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
 
 
-	
+	CFont font;
+	font.CreatePointFont(200, _T("宋体"), NULL);
+	m_bottom.SetFont(&font);
+
 	//q.SubclassWindow(GetDlgItem(IDC_BUTTON_CONNECT)->m_hWnd);  //子类化
 
 	m_choosewindow.SetStyle(QButton::Win10);
@@ -316,8 +352,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	m_navigation.InsertColumn(2, L"分数", LVCFMT_LEFT, 60, 0);
 	m_navigation.InsertColumn(3, L"时间", LVCFMT_LEFT, 80, 0);
 	m_navigation.InsertColumn(4, L"注释", LVCFMT_LEFT, 110, 0);
-
-
+	m_navigation.SetExtendedStyle(m_navigation.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
 
 	//读取引擎目录配置，没有的话写入新的
 	char programPath[MAX_PATH];
@@ -433,8 +468,8 @@ BOOL CChessAIDlg::OnInitDialog()
 	game.setChessSource("./pic/红车.png", "./pic/红馬.png", "./pic/红相.png", "./pic/红仕.png", "./pic/红帅.png", "./pic/红炮.png", "./pic/红兵.png",
 		"./pic/黑车.png", "./pic/黑馬.png", "./pic/黑象.png", "./pic/黑士.png", "./pic/黑将.png", "./pic/黑炮.png", "./pic/黑卒.png", '\0');
 	game.setBoardSource("./pic/棋盘.png", 260, 31, 546, 58, 58, 57, 57);
-	game.init(GetDC(),30, 80);//计算出棋盘每个点的坐标
-	game.begin(false); //摆棋
+	game.init(GetDC(),26, 70);//计算出棋盘每个点的坐标
+	game.begin(true); //摆棋
 
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -448,7 +483,6 @@ Yolo yolo;
 
 cv::dnn::Net net;
 HWND gameHwnd;
-
 
 DWORD WINAPI drawThread(LPVOID lpParam) {
 
@@ -466,12 +500,12 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 	while (true) {
 
-		if (isConnecting == false)
-		{
-			d3d.exit();
-			ExitThread(NULL);
-			//TerminateThread(drawThreadHandle,NULL);
-		}
+		//if (isConnecting == false)
+		//{
+		//	d3d.exit();
+		//	ExitThread(NULL);
+		//	//TerminateThread(drawThreadHandle,NULL);
+		//}
 
 
 		//问题出在这里 gameHwnd失效了
@@ -538,7 +572,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		}
 
-		printf("fen:%s\n", calcFEN(maps).c_str());
+		printf("fen:%s\n", calcFEN(maps,0).c_str());
 		std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
 		for (int i = 0; i < 10; i++)
 		{
@@ -557,7 +591,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 
-		std::string fen = calcFEN(maps);
+		std::string fen = calcFEN(maps,0);
 
 		game.setFen(fen);
 
@@ -573,6 +607,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		dlg->m_engineInfo.SetWindowTextW(engineInfo);
 		//dlg->m_engineInfo.setline;
 		dlg->SendDlgItemMessage(IDC_EDIT_ENGINEINFO, WM_VSCROLL, SB_BOTTOM, 0); //滚动条始终在底部
+
 
 		d3d.clear();
 
@@ -630,7 +665,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				d3d.drawWord(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color, std::to_string(result[i].confidence));
 			}
 		}
-
+	
 		Sleep(10);
 
 	}
@@ -708,6 +743,15 @@ HBRUSH CChessAIDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	pDC->SetBkColor(RGB(255, 255, 255));
 	pDC->SetTextColor(RGB(0,0,0));
 
+	if (pWnd->GetDlgCtrlID() == IDC_STATIC_BOTTOM)
+	{
+		pDC->SetBkColor(RGB(46, 46, 46));
+		pDC->SetTextColor(RGB(255, 255, 255));
+
+		HBRUSH B = CreateSolidBrush(RGB(46, 46, 46));
+		return (HBRUSH)B;
+	}
+
 	return hbr;
 }
 
@@ -751,6 +795,7 @@ void CChessAIDlg::OnBnClickedButton5()
 
 int status = 0; //啥也没干  1是选中棋子了
 Pot* tmp;
+int tmpI, tmpJ;
 
 void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
@@ -767,37 +812,89 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 				if (status == 0)
 				{
+
 					if (game.maps[i][j].id != -1)
 					{
+
+						//如果不是自己走棋，就不能点击
+						if (game.toWhoMove)
+						{
+							if (game.maps[i][j].id > 6)
+							{
+								return;
+							}
+						}
+						else {
+							if (game.maps[i][j].id <= 6)
+							{
+								return;
+							}
+						}
+
+
 						status = 1;
 						//选中棋子
 						tmp = &game.maps[i][j];
-
+						tmpI = i;
+						tmpJ = j;
+						//框框
 						game.maps[i][j].status = 1;
 					}
 				}
 				else {
 
 					//走棋
+					
+					
 					if (&game.maps[i][j] != tmp) //不能是同一个棋原地踏步
 					{
 						if ((game.maps[i][j].id >= 0 && game.maps[i][j].id <= 6 && tmp->id <= 6)
 							|| (game.maps[i][j].id > 6 && tmp->id > 6)) //不能吃自己的棋
 						{
+							tmp->status = 0; //取消之前棋子的框框
+							game.maps[i][j].status = 1; //改为新的棋子框框
 							//更换新的选中棋子
-							tmp->status = 0;
 							tmp = &game.maps[i][j];
-							game.maps[i][j].status = 1;
-
+							tmpI = i;
+							tmpJ = j;
 						}
 						else {
 
 							status = 0;
+							
 
-							game.maps[i][j].setName(tmp->name);
+							//tmp是原来的位置 maps[i][j]是要走的位置
+							std::string rowFlags[9] = { "a","b","c","d","e","f","g","h","i" };
+							//stepIdx坐标 转 step
+							std::string step;
+							if (game.isRed)
+							{
+								step = rowFlags[tmpJ] + std::to_string(9 - tmpI) + rowFlags[j] + std::to_string(9 - i);
+							}
+							else {
+								step = rowFlags[8 - tmpJ] + std::to_string(tmpI) + rowFlags[8 - j] + std::to_string(i);
+							}
 
-							tmp->status = 0;
-							tmp->setName("");
+
+			
+							
+							//走棋
+							game.moveChess(step);
+
+
+
+							int row = m_navigation.GetItemCount();
+							m_navigation.InsertItem(row, L"");
+							if (!game.toWhoMove) //红棋多一列
+							{
+								
+								m_navigation.SetItemText(row, 0,CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
+							}
+							m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size()-1].getStep().c_str()));
+							m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
+							m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
+							m_navigation.EnsureVisible(row,FALSE);
+
 						}
 					}
 
@@ -821,7 +918,7 @@ end:
 void CChessAIDlg::OnCopyfen()
 {
 
-	MessageBoxA(NULL, ("当前局面FEN:\n" + calcFEN(game.maps) + "\n复制成功！").c_str(), "复制局面", 0);
+	MessageBoxA(NULL, ("当前局面FEN:\n" + calcFEN(game.maps,1/*这里后面要改成当前到谁走了*/) + "\n复制成功！").c_str(), "复制局面", 0);
 	// TODO: 在此添加命令处理程序代码
 }
 
@@ -831,6 +928,15 @@ void CChessAIDlg::OnDestroy()
 	CDialogEx::OnDestroy();
 
 	// TODO: 在此处添加消息处理程序代码
+
+}
+
+
+void CChessAIDlg::OnClose()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CloseHandle(drawThreadHandle);
+
 
 	//保存配置
 	char programPath[MAX_PATH];
@@ -865,19 +971,10 @@ void CChessAIDlg::OnDestroy()
 	Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 
 
-}
-
-
-void CChessAIDlg::OnClose()
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	CloseHandle(drawThreadHandle);
-
-
 	CDialogEx::OnClose();
 }
 
-void CChessAIDlg::Connect()
+LRESULT  CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 {
 	// TODO: 在此添加控件通知处理程序代码
 
@@ -886,10 +983,9 @@ void CChessAIDlg::Connect()
 	{
 		isConnecting = false;
 		connectDlg.m_connect.SetWindowTextW(L"连线");
-		//CloseHandle(drawThreadHandle);
-		//TerminateThread(drawThreadHandle, 0);
-
-		return;
+		TerminateThread(drawThreadHandle, 0);
+		d3d.exit();
+		return 0;
 	}
 	else {
 		isConnecting = true;
@@ -910,10 +1006,12 @@ void CChessAIDlg::Connect()
 	d3d.init(rect.right - rect.left, rect.bottom - rect.top);
 	d3d.showWindow(gameHwnd);
 
+
+	return 0;
 }
 
 
-void CChessAIDlg::OnBnClickedCheckFront()
+LRESULT CChessAIDlg::ClickedCheckFront(WPARAM wParam, LPARAM lParam)
 {
 	// TODO: 在此添加控件通知处理程序代码
 	if (connectDlg.m_front.GetCheck())
@@ -930,8 +1028,30 @@ void CChessAIDlg::OnBnClickedCheckFront()
 		::SetWindowPos(::GetParent(gameHwnd), HWND_NOTOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
 		
 	}
+
+	return 0;
 }
 
+
+void CChessAIDlg::ClickedCheckFront1()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (connectDlg.m_front.GetCheck())
+	{
+		CRect rect;
+		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
+		//::SetWindowPos(gameHwnd, HWND_TOPMOST, 0,0,0,0,NULL);
+		::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
+	}
+	else {
+		CRect rect;
+		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
+		//::SetWindowPos(gameHwnd, HWND_NOTOPMOST, 0,0,0,0, NULL);
+		::SetWindowPos(::GetParent(gameHwnd), HWND_NOTOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
+
+	}
+
+}
 
 void CChessAIDlg::OnInputfen()
 {
@@ -943,5 +1063,31 @@ void CChessAIDlg::OnInputfen()
 void CChessAIDlg::OnBnClickedButtonChoosewindow()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	Connect();
+	//Connect();
+	/*game.moveChess("a0b1");*/
+
+	
+}
+
+
+void CChessAIDlg::OnBnClickedMfcbuttonSwap()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	
+	game.changeTeam();
+	tmp = &game.maps[9 - tmpI][8 - tmpJ];
+	tmpI = 9 - tmpI;
+	tmpJ = 8 - tmpJ;
+
+}
+
+
+void CChessAIDlg::OnBnClickedMfcbuttonBegin()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	game.begin(game.isRed);
+	game.show();
+
+	m_navigation.DeleteAllItems();
+
 }
