@@ -5,18 +5,17 @@
 #include<vector>
 #include<gdiplus.h>
 #include"Utils.h"
+#include"moveInfo.h"
+#include "stepIdx.h"
+
 using namespace Gdiplus;
+
 
 
 class Pot
 {
 public:
-	Pot() {
-
-	}
-	~Pot() {
-
-	}
+	Pot();
 	void setName(std::string name);
 	void setId(int id);
 	void setStatus(int status); //0ÊÇÄ¬ÈÏ×´Ì¬ 1ÊÇÑ¡ÖĞ
@@ -33,33 +32,6 @@ public:
 	std::string nameList[14]{ "ºì³µ","ºìñR","ºìÏà","ºìÊË","ºìË§","ºìÅÚ","ºì±ø","ºÚ³µ","ºÚñR","ºÚÏó","ºÚÊ¿","ºÚ½«","ºÚÅÚ","ºÚ×ä" };
 
 };
-
-class moveInfo
-{
-public:
-
-	moveInfo(std::string step,std::string qpstep,std::string fen) {
-		this->step = step;
-		this->qpstep = qpstep;
-		this->fen = fen;
-	}
-	~moveInfo() {}
-	std::string getStep() {
-		return step;
-	}
-	std::string getQpStep() {
-		return qpstep;
-	}
-	std::string getFen() {
-		return fen;
-	}
-
-private:
-	std::string step;
-	std::string qpstep;
-	std::string fen;
-};
-
 
 class Game
 {

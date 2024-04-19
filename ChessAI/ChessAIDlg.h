@@ -77,4 +77,6 @@ public:
 	CStatic m_bottom;
 	afx_msg void OnBnClickedMfcbuttonSwap();
 	afx_msg void OnBnClickedMfcbuttonBegin();
+	afx_msg void OnBnClickedMfcbuttonExec();
+	afx_msg void OnBnClickedButtonBoardpic();
 };

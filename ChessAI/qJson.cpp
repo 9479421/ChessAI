@@ -76,7 +76,7 @@ bool isDigit(std::string str) {
 
 qJsonObject qJson::parseJsonObject(std::string str)
 {
-	qJsonObject* retObject = new qJsonObject();
+	qJsonObject retObject;
 
 
 	str = trim(str);
@@ -118,7 +118,7 @@ qJsonObject qJson::parseJsonObject(std::string str)
 
 						//printf("key:%s value:%s\n", key.c_str(), value.c_str());
 						//写入
-						retObject->setString(key, value);
+						retObject.setString(key, value);
 
 
 						if (str.find_first_not_of(' ') == -1) //读到结尾了
@@ -169,7 +169,7 @@ qJsonObject qJson::parseJsonObject(std::string str)
 						//截断，保留后面的文本
 						str = str.substr(idx + 1 + firstCharIdx + i + 1);
 						//写入 
-						retObject->setJsonObject(key, /*递归*/parseJsonObject(objStr/*对象文本*/)); //同时将该对象传递
+						retObject.setJsonObject(key, /*递归*/parseJsonObject(objStr/*对象文本*/)); //同时将该对象传递
 
 						if (str.find_first_not_of(' ') == -1) //读到结尾了
 						{
@@ -217,7 +217,7 @@ qJsonObject qJson::parseJsonObject(std::string str)
 						//截断，保留后面的文本
 						str = str.substr(idx + 1 + firstCharIdx + i + 1);
 						//写入 
-						retObject->setJsonArray(key, /*递归*/parseJsonArray(arrStr/*对象文本*/)); //同时将该对象传递
+						retObject.setJsonArray(key, /*递归*/parseJsonArray(arrStr/*对象文本*/)); //同时将该对象传递
 
 						if (str.find_first_not_of(' ') == -1) //读到结尾了
 						{
@@ -248,13 +248,13 @@ qJsonObject qJson::parseJsonObject(std::string str)
 				}
 				else if (value.compare("true") == 0 || value.compare("TRUE") == 0 || value.compare("false") == 0 || value.compare("FALSE") == 0) {
 
-					retObject->setBool(key, (value.compare("true") == 0 || value.compare("TRUE") == 0) ? true : false);
+					retObject.setBool(key, (value.compare("true") == 0 || value.compare("TRUE") == 0) ? true : false);
 				}
 				else {
 					//判断是否合法数字，如果不是，说明json不合规
 					if (isDigit(value))
 					{
-						retObject->setDouble(key, std::stod(value));
+						retObject.setDouble(key, std::stod(value));
 					}
 					else {
 						//json不合规，直接抛出异常
@@ -270,7 +270,7 @@ qJsonObject qJson::parseJsonObject(std::string str)
 		}
 	}
 
-	return *retObject;
+	return retObject;
 }
 
 qJsonArray qJson::parseJsonArray(std::string str)

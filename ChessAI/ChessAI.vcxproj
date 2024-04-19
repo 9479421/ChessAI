@@ -204,6 +204,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="Gdi.h" />
     <ClInclude Include="http.h" />
+    <ClInclude Include="moveInfo.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Pojo.h" />
     <ClInclude Include="Process.h" />
@@ -214,6 +215,7 @@
     <ClInclude Include="QStatusBar.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SkinColors.h" />
+    <ClInclude Include="stepIdx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="yolov7.h" />
@@ -223,6 +225,7 @@
     <ClCompile Include="ChessAIDlg.cpp" />
     <ClCompile Include="ConnectDlg.cpp" />
     <ClCompile Include="d3d9.cpp" />
+    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="EngineDlg.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Gdi.cpp" />

@@ -97,6 +97,64 @@ std::string Process::execute(std::string endFlag)
 	return strRet;
 }
 
+
+void Process::execute(std::string endFlag, std::string endCmd, float maxWaitingTime,std::string& ret)
+{
+	endCmd += "\r\n";
+
+
+	std::string cmd;
+	for (int i = 0; i < cmdLines.size(); i++)
+	{
+		cmd += cmdLines[i] + "\r\n";
+	}
+	WriteFile(hInWrite, cmd.c_str(), cmd.length(), NULL, NULL);
+
+	//开始计时
+	std::chrono::steady_clock::time_point startTime = std::chrono::high_resolution_clock::now();
+	bool isEnd = false;
+
+	char resultbuffer[1024]{ 0 };
+	while (true)
+	{	
+		memset(resultbuffer, 0, 1024);
+		if (!ReadFile(hOutRead, resultbuffer, sizeof(resultbuffer) - 1, NULL, NULL))
+		{
+			break;
+		}
+		ret += resultbuffer;
+		int idx;
+		if ((idx = ret.find(endFlag)) != std::string::npos)
+		{
+			for (int i = 0; i < strlen(resultbuffer); i++)
+			{
+				std::string tmp = ret.substr(idx + endFlag.size() + i, 1);
+				if (tmp == "\r" || tmp == "\n")
+				{
+					printf("all:\n%s\n", ret.c_str());
+					goto end;
+				}
+			}
+		}
+
+		if (!isEnd)
+		{
+			std::chrono::steady_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+			if (std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() > maxWaitingTime)
+			{
+				//强行结束，直接拿到最佳走法
+				WriteFile(hInWrite, endCmd.c_str(), endCmd.size(), NULL, NULL);
+				isEnd = true;
+			}
+		}
+		
+	}
+
+end:
+
+	cmdLines.clear();
+}
+
 void Process::exit()
 {
 	//销毁内存和进程

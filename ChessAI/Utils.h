@@ -10,7 +10,7 @@
 #pragma comment (lib,"d3dx9.lib")
 
 #include<opencv2/opencv.hpp>
-
+#include<tlhelp32.h>
 
 struct XSleep_Structure
 {
@@ -54,6 +54,12 @@ public:
 	static int findFirstNotOf(const std::string& str, char ch...);
 	static bool isDigit(std::string str);
 
+
+
+	static std::string getCenterString(std::string str,std::string begin,std::string end);
+	static std::string getRightString(std::string str,std::string begin);
+
+	static bool IsProcessExists(std::string processName);
 };
 
 

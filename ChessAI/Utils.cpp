@@ -477,3 +477,47 @@ bool Utils::isDigit(std::string str)
 	}
 	return true;
 }
+
+std::string Utils::getCenterString(std::string str, std::string begin, std::string end)
+{
+	int idx1 = str.find(begin);
+	if (idx1 == std::string::npos)
+	{
+		return "";
+	}
+	int idx2 = str.find(end, idx1 + begin.size());
+	if (idx2 == std::string::npos)
+	{
+		return "";
+	}
+	return str.substr(idx1 + begin.size(), idx2 - (idx1 + begin.size()));
+}
+
+std::string Utils::getRightString(std::string str, std::string begin)
+{
+	int idx1 = str.find(begin);
+	if (idx1 == std::string::npos)
+	{
+		return "";
+	}
+	return str.substr(idx1+begin.size());
+}
+
+bool Utils::IsProcessExists(std::string processName)
+{
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	PROCESSENTRY32 pe32;
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+	bool isExists = false;
+	if (Process32First(hSnapshot, &pe32))
+	{
+		do {
+			if (_stricmp(CW2A(pe32.szExeFile), processName.c_str()) == 0)
+			{
+				CloseHandle(hSnapshot);
+				return true;
+			}
+		} while (Process32Next(hSnapshot, &pe32));
+	}
+
+}

@@ -19,6 +19,9 @@
     <Filter Include="源文件\UI">
       <UniqueIdentifier>{b2c55e07-cf9b-4d8c-adcf-77f2cc60e7e3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\pojo">
+      <UniqueIdentifier>{691516f8-27c3-459e-b2f8-a02a80c7ea91}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChessAI.h">
@@ -66,9 +69,6 @@
     <ClInclude Include="QStatusBar.h">
       <Filter>头文件\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="EngineDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -92,6 +92,15 @@
     </ClInclude>
     <ClInclude Include="ConnectDlg.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="stepIdx.h">
+      <Filter>头文件\pojo</Filter>
+    </ClInclude>
+    <ClInclude Include="moveInfo.h">
+      <Filter>头文件\pojo</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>头文件\pojo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -147,6 +156,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="ConnectDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

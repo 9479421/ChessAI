@@ -1,51 +1,8 @@
 #include "Game.h"
 
-class stepIdx
+Pot::Pot()
 {
-public:
-	int beginX = -1;
-	int beginY = -1;
-	int endX = -1;
-	int endY = -1;
-public:
-	stepIdx() {
-
-	}
-	stepIdx(int beginX, int beginY, int endX, int endY) {
-		this->beginX = beginX;
-		this->beginY = beginY;
-		this->endX = endX;
-		this->endY = endY;
-	}
-	boolean isValidate() {
-		if (beginX != -1 && beginY != -1 && endX != -1 && endY != -1)
-		{
-			return true;
-		}
-		return false;
-	}
-	void print() {
-		printf("(%d.%d)==>(%d.%d)\n", beginX, beginY, endX, endY);
-	}
-	void setBeginX(int beginX) {
-		this->beginX = beginX;
-	}
-	void setBeginY(int beginY) {
-		this->beginY = beginY;
-	}
-	void setEndX(int endX) {
-		this->endX = endX;
-	}
-	void setEndY(int endY) {
-		this->endY = endY;
-	}
-	void set(int beginX, int beginY, int endX, int endY) {
-		this->beginX = beginX;
-		this->beginY = beginY;
-		this->endX = endX;
-		this->endY = endY;
-	}
-};
+}
 
 void Pot::setName(std::string name)
 {
@@ -221,19 +178,17 @@ void Game::setChess(int x, int y, std::string name)
 {
 }
 
-int getNumsByRowFlag(std::string rowFlag) {
-	std::string rowFlags[9] = { "a","b","c","d","e","f","g","h","i" };
-	for (int i = 0; i < 9; i++)
-	{
-		if (rowFlags[i].compare(rowFlag) == 0) {
-			return i;
-		}
-	}
-	return -1;
-}
+
+extern int getNumsByRowFlag(std::string rowFlag);
 
 template<typename T>
 extern std::string calcFEN(T maps[10][9], int type);
+
+template<typename T>
+extern std::string stepToQp(std::string step, T maps[10][9]);
+
+template<typename T>
+extern std::string stepListToQp(std::string stepListStr, T maps[10][9]);
 
 
 void Game::moveChess(std::string step)
@@ -265,68 +220,7 @@ void Game::moveChess(std::string step)
 		//判断规则
 
 		//记录走之前后的fen 以及走法
-		//step转qpstep
-		std::string nums[9] = {"1","2","3","4","5","6","7","8","9"};
-		std::string NUMS[9] = {"一","二","三","四","五","六","七","八","九"};
-		std::string qpstep;
-
-		for (int i = 0; i < 10; i++)
-		{
-			if (i != stepIdx.beginX) {
-				if (maps[i][stepIdx.beginY].id == maps[stepIdx.beginX][stepIdx.beginY].id)
-				{
-					if (i < stepIdx.beginX) {
-						qpstep = toWhoMove?"后":"前";
-					}
-					else {
-						qpstep = toWhoMove?"前":"后";
-					}
-					qpstep += maps[stepIdx.beginX][stepIdx.beginY].name.substr(2);
-					break;
-				}
-
-			}
-			
-			if (i == 9) //还没找到
-			{
-				if (toWhoMove) {
-					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) +  (toWhoMove? NUMS[8 - stepIdx.beginY] : nums[8 - stepIdx.beginY] );
-				}
-				else {
-					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + (toWhoMove ? NUMS[stepIdx.beginY ] : nums[stepIdx.beginY ]);
-				}
-			}
-		}
-		if (stepIdx.endX == stepIdx.beginX) //平
-		{
-			
-			qpstep += "平" + (toWhoMove ? NUMS[9 - stepIdx.endY - 1] : nums[9 - stepIdx.endY-1]);
-		}
-		else if (stepIdx.endY == stepIdx.beginY) //进/退
-		{
-			if (stepIdx.beginX > stepIdx.endX) //退
-			{
-				qpstep +=( toWhoMove?"进":"退") + (toWhoMove ? NUMS[stepIdx.beginX - stepIdx.endX -1] : nums[stepIdx.beginX - stepIdx.endX - 1]);
-			}
-			else {
-				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[stepIdx.endX - stepIdx.beginX - 1] : nums[stepIdx.endX - stepIdx.beginX - 1]);
-			}
-		}
-		else
-		{ 
-			//马象等
-			if (stepIdx.beginX > stepIdx.endX) //退
-			{
-				qpstep += (toWhoMove ? "进" : "退")+ (toWhoMove ? NUMS[8-stepIdx.endY] : nums[8- stepIdx.endY]);
-			}
-			else {
-				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[ stepIdx.endY] : nums[stepIdx.endY]);
-			}
-		}
-		
-
-
-		stepList.push_back(moveInfo(step, qpstep, calcFEN(maps, 1)));
+		stepList.push_back(moveInfo(step, stepToQp(step, maps), calcFEN(maps, 1)));
 
 
 		//出棋

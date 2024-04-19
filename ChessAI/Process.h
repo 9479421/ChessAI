@@ -3,6 +3,7 @@
 #include<vector>
 #include<atlconv.h>
 #include"Utils.h"
+#include<chrono>
 class Process
 {
 private:
@@ -17,6 +18,7 @@ public:
 	void createProcess(std::string process);
 	void addCmdLine(std::string cmdLine);
 	std::string execute(std::string endFlag);
+	void execute(std::string endFlag, std::string endCmd ,float maxWaitingTime, std::string& ret);
 	void exit();
 };
 

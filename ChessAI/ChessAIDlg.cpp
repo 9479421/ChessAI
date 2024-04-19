@@ -23,11 +23,14 @@
 #include "Config.h"
 #include <fstream>
 #include "qJson.h"
-#include<tlhelp32.h>
+
 
 #include "Gdi.h"
 
 #include"Game.h"
+
+#include "stepIdx.h"
+#include <future>
 
 
 ConnectDlg connectDlg;
@@ -44,6 +47,8 @@ HANDLE drawThreadHandle;
 DWORD drawThreadId;
 bool isConnecting = false;
 
+Engine engine;
+
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
@@ -52,15 +57,15 @@ class CAboutDlg : public CDialogEx
 public:
 	CAboutDlg();
 
-// 对话框数据
+	// 对话框数据
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
-// 实现
+	// 实现
 protected:
 	DECLARE_MESSAGE_MAP()
 };
@@ -132,31 +137,14 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CHOOSEWINDOW, &CChessAIDlg::OnBnClickedButtonChoosewindow)
 	ON_BN_CLICKED(IDC_MFCBUTTON_SWAP, &CChessAIDlg::OnBnClickedMfcbuttonSwap)
 	ON_BN_CLICKED(IDC_MFCBUTTON_BEGIN, &CChessAIDlg::OnBnClickedMfcbuttonBegin)
+	ON_BN_CLICKED(IDC_MFCBUTTON_EXEC, &CChessAIDlg::OnBnClickedMfcbuttonExec)
+	ON_BN_CLICKED(IDC_BUTTON_BOARDPIC, &CChessAIDlg::OnBnClickedButtonBoardpic)
 END_MESSAGE_MAP()
 
 
-
-
-bool IsProcessExists(std::string processName) {
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	PROCESSENTRY32 pe32;
-	pe32.dwSize = sizeof(PROCESSENTRY32);
-	bool isExists = false;
-	if (Process32First(hSnapshot, &pe32))
-	{
-		do {
-			if (_stricmp(CW2A(pe32.szExeFile), processName.c_str()) == 0)
-			{
-				CloseHandle(hSnapshot);
-				return true;
-			}
-		} while (Process32Next(hSnapshot, &pe32));
-	}
-
-}
-
+//几个通用函数
 template<typename T>
-std::string calcFEN(T maps[10][9],int type/*0是自动加我方先走  1是红先走  2是黑先走 */) {
+std::string calcFEN(T maps[10][9], int type/*0是自动加我方先走  1是红先走  2是黑先走 */) {
 	std::string fen;
 	boolean isRed = false;
 	for (int i = 0; i < 10; i++)
@@ -229,6 +217,234 @@ std::string calcFEN(T maps[10][9],int type/*0是自动加我方先走  1是红�
 	}
 	return fen;
 }
+
+int getNumsByRowFlag(std::string rowFlag) {
+	std::string rowFlags[9] = { "a","b","c","d","e","f","g","h","i" };
+	for (int i = 0; i < 9; i++)
+	{
+		if (rowFlags[i].compare(rowFlag) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+
+template<typename T>
+std::string stepToQp(std::string step, T maps[10][9]) {
+	bool isRed;
+
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 9; j++)
+		{
+
+			//双重校验
+			if (maps[i][j].id == 4)
+			{
+				if (i <= 4) {
+					isRed = false;
+				}
+				else {
+					isRed = true;
+				}
+			}
+			if (maps[i][j].id == 11)
+			{
+				if (i >= 5) {
+					isRed = false;
+				}
+				else {
+					isRed = true;
+				}
+			}
+		}
+	}
+
+
+	stepIdx stepIdx;
+	int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
+	if (step.size() == 4)  //ab转坐标
+	{
+		std::string s1 = step.substr(0, 1);
+		std::string s2 = step.substr(1, 1);
+		std::string s3 = step.substr(2, 1);
+		std::string s4 = step.substr(3, 1);
+		row_begin = getNumsByRowFlag(s1);
+		col_begin = atoi(s2.c_str());
+		row_end = getNumsByRowFlag(s3);
+		col_end = atoi(s4.c_str());
+		if (isRed)
+		{
+			stepIdx.set(9 - col_begin, row_begin, 9 - col_end, row_end);
+		}
+		else {
+			stepIdx.set(col_begin, 8 - row_begin, col_end, 8 - row_end);
+		}
+
+
+		bool toWhoMove;
+		if (maps[stepIdx.beginX][stepIdx.beginY].id <= 6)
+		{
+			toWhoMove = true;
+		}
+		else {
+			toWhoMove = false;
+		}
+
+		//printf("(%d.%d)==>(%d.%d)\n", row_begin, col_begin, row_end, col_end);
+		stepIdx.print();
+
+		//判断规则
+
+		//记录走之前后的fen 以及走法
+		//step转qpstep
+		std::string nums[9] = { "1","2","3","4","5","6","7","8","9" };
+		std::string NUMS[9] = { "一","二","三","四","五","六","七","八","九" };
+		std::string qpstep;
+
+		for (int i = 0; i < 10; i++)
+		{
+			if (i != stepIdx.beginX) {
+				if (maps[i][stepIdx.beginY].id == maps[stepIdx.beginX][stepIdx.beginY].id)
+				{
+					if (i < stepIdx.beginX) {
+						qpstep = toWhoMove ? "后" : "前";
+					}
+					else {
+						qpstep = toWhoMove ? "前" : "后";
+					}
+					qpstep += maps[stepIdx.beginX][stepIdx.beginY].name.substr(2);
+					break;
+				}
+
+			}
+
+			if (i == 9) //还没找到
+			{
+				if (toWhoMove) {
+					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + (toWhoMove ? NUMS[8 - stepIdx.beginY] : nums[8 - stepIdx.beginY]);
+				}
+				else {
+					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + (toWhoMove ? NUMS[stepIdx.beginY] : nums[stepIdx.beginY]);
+				}
+			}
+		}
+		if (stepIdx.endX == stepIdx.beginX) //平
+		{
+
+			qpstep += "平" + (toWhoMove ? NUMS[9 - stepIdx.endY - 1] : nums[9 - stepIdx.endY - 1]);
+		}
+		else if (stepIdx.endY == stepIdx.beginY) //进/退
+		{
+			if (stepIdx.beginX > stepIdx.endX) //退
+			{
+				qpstep += (toWhoMove ? "进" : "退") + (toWhoMove ? NUMS[stepIdx.beginX - stepIdx.endX - 1] : nums[stepIdx.beginX - stepIdx.endX - 1]);
+			}
+			else {
+				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[stepIdx.endX - stepIdx.beginX - 1] : nums[stepIdx.endX - stepIdx.beginX - 1]);
+			}
+		}
+		else
+		{
+			//马象等
+			if (stepIdx.beginX > stepIdx.endX) //退
+			{
+				qpstep += (toWhoMove ? "进" : "退") + (toWhoMove ? NUMS[8 - stepIdx.endY] : nums[8 - stepIdx.endY]);
+			}
+			else {
+				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[stepIdx.endY] : nums[stepIdx.endY]);
+			}
+		}
+
+		return qpstep;
+	}
+
+	return "";
+}
+
+
+template<typename T>
+std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
+
+	T maps[10][9];
+	memcpy(maps, sourceMaps, sizeof(T) * 90);
+
+	bool isRed;
+
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 9; j++)
+		{
+			//双重校验
+			if (maps[i][j].id == 4)
+			{
+				if (i <= 4) {
+					isRed = false;
+				}
+				else {
+					isRed = true;
+				}
+			}
+			if (maps[i][j].id == 11)
+			{
+				if (i >= 5) {
+					isRed = false;
+				}
+				else {
+					isRed = true;
+				}
+			}
+		}
+	}
+
+	std::string qpRet;
+
+	stepIdx stepIdx;
+	int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
+
+	std::vector<std::string> stepList = Utils::splitStr(stepListStr, " ");
+	for (size_t i = 0; i < stepList.size(); i++)
+	{
+		if (stepList[i].size() == 4) //走一波 傻逼
+		{
+			qpRet += stepToQp<T>(stepList[i], maps) + " ";
+			if ((i + 1) % 6 == 0 && i != stepList.size() - 1)
+			{
+				qpRet += "\r\n";
+			}
+
+
+			std::string s1 = stepList[i].substr(0, 1);
+			std::string s2 = stepList[i].substr(1, 1);
+			std::string s3 = stepList[i].substr(2, 1);
+			std::string s4 = stepList[i].substr(3, 1);
+			row_begin = getNumsByRowFlag(s1);
+			col_begin = atoi(s2.c_str());
+			row_end = getNumsByRowFlag(s3);
+			col_end = atoi(s4.c_str());
+			if (isRed)
+			{
+				stepIdx.set(9 - col_begin, row_begin, 9 - col_end, row_end);
+			}
+			else {
+				stepIdx.set(col_begin, 8 - row_begin, col_end, 8 - row_end);
+			}
+
+
+			//开走
+			maps[stepIdx.endX][stepIdx.endY].setName(maps[stepIdx.beginX][stepIdx.beginY].name);
+			maps[stepIdx.beginX][stepIdx.beginY].setName("");
+
+		}
+	}
+
+
+	return qpRet;
+}
+
+
+
 
 
 std::string validateVersion();
@@ -348,7 +564,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	//导航
 	m_navigation.InsertColumn(0, L"", LVCFMT_LEFT, 30, 0);
-	m_navigation.InsertColumn(1, L"招法",LVCFMT_LEFT,100,0);
+	m_navigation.InsertColumn(1, L"招法", LVCFMT_LEFT, 100, 0);
 	m_navigation.InsertColumn(2, L"分数", LVCFMT_LEFT, 60, 0);
 	m_navigation.InsertColumn(3, L"时间", LVCFMT_LEFT, 80, 0);
 	m_navigation.InsertColumn(4, L"注释", LVCFMT_LEFT, 110, 0);
@@ -397,7 +613,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	connectDlg.m_thinkTime.SetWindowTextW(CA2W(json.getString("thinkTime").c_str()));
 	connectDlg.m_thinkDepth.SetWindowTextW(CA2W(json.getString("thinkDepth").c_str()));
 	connectDlg.m_front.SetCheck(json.getBool("isFront"));
-	
+
 	connectDlg.m_rectRed.SetColor(json.getInt("rectRedColor"));
 	connectDlg.m_rectBlack.SetColor(json.getInt("rectBlackColor"));
 	connectDlg.m_fontRed.SetColor(json.getInt("fontRedColor"));
@@ -447,19 +663,20 @@ BOOL CChessAIDlg::OnInitDialog()
 	m_engineList.SetCurSel(0);
 
 
+
 	//方案
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
-	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(),_T("JJ象棋"));
+	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
 	connectDlg.m_schemeList.SetCurSel(0);
 
-	if (IsProcessExists("QQChess2021.exe"))
-	{
-		
-	}
-	if (IsProcessExists("QQChess2021.exe"))
-	{
+	//if (IsProcessExists("QQChess2021.exe"))
+	//{
 
-	}
+	//}
+	//if (IsProcessExists("QQChess2021.exe"))
+	//{
+
+	//}
 
 
 
@@ -468,7 +685,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	game.setChessSource("./pic/红车.png", "./pic/红馬.png", "./pic/红相.png", "./pic/红仕.png", "./pic/红帅.png", "./pic/红炮.png", "./pic/红兵.png",
 		"./pic/黑车.png", "./pic/黑馬.png", "./pic/黑象.png", "./pic/黑士.png", "./pic/黑将.png", "./pic/黑炮.png", "./pic/黑卒.png", '\0');
 	game.setBoardSource("./pic/棋盘.png", 260, 31, 546, 58, 58, 57, 57);
-	game.init(GetDC(),26, 70);//计算出棋盘每个点的坐标
+	game.init(GetDC(), 26, 70);//计算出棋盘每个点的坐标
 	game.begin(true); //摆棋
 
 
@@ -510,7 +727,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		//问题出在这里 gameHwnd失效了
 
-		HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd,false);
+		HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd, false);
 		//显示缩略图
 		HBITMAP bitmap_small = Utils::stretchBitMap(bitmap, 243, 243);
 		dlg->m_picture.SetBitmap(bitmap_small);
@@ -572,7 +789,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		}
 
-		printf("fen:%s\n", calcFEN(maps,0).c_str());
+		printf("fen:%s\n", calcFEN(maps, 0).c_str());
 		std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
 		for (int i = 0; i < 10; i++)
 		{
@@ -591,7 +808,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 
-		std::string fen = calcFEN(maps,0);
+		std::string fen = calcFEN(maps, 0);
 
 		game.setFen(fen);
 
@@ -603,7 +820,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		//把过程打印出来
 		CString engineInfo;
 		//dlg->m_engineInfo.GetWindowTextW(engineInfo);
-		engineInfo.Append(  CA2W( ("\n" + step_process.second ).c_str()) );
+		engineInfo.Append(CA2W(("\n" + step_process.second).c_str()));
 		dlg->m_engineInfo.SetWindowTextW(engineInfo);
 		//dlg->m_engineInfo.setline;
 		dlg->SendDlgItemMessage(IDC_EDIT_ENGINEINFO, WM_VSCROLL, SB_BOTTOM, 0); //滚动条始终在底部
@@ -632,7 +849,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		if (connectDlg.m_showArrow.GetCheck())
 		{
 			COLORREF color;
-			if (fen.find("w")!=std::string::npos)
+			if (fen.find("w") != std::string::npos)
 			{
 				//红棋
 				color = connectDlg.m_arrowRed.GetColor();
@@ -644,7 +861,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			//绘制最佳行棋路线
 			d3d.drawLine(maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2,
 				maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2,
-				maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width/2,
+				maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2,
 				maps[stepIdx.endX][stepIdx.endY].box.y,
 				4.0f,
 				color //D3DCOLOR_XRGB(GetRValue(color), GetGValue(color), GetBValue(color)
@@ -665,7 +882,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				d3d.drawWord(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color, std::to_string(result[i].confidence));
 			}
 		}
-	
+
 		Sleep(10);
 
 	}
@@ -741,7 +958,7 @@ HBRUSH CChessAIDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 
 	pDC->SetBkColor(RGB(255, 255, 255));
-	pDC->SetTextColor(RGB(0,0,0));
+	pDC->SetTextColor(RGB(0, 0, 0));
 
 	if (pWnd->GetDlgCtrlID() == IDC_STATIC_BOTTOM)
 	{
@@ -771,7 +988,7 @@ void CChessAIDlg::OnBnClickedButtonManageengine()
 {
 	size_t hash = hash_vector(engineConfigList);
 	engineDlg.DoModal(); //关闭引擎窗口后自动刷新读取
-	
+
 	if (hash != hash_vector(engineConfigList)) //产生了编辑
 	{
 		m_engineList.ResetContent();
@@ -844,8 +1061,6 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 				else {
 
 					//走棋
-					
-					
 					if (&game.maps[i][j] != tmp) //不能是同一个棋原地踏步
 					{
 						if ((game.maps[i][j].id >= 0 && game.maps[i][j].id <= 6 && tmp->id <= 6)
@@ -859,10 +1074,7 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 							tmpJ = j;
 						}
 						else {
-
 							status = 0;
-							
-
 							//tmp是原来的位置 maps[i][j]是要走的位置
 							std::string rowFlags[9] = { "a","b","c","d","e","f","g","h","i" };
 							//stepIdx坐标 转 step
@@ -874,10 +1086,6 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 							else {
 								step = rowFlags[8 - tmpJ] + std::to_string(tmpI) + rowFlags[8 - j] + std::to_string(i);
 							}
-
-
-			
-							
 							//走棋
 							game.moveChess(step);
 
@@ -885,16 +1093,16 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 							int row = m_navigation.GetItemCount();
 							m_navigation.InsertItem(row, L"");
-							if (!game.toWhoMove) //红棋多一列
+							if (!game.toWhoMove) //红棋记录回合数
 							{
-								
-								m_navigation.SetItemText(row, 0,CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
+								m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
 							}
-							m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size()-1].getStep().c_str()));
+							m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
 							m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
 							m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
-							m_navigation.EnsureVisible(row,FALSE);
 
+							m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
+							m_navigation.EnsureVisible(row, FALSE);
 						}
 					}
 
@@ -918,7 +1126,7 @@ end:
 void CChessAIDlg::OnCopyfen()
 {
 
-	MessageBoxA(NULL, ("当前局面FEN:\n" + calcFEN(game.maps,1/*这里后面要改成当前到谁走了*/) + "\n复制成功！").c_str(), "复制局面", 0);
+	MessageBoxA(m_hWnd, ("当前局面FEN:\n" + calcFEN(game.maps, 1/*这里后面要改成当前到谁走了*/) + "\n复制成功！").c_str(), "复制局面", 0);
 	// TODO: 在此添加命令处理程序代码
 }
 
@@ -935,7 +1143,7 @@ void CChessAIDlg::OnDestroy()
 void CChessAIDlg::OnClose()
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	CloseHandle(drawThreadHandle);
+	TerminateThread(drawThreadHandle, 0);
 
 
 	//保存配置
@@ -1019,14 +1227,14 @@ LRESULT CChessAIDlg::ClickedCheckFront(WPARAM wParam, LPARAM lParam)
 		CRect rect;
 		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
 		//::SetWindowPos(gameHwnd, HWND_TOPMOST, 0,0,0,0,NULL);
-		::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy,NULL);
+		::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
 	}
 	else {
 		CRect rect;
 		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
 		//::SetWindowPos(gameHwnd, HWND_NOTOPMOST, 0,0,0,0, NULL);
 		::SetWindowPos(::GetParent(gameHwnd), HWND_NOTOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
-		
+
 	}
 
 	return 0;
@@ -1066,14 +1274,14 @@ void CChessAIDlg::OnBnClickedButtonChoosewindow()
 	//Connect();
 	/*game.moveChess("a0b1");*/
 
-	
+
 }
 
 
 void CChessAIDlg::OnBnClickedMfcbuttonSwap()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	
+
 	game.changeTeam();
 	tmp = &game.maps[9 - tmpI][8 - tmpJ];
 	tmpI = 9 - tmpI;
@@ -1089,5 +1297,111 @@ void CChessAIDlg::OnBnClickedMfcbuttonBegin()
 	game.show();
 
 	m_navigation.DeleteAllItems();
+
+}
+
+
+struct calcFenParam {
+	std::string fen;
+	CChessAIDlg* dlg;
+};
+
+void execEngineAndReadData(LPVOID param) {
+	CChessAIDlg* dlg = ((calcFenParam*)param)->dlg;
+	std::string fen = ((calcFenParam*)param)->fen;
+
+
+	std::string* ret = new std::string();
+
+	std::future<std::string> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string* ret, std::string fen) {
+		std::future<std::string> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret) {
+			std::string step = engine.calcStep(fen, 8, 26, *ret);
+			printf("%s\n", step.c_str());
+
+			return step;
+			}, fen, ret);
+
+
+		bool isOk = false;
+		while (true) {
+			std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
+			if (status == std::future_status::ready)
+			{
+				isOk = true;
+			}
+			std::string info;
+			std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+			for (int i = 0; i < strList.size(); i++)
+			{
+				if (strList[i].find("pv") != std::string::npos)
+				{
+					std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+					std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+					std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+					std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+					std::string pv = Utils::getRightString(strList[i], " pv ");
+
+					std::string stepListStr = stepListToQp(pv, game.maps);
+					info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+				}
+			}
+			dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+			if (isOk)
+			{
+				break;
+			}
+		}
+		return calcFuture.get();
+		}, dlg, ret, fen);
+
+	std::string step = readFuture.get();
+
+	delete ret;
+
+	game.moveChess(step);
+
+	int row = dlg->m_navigation.GetItemCount();
+	dlg->m_navigation.InsertItem(row, L"");
+	if (!game.toWhoMove) //红棋记录回合数
+	{
+		dlg->m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
+	}
+	dlg->m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
+	dlg->m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
+	dlg->m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
+
+	dlg->m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
+	dlg->m_navigation.EnsureVisible(row, FALSE);
+}
+
+calcFenParam param;
+
+void CChessAIDlg::OnBnClickedMfcbuttonExec()
+{
+	if (engine.enginePath.empty())
+	{
+		engine.open(engineConfigList[m_engineList.GetCurSel()].path); //设计引擎
+	}
+
+
+
+	//直接异步执行 然后异步把ret不断写入编辑框
+	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
+	printf("fen:%s\n", fen.c_str());
+
+	param.fen = fen;
+	param.dlg = this;
+	//启动线程来进行读取ret
+	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)execEngineAndReadData, (LPVOID)&param, NULL, NULL);
+
+
+}
+
+
+void CChessAIDlg::OnBnClickedButtonBoardpic()
+{
+	// TODO: 在此添加控件通知处理程序代码
 
 }
