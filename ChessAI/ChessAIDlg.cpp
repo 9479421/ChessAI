@@ -50,6 +50,7 @@ bool isConnecting = false;
 Engine engine;
 
 
+
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
 class CAboutDlg : public CDialogEx
@@ -110,6 +111,9 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MFCBUTTON_BEGIN, m_begin);
 	DDX_Control(pDX, IDC_MFCBUTTON_EXEC, m_exec);
 	DDX_Control(pDX, IDC_STATIC_BOTTOM, m_bottom);
+	DDX_Control(pDX, IDC_COMBO_THINKTIME, m_thinkTime);
+	DDX_Control(pDX, IDC_COMBO_THINKDEPTH, m_thinkDepth);
+	DDX_Control(pDX, IDC_CHECK_PKMODE, m_pkmode);
 }
 
 BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
@@ -130,7 +134,6 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 
 
 	ON_MESSAGE(10086, &CChessAIDlg::Connect) //连线函数
-	ON_MESSAGE(10087, &CChessAIDlg::ClickedCheckFront)
 
 
 	ON_COMMAND(ID_INPUTFEN, &CChessAIDlg::OnInputfen)
@@ -139,7 +142,36 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_MFCBUTTON_BEGIN, &CChessAIDlg::OnBnClickedMfcbuttonBegin)
 	ON_BN_CLICKED(IDC_MFCBUTTON_EXEC, &CChessAIDlg::OnBnClickedMfcbuttonExec)
 	ON_BN_CLICKED(IDC_BUTTON_BOARDPIC, &CChessAIDlg::OnBnClickedButtonBoardpic)
+	ON_WM_CREATE()
+	ON_CBN_SELCHANGE(IDC_COMBO_ENGINELIST, &CChessAIDlg::OnCbnSelchangeComboEnginelist)
 END_MESSAGE_MAP()
+
+
+
+
+
+void CChessAIDlg::Log(std::string str)
+{
+	m_bottom.SetWindowTextW(CA2W(str.c_str()));
+}
+
+void CChessAIDlg::loadEngine()
+{
+
+	std::thread thread([](CChessAIDlg* dlg) {
+		if (dlg->m_engineList.GetCount() > 0 && dlg->m_engineList.GetCurSel()>=0)
+		{
+			dlg->Log("引擎初始化中……");
+			engine.open(engineConfigList[dlg->m_engineList.GetCurSel()].path); //设计引擎
+			dlg->Log("引擎初始化完毕");
+		}
+		else {
+			dlg->Log("当前无引擎，请配置");
+		}
+		}, this);
+	thread.detach();
+
+}
 
 
 //几个通用函数
@@ -293,7 +325,7 @@ std::string stepToQp(std::string step, T maps[10][9]) {
 		}
 
 		//printf("(%d.%d)==>(%d.%d)\n", row_begin, col_begin, row_end, col_end);
-		stepIdx.print();
+		//stepIdx.print();
 
 		//判断规则
 
@@ -303,59 +335,206 @@ std::string stepToQp(std::string step, T maps[10][9]) {
 		std::string NUMS[9] = { "一","二","三","四","五","六","七","八","九" };
 		std::string qpstep;
 
-		for (int i = 0; i < 10; i++)
+
+		if (isRed)
 		{
-			if (i != stepIdx.beginX) {
-				if (maps[i][stepIdx.beginY].id == maps[stepIdx.beginX][stepIdx.beginY].id)
+			for (int i = 0; i < 10; i++)
+			{
+				if (i != stepIdx.beginX) {
+					if (maps[i][stepIdx.beginY].id == maps[stepIdx.beginX][stepIdx.beginY].id)
+					{
+						if (toWhoMove)
+						{
+							if (i < stepIdx.beginX)
+							{
+								qpstep = "后";
+							}
+							else {
+								qpstep = "前";
+							}
+							
+						}
+						else {
+							if (i < stepIdx.beginX)
+							{
+								qpstep = "前";
+							}
+							else {
+								qpstep = "后";
+							}
+						}
+						qpstep += maps[stepIdx.beginX][stepIdx.beginY].name.substr(2);
+						break;
+					}
+
+				}
+
+				if (i == 9) //还没找到
 				{
-					if (i < stepIdx.beginX) {
-						qpstep = toWhoMove ? "后" : "前";
+					if (toWhoMove) {
+						qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + NUMS[8 - stepIdx.beginY];
 					}
 					else {
-						qpstep = toWhoMove ? "前" : "后";
+						qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + nums[stepIdx.beginY];
 					}
-					qpstep += maps[stepIdx.beginX][stepIdx.beginY].name.substr(2);
-					break;
 				}
-
 			}
-
-			if (i == 9) //还没找到
+			if (stepIdx.endX == stepIdx.beginX) //平
 			{
-				if (toWhoMove) {
-					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + (toWhoMove ? NUMS[8 - stepIdx.beginY] : nums[8 - stepIdx.beginY]);
+				if (toWhoMove)
+				{
+					qpstep += "平" + NUMS[8 - stepIdx.endY];
 				}
 				else {
-					qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + (toWhoMove ? NUMS[stepIdx.beginY] : nums[stepIdx.beginY]);
+					qpstep += "平" + nums[stepIdx.endY];
+				}
+
+			}
+			else if (stepIdx.endY == stepIdx.beginY) //进/退
+			{
+				if (toWhoMove)
+				{
+					if (stepIdx.beginX > stepIdx.endX) {
+						qpstep += "进" + NUMS[stepIdx.beginX - stepIdx.endX - 1];
+					}
+					else {
+						qpstep += "退" + NUMS[stepIdx.endX - stepIdx.beginX - 1];
+					}
+				}
+				else {
+					if (stepIdx.beginX > stepIdx.endX) {
+						qpstep += "退" + nums[stepIdx.beginX - stepIdx.endX - 1];
+					}
+					else {
+						qpstep += "进" + nums[stepIdx.endX - stepIdx.beginX - 1];
+					}
+				}
+			}
+			else
+			{
+				if (toWhoMove)		//马象等
+				{
+					if (stepIdx.beginX > stepIdx.endX)
+					{
+						qpstep += "进" + NUMS[8 - stepIdx.endY];
+					}
+					else {
+						qpstep += "退" + NUMS[8 - stepIdx.endY];
+
+					}
+				}
+				else {
+					if (stepIdx.beginX > stepIdx.endX)
+					{
+						qpstep += "退" + nums[stepIdx.endY];
+					}
+					else {
+						qpstep += "进" + nums[stepIdx.endY];
+
+					}
 				}
 			}
 		}
-		if (stepIdx.endX == stepIdx.beginX) //平
-		{
+		else {
+			for (int i = 0; i < 10; i++)
+			{
+				if (i != stepIdx.beginX) {
+					if (maps[i][stepIdx.beginY].id == maps[stepIdx.beginX][stepIdx.beginY].id)
+					{
+						if (toWhoMove)
+						{
+							if (i < stepIdx.beginX)
+							{
+								qpstep = "前";
+							}
+							else {
+								qpstep = "后";
+							}
 
-			qpstep += "平" + (toWhoMove ? NUMS[9 - stepIdx.endY - 1] : nums[9 - stepIdx.endY - 1]);
-		}
-		else if (stepIdx.endY == stepIdx.beginY) //进/退
-		{
-			if (stepIdx.beginX > stepIdx.endX) //退
+						}
+						else {
+							if (i < stepIdx.beginX)
+							{
+								qpstep = "后";
+							}
+							else {
+								qpstep = "前";
+							}
+						}
+						qpstep += maps[stepIdx.beginX][stepIdx.beginY].name.substr(2);
+						break;
+					}
+
+				}
+
+				if (i == 9) //还没找到
+				{
+					if (toWhoMove) {
+						qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + NUMS[stepIdx.beginY];
+					}
+					else {
+						qpstep = maps[stepIdx.beginX][stepIdx.beginY].name.substr(2) + nums[8 - stepIdx.beginY];
+					}
+				}
+			}
+			if (stepIdx.endX == stepIdx.beginX) //平
 			{
-				qpstep += (toWhoMove ? "进" : "退") + (toWhoMove ? NUMS[stepIdx.beginX - stepIdx.endX - 1] : nums[stepIdx.beginX - stepIdx.endX - 1]);
+				if (toWhoMove)
+				{
+					qpstep += "平" + NUMS[stepIdx.endY];
+				}
+				else {
+					qpstep += "平" + nums[8 - stepIdx.endY];
+				}
+
 			}
-			else {
-				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[stepIdx.endX - stepIdx.beginX - 1] : nums[stepIdx.endX - stepIdx.beginX - 1]);
-			}
-		}
-		else
-		{
-			//马象等
-			if (stepIdx.beginX > stepIdx.endX) //退
+			else if (stepIdx.endY == stepIdx.beginY) //进/退
 			{
-				qpstep += (toWhoMove ? "进" : "退") + (toWhoMove ? NUMS[8 - stepIdx.endY] : nums[8 - stepIdx.endY]);
+				if (toWhoMove)
+				{
+					if (stepIdx.beginX > stepIdx.endX) {
+						qpstep += "退" + NUMS[stepIdx.beginX - stepIdx.endX - 1];
+					}
+					else {
+						qpstep += "进" + NUMS[stepIdx.endX - stepIdx.beginX - 1];
+					}
+				}
+				else {
+					if (stepIdx.beginX > stepIdx.endX) {
+						qpstep += "进" + nums[stepIdx.beginX - stepIdx.endX - 1];
+					}
+					else {
+						qpstep += "退" + nums[stepIdx.endX - stepIdx.beginX - 1];
+					}
+				}
 			}
-			else {
-				qpstep += (toWhoMove ? "退" : "进") + (toWhoMove ? NUMS[stepIdx.endY] : nums[stepIdx.endY]);
+			else
+			{
+				if (toWhoMove)		//马象等
+				{
+					if (stepIdx.beginX > stepIdx.endX)
+					{
+						qpstep += "退" + NUMS[stepIdx.endY];
+					}
+					else {
+						qpstep += "进" + NUMS[stepIdx.endY];
+
+					}
+				}
+				else {
+					if (stepIdx.beginX > stepIdx.endX)
+					{
+						qpstep += "进" + nums[8 - stepIdx.endY];
+					}
+					else {
+						qpstep += "退" + nums[8 - stepIdx.endY];
+
+					}
+				}
 			}
 		}
+		
+		
 
 		return qpstep;
 	}
@@ -403,12 +582,18 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 	stepIdx stepIdx;
 	int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
 
+
+	
 	std::vector<std::string> stepList = Utils::splitStr(stepListStr, " ");
+	
+
 	for (size_t i = 0; i < stepList.size(); i++)
 	{
 		if (stepList[i].size() == 4) //走一波 傻逼
 		{
-			qpRet += stepToQp<T>(stepList[i], maps) + " ";
+			
+
+			qpRet += stepToQp(stepList[i], maps) + " ";
 			if ((i + 1) % 6 == 0 && i != stepList.size() - 1)
 			{
 				qpRet += "\r\n";
@@ -437,6 +622,7 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 			maps[stepIdx.beginX][stepIdx.beginY].setName("");
 
 		}
+
 	}
 
 
@@ -610,8 +796,8 @@ BOOL CChessAIDlg::OnInitDialog()
 	f.close();
 	//读入文件
 	qJsonObject json = qJson::parseJsonObject(std::string(CW2A(Utils::readFile(CString(settingPath.c_str())))));
-	connectDlg.m_thinkTime.SetWindowTextW(CA2W(json.getString("thinkTime").c_str()));
-	connectDlg.m_thinkDepth.SetWindowTextW(CA2W(json.getString("thinkDepth").c_str()));
+	m_thinkTime.SetWindowTextW(CA2W(json.getString("thinkTime").c_str()));
+	m_thinkDepth.SetWindowTextW(CA2W(json.getString("thinkDepth").c_str()));
 	connectDlg.m_front.SetCheck(json.getBool("isFront"));
 
 	connectDlg.m_rectRed.SetColor(json.getInt("rectRedColor"));
@@ -661,13 +847,16 @@ BOOL CChessAIDlg::OnInitDialog()
 		m_engineList.InsertString(count, CA2W(engineConfigList[i].name.c_str()));
 	}
 	m_engineList.SetCurSel(0);
-
+	loadEngine();
 
 
 	//方案
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
 	connectDlg.m_schemeList.SetCurSel(0);
+	
+
+
 
 	//if (IsProcessExists("QQChess2021.exe"))
 	//{
@@ -689,9 +878,72 @@ BOOL CChessAIDlg::OnInitDialog()
 	game.begin(true); //摆棋
 
 
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
+//
+//class pos
+//{
+//public:
+//	int x;
+//	int y;
+//public:
+//	pos(int x, int y) {
+//		this->x = x;
+//		this->y = y;
+//	}
+//	bool equals(pos p) {
+//		return p.x == x && p.y == y;
+//	}
+//};
+//
+//
+//class chess
+//{
+//public:
+//	chess(int id) {
+//		this->id = id;
+//	}
+//	void addPos(pos p) {
+//		poses.push_back(p);
+//	}
+//public:
+//	int id;
+//	std::vector<pos> poses;
+//
+//public:
+//	std::pair<int,int> equalsY(chess objChess) {
+//		for (int i = 0; i < objChess.poses.size(); i++)
+//		{
+//			for (int j = 0; j < poses.size(); j++)
+//			{
+//				if (abs(poses[j].y- objChess.poses[i].y) <= 5)
+//				{
+//					return std::make_pair(j, abs(poses[j].x - objChess.poses[i].x));
+//				}
+//			}
+//		}
+//		return std::make_pair(-1,-1);
+//	}
+//	std::pair<int, int> equalsX(chess objChess) {
+//		for (int i = 0; i < objChess.poses.size(); i++)
+//		{
+//			for (int j = 0; j < poses.size(); j++)
+//			{
+//				if ( abs(poses[j].x - objChess.poses[i].x ) <= 5)
+//				{
+//					return std::make_pair(j, abs(poses[j].y - objChess.poses[i].y));
+//				}
+//			}
+//		}
+//		return std::make_pair(-1, -1);
+//	}
+//};
+//
+//bool Equal(int m1, int m2) {
+//	return abs(m1 - m2) < 20;
+//}
 
 
 
@@ -705,7 +957,15 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 	CChessAIDlg* dlg = (CChessAIDlg*)lpParam;
 
-	Engine engine(engineConfigList[dlg->m_engineList.GetCurSel()].path);
+	
+	CString thinkTimeStr;
+	dlg->m_thinkTime.GetWindowTextW(thinkTimeStr);
+	CString thinkDepthStr;
+	dlg->m_thinkDepth.GetWindowTextW(thinkDepthStr);
+
+	float thinkTime = atof(CW2A(thinkTimeStr));
+	int thinkDepth = atoi(CW2A(thinkDepthStr));
+
 
 	std::string modelPath = "best.onnx";
 	if (yolo.readModel(net, modelPath, true)) {
@@ -715,15 +975,23 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		std::cout << "read onnx model failed!";
 	}
 
+
+	std::vector<std::string>objPosVec;
+	int validateTime = 0;
+
+
+
+	//float centerX;
+	//float topcenterY, bottomcenterY;
+
 	while (true) {
 
-		//if (isConnecting == false)
-		//{
-		//	d3d.exit();
-		//	ExitThread(NULL);
-		//	//TerminateThread(drawThreadHandle,NULL);
-		//}
-
+		if (isConnecting == false)
+		{
+			d3d.exit();
+			ExitThread(NULL);
+			//TerminateThread(drawThreadHandle,NULL);
+		}
 
 		//问题出在这里 gameHwnd失效了
 
@@ -743,26 +1011,230 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		int width = img.size().width;
 		int height = img.size().height;
-		std::cout << width << " " << height << std::endl;
+		//std::cout << width << " " << height << std::endl;
 
 		std::vector<Output> result;
 		yolo.Detect(img, net, result);
 
+		
+		//
+		//chess hongshuai(4);
+		//chess heijiang(11);
+		//chess hongxiang(2);
+		//chess heixiang(9);
+		//chess hongbing(6);
+		//chess heizu(13);
+		//chess hongshi(3);
+		//chess heishi(10);
 
-		//开始冒泡排序坐标y
-		for (int i = 0; i < result.size(); i++)
-		{
-			for (int j = 1; j < result.size() - i; j++)
-			{
-				if (result[j - 1].box.y > result[j].box.y) {
-					Output temp = result[j - 1];
-					result[j - 1] = result[j];
-					result[j] = temp;
-				}
-			}
-		}
+		//float minMargin = 999;
+		//float maxMargin = 0;
+		////拿到最小的x和y坐标间隔，即为棋子间距
+		//for (int i = 0; i < result.size(); i++)
+		//{
+		//	//把特殊棋子都给标出来
+		//	if (result[i].id == 11)
+		//	{
+		//		heijiang.addPos(pos(result[i].box.x + result[i].box.width/2, result[i].box.y + result[i].box.height/2));
+		//	}
+		//	if (result[i].id == 4)
+		//	{
+		//		hongshuai.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
+		//	}
+		//	if (result[i].id == 2)
+		//	{
+		//		hongxiang.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
+		//	}
+		//	if (result[i].id == 9)
+		//	{
+		//		heixiang.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
+		//	}
+		//	if (result[i].id == 6)
+		//	{
+		//		hongbing.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
+		//	}
+		//	if (result[i].id == 13)
+		//	{
+		//		heizu.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
+		//	}
+		//	if (result[i].id == 3)
+		//	{
+		//		hongshi.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
+		//	}
+		//	if (result[i].id == 10)
+		//	{
+		//		heishi.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
+		//	}
+
+		//	for (int j = i + 1; j < result.size(); j++)
+		//	{
+		//		int marginX = abs(result[i].box.x + result[i].box.width / 2 - result[j].box.x + result[j].box.width / 2);
+		//		if (marginX < minMargin  &&  marginX> result[i].box.height)
+		//		{
+		//			minMargin = marginX;
+		//		}
+		//		if (marginX > maxMargin &&  marginX < result[i].box.height * 1.5)
+		//		{
+		//			maxMargin = marginX;
+		//		}
+
+		//		int marginY = abs(result[i].box.y + result[i].box.height / 2 - result[j].box.y + result[j].box.height / 2);
+		//		if (marginY < minMargin && marginY>  result[i].box.height)
+		//		{
+		//			minMargin = marginY;
+		//		}
+		//		if (marginY > maxMargin && marginY < result[i].box.height * 1.5)
+		//		{
+		//			maxMargin = marginY;
+		//		}
+		//	}
+		//}
+
+
+
+		//bool isRed;
+		//if (hongshuai.poses.size() > 0 && heijiang.poses.size()>0)
+		//{
+		//	if (hongshuai.poses[0].y > heijiang.poses[0].y) {
+		//		isRed = true;
+		//	}
+		//	else {
+		//		isRed = false;
+		//	}
+		//}
+		//else {
+		//	//还没识别到，等待识别把！
+		//	continue;
+		//}
+
+
+		////红帅和某个红象在一排里，且相距2格，说明帅在原位
+		//if (Equal(hongshuai.equalsY(hongxiang).second,2*minMargin))
+		//{
+		//	centerX = hongshuai.poses[hongshuai.equalsY(hongxiang).first].x;
+		//	if(isRed){
+		//		bottomcenterY = hongshuai.poses[hongshuai.equalsY(hongxiang).first].y;
+		//	}
+		//	else {
+		//		topcenterY = hongshuai.poses[hongshuai.equalsY(hongxiang).first].y;
+		//	}
+		//}
+		////红仕红象在竖排里，只有一种情况，就是士象都撑起来了，这种时候红帅的位置在士的正下方一格子
+		//if (Equal(hongshi.equalsX(hongxiang).second, minMargin))
+		//{
+		//	centerX = hongshi.poses[hongshi.equalsX(hongxiang).first].x;
+		//	if (isRed)
+		//	{
+		//		bottomcenterY = hongshi.poses[hongshi.equalsX(hongxiang).first].y + 5;
+		//	}
+		//	else {
+		//		topcenterY = hongshi.poses[hongshi.equalsX(hongxiang).first].y - 5;
+		//	}
+		//	
+		//}
+
+		////黑将和某个黑象在一排里，且相距2格，说明将在原位
+		//
+		//if (Equal(heijiang.equalsY(heixiang).second, 2 * minMargin))
+		//{
+		//	centerX = heijiang.poses[heijiang.equalsY(heixiang).first].x;
+		//	if (isRed)
+		//	{
+		//		topcenterY = heijiang.poses[heijiang.equalsY(heixiang).first].y;
+		//	}
+		//	else {
+		//		bottomcenterY = heijiang.poses[heijiang.equalsY(heixiang).first].y;
+		//	}
+		//}
+		////黑仕黑象在竖排里，只有一种情况，就是士象都撑起来了，这种时候黑将的位置在士的正下方一格子
+		//if (Equal(heishi.equalsX(heixiang).second, minMargin))
+		//{
+		//	centerX = heishi.poses[heishi.equalsX(heixiang).first].x;
+		//	if (isRed)
+		//	{
+		//		topcenterY = heishi.poses[heishi.equalsX(heixiang).first].y - 5;
+		//	}
+		//	else {
+		//		bottomcenterY = heishi.poses[heishi.equalsX(heixiang).first].y + 5;
+		//	}
+		//}
+
+
+
+		
+		////开始定义棋盘每个落点的坐标
+		//for (int i = 0; i < 10; i++)
+		//{
+		//	for (int j = 0; j < 9; j++)
+		//	{
+		//		//0,4
+		//		//楚河汉界上面
+		//		int y = 0;
+		//		if (i <= 4) {
+		//			y = topcenterY + i * minMargin;
+		//		}
+		//		else {
+		//			y = bottomcenterY - (9 - i) * minMargin;
+		//		}
+		//		int x = centerX + (j - 4) * minMargin;
+		//		maps[i][j].box.x = x;
+		//		maps[i][j].box.y = y;
+		//	}
+		//}
+		////算出棋子的位置
+		//for (int i = 0; i < result.size(); i++)
+		//{
+		//	if (abs(result[i].box.y - bottomcenterY ) < abs(result[i].box.y - topcenterY))
+		//	{
+		//		int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / minMargin);
+		//		int yIndex = 9 - (int)round((bottomcenterY - (result[i].box.y + result[i].box.height / 2)) / minMargin);
+		//		if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+		//		{
+		//			maps[yIndex][xIndex] = result[i];
+		//		}
+		//		else {
+		//			//有不成立因素
+		//		}
+		//	}
+		//	else {
+		//		int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / minMargin);
+		//		int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topcenterY) / minMargin);
+		//		if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+		//		{
+		//			maps[yIndex][xIndex] = result[i];
+		//		}
+		//		else {
+		//			//有不成立因素
+		//		}
+		//	}
+
+		//}
+
+
+		////开始冒泡排序坐标y
+		//for (int i = 0; i < result.size(); i++)
+		//{
+		//	for (int j = 1; j < result.size() - i; j++)
+		//	{
+		//		if (result[j - 1].box.y > result[j].box.y) {
+		//			Output temp = result[j - 1];
+		//			result[j - 1] = result[j];
+		//			result[j] = temp;
+		//		}
+		//	}
+		//}
+
+		bool isRed;
+
 		Output maps[10][9];
-		float left_top_Point[2] = { width * 208 / 838,height * 55 / 624 };
+
+
+		float topY = height * 55 / 624;
+		float bottomY = height * 544 / 624;
+
+		float centerX = width * 420 / 838;
+
+
 		float margin = width * 55 / 838;
 
 		//给空格也计算出大概的位置
@@ -770,24 +1242,154 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		{
 			for (int j = 0; j < 9; j++)
 			{
-				maps[i][j].box.x = (int)(left_top_Point[0] + margin * j);
-				maps[i][j].box.y = (int)(left_top_Point[1] + margin * i);
+				int y = 0;
+				if (i <= 4) {
+					y = topY + i * margin;
+				}
+				else {
+					y = bottomY - (9 - i) * margin;
+				}
+				int x = centerX + (j - 4) * margin;
+
+				maps[i][j].box.x = x;
+				maps[i][j].box.y = y;
 			}
 		}
 
 		for (int i = 0; i < result.size(); i++)
 		{
-			int xIndex = (int)round((result[i].box.x + (result[i].box.width / 2) - left_top_Point[0]) / margin);
-			int yIndex = (int)round((result[i].box.y + (result[i].box.height / 2) - left_top_Point[1]) / margin);
-			if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+			
+
+			if (abs(result[i].box.y - bottomY ) < abs(result[i].box.y - topY))
 			{
-				maps[yIndex][xIndex] = result[i];
+				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / margin);
+				int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / margin);
+				if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+				{
+					maps[yIndex][xIndex] = result[i];
+				}
+				else {
+					//有不成立因素
+				}
 			}
 			else {
-				//有不成立因素
+				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / margin);
+				int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topY) / margin);
+				if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+				{
+					maps[yIndex][xIndex] = result[i];
+				}
+				else {
+					//有不成立因素
+				}
 			}
 
+
+			//int xIndex = (int)round((result[i].box.x + (result[i].box.width / 2) - left_top_Point[0]) / margin);
+			//int yIndex = (int)round((result[i].box.y + (result[i].box.height / 2) - left_top_Point[1]) / margin);
+			//if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+			//{
+			//	maps[yIndex][xIndex] = result[i];
+			//}
+			//else {
+			//	//有不成立因素
+			//}
+
 		}
+
+		//获取maps对方的棋子，产生变动才会进行绘制
+		std::vector<std::string>redPosVec, blackPosVec;
+		/*bool isRed = false;*/
+		for (int i = 0; i < 10; i++)
+		{
+			for (int j = 0; j < 9; j++)
+			{
+				if (maps[i][j].id!=-1)
+				{
+					if (maps[i][j].id <= 6)
+					{
+						redPosVec.push_back(std::to_string(i) + std::to_string(j) + std::to_string(maps[i][j].id));
+					}
+					else {
+						blackPosVec.push_back(std::to_string(i) + std::to_string(j) + std::to_string(maps[i][j].id));
+					}
+				}
+
+				//双重校验
+				if (maps[i][j].id == 4)
+				{
+					if (i <= 4) {
+						isRed = false;
+					}
+					else {
+						isRed = true;
+					}
+				}
+				if (maps[i][j].id == 11)
+				{
+					if (i >= 5) {
+						isRed = false;
+					}
+					else {
+						isRed = true;
+					}
+				}
+			}
+		}
+		if (isRed)
+		{
+			if (std::equal(objPosVec.begin(),objPosVec.end(),blackPosVec.begin(),blackPosVec.end()))
+			{
+				//没变动
+				validateTime++;
+				dlg->Log("没有变动" + std::to_string(validateTime));
+				if (validateTime == 4) //可以识别了，但是只能识别一次，一次后就等待变动
+				{
+
+				}
+				else {
+					//既然没变动，那就过一会再检测一次，暂时还不能识别，直接continue
+					Sleep(200);
+					continue;
+				}
+			}
+			else {
+				dlg->Log("对方棋产生了变动");
+				
+				//产生了变动
+				objPosVec = blackPosVec;
+				validateTime = 0;
+				continue;
+			}
+		}
+		else {
+			if (std::equal(objPosVec.begin(), objPosVec.end(), redPosVec.begin(), redPosVec.end()))
+			{
+				//没变动
+				validateTime++;
+				dlg->Log("没有变动" + std::to_string(validateTime));
+				if (validateTime == 4) //可以识别了，但是只能识别一次，一次后就等待变动
+				{
+
+				}
+				else {
+					//既然没变动，那就过一会再检测一次，暂时还不能识别，直接continue
+					Sleep(200);
+					continue;
+				}
+			}
+			else {
+				dlg->Log("对方棋产生了变动");
+
+				//产生了变动
+				objPosVec = redPosVec;
+				validateTime = 0;
+				continue;
+			}
+		}
+
+
+
 
 		printf("fen:%s\n", calcFEN(maps, 0).c_str());
 		std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
@@ -810,20 +1412,61 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		std::string fen = calcFEN(maps, 0);
 
-		game.setFen(fen);
+
+		game.setFen(fen); //直接显示到窗口棋盘里了
 
 
-		std::pair<std::string, std::string> step_process = engine.calcStep(fen); //最佳走法以及计算过程
+		std::string* ret = new std::string();
 
-		stepIdx stepIdx = Engine::getStepIdx(step_process.first, fen);//获得最佳走法的坐标系
+		std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
+			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+				std::pair<std::string, std::string>stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
 
-		//把过程打印出来
-		CString engineInfo;
-		//dlg->m_engineInfo.GetWindowTextW(engineInfo);
-		engineInfo.Append(CA2W(("\n" + step_process.second).c_str()));
-		dlg->m_engineInfo.SetWindowTextW(engineInfo);
-		//dlg->m_engineInfo.setline;
-		dlg->SendDlgItemMessage(IDC_EDIT_ENGINEINFO, WM_VSCROLL, SB_BOTTOM, 0); //滚动条始终在底部
+				return stepPair;
+				}, fen, ret, thinkTime, thinkDepth);
+
+
+			bool isOk = false;
+			while (true) {
+				std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
+				if (status == std::future_status::ready)
+				{
+					isOk = true;
+				}
+				std::string info;
+				std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+				for (int i = 0; i < strList.size(); i++)
+				{
+					if (strList[i].find("pv") != std::string::npos)
+					{
+						std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+						std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+						std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+						std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+						std::string pv = Utils::getRightString(strList[i], " pv ");
+
+						std::string stepListStr = stepListToQp(pv, game.maps);
+						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+					}
+				}
+				dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+				if (isOk)
+				{
+					break;
+				}
+			}
+			return calcFuture.get();
+			}, dlg, fen, thinkTime, thinkDepth, ret);
+
+		std::pair<std::string, std::string> stepPair = readFuture.get();
+		delete ret;
+
+		game.addIndicate(stepPair.first, stepPair.second);
+
+		stepIdx stepIdx = Engine::getStepIdx(stepPair.first, fen);//获得最佳走法的坐标系
+
 
 
 		d3d.clear();
@@ -862,7 +1505,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			d3d.drawLine(maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2,
 				maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2,
 				maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2,
-				maps[stepIdx.endX][stepIdx.endY].box.y,
+				maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2,
 				4.0f,
 				color //D3DCOLOR_XRGB(GetRValue(color), GetGValue(color), GetBValue(color)
 			);
@@ -998,6 +1641,8 @@ void CChessAIDlg::OnBnClickedButtonManageengine()
 			m_engineList.InsertString(count, CA2W(engineConfigList[i].name.c_str()));
 		}
 	}
+
+	loadEngine();
 	// TODO: 在此添加控件通知处理程序代码
 }
 
@@ -1017,6 +1662,11 @@ int tmpI, tmpJ;
 void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (isConnecting)
+	{
+		return;
+	}
+
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -1091,6 +1741,86 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 
 
+							//走完棋自动分析
+							//直接异步执行 然后异步把ret不断写入编辑框
+							std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
+							printf("fen:%s\n", fen.c_str());
+
+							
+
+							CString thinkTimeStr;
+							m_thinkTime.GetWindowTextW(thinkTimeStr);
+							CString thinkDepthStr;
+							m_thinkDepth.GetWindowTextW(thinkDepthStr);
+							float thinkTime = atof(CW2A(thinkTimeStr));
+							int thinkDepth = atoi(CW2A(thinkDepthStr));
+
+							std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
+
+								std::string* ret = new std::string();
+
+								std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
+									std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+										std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+										
+										return stepPair;
+										}, fen, ret, thinkTime, thinkDepth);
+
+
+									bool isOk = false;
+									while (true) {
+										std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
+										if (status == std::future_status::ready)
+										{
+											isOk = true;
+										}
+										std::string info;
+										std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+										for (int i = 0; i < strList.size(); i++)
+										{
+											if (strList[i].find("pv") != std::string::npos)
+											{
+												std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+												std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+												std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+												std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+												std::string pv = Utils::getRightString(strList[i], " pv ");
+
+												std::string stepListStr = stepListToQp(pv, game.maps);
+												info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+											}
+										}
+										dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+										if (isOk)
+										{
+											break;
+										}
+									}
+									return calcFuture.get();
+									}, dlg, fen, thinkTime, thinkDepth, ret);
+
+								std::pair<std::string, std::string> stepPair = readFuture.get();
+
+								std::string step = stepPair.first;
+								std::string ponder = stepPair.second;
+								printf("%s %s\n", step.c_str(), ponder.c_str());
+
+								game.addIndicate(step, ponder); //添加指示
+
+
+								if (dlg->m_pkmode.GetCheck() && game.toWhoMove != game.isRed)
+								{
+									game.moveChess(step);
+								}
+
+
+								delete ret;
+								}, this, fen, thinkTime, thinkDepth);
+							thread.detach();
+
+
 							int row = m_navigation.GetItemCount();
 							m_navigation.InsertItem(row, L"");
 							if (!game.toWhoMove) //红棋记录回合数
@@ -1155,9 +1885,9 @@ void CChessAIDlg::OnClose()
 	qJsonObject json;
 
 	CString thinkTime;
-	connectDlg.m_thinkTime.GetWindowTextW(thinkTime);
+	GetWindowTextW(thinkTime);
 	CString thinkDepth;
-	connectDlg.m_thinkDepth.GetWindowTextW(thinkDepth);
+	GetWindowTextW(thinkDepth);
 	json.setString("thinkTime", std::string(CW2A(thinkTime)));
 	json.setString("thinkDepth", std::string(CW2A(thinkDepth)));
 
@@ -1182,7 +1912,7 @@ void CChessAIDlg::OnClose()
 	CDialogEx::OnClose();
 }
 
-LRESULT  CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
+LRESULT CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 {
 	// TODO: 在此添加控件通知处理程序代码
 
@@ -1191,8 +1921,8 @@ LRESULT  CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 	{
 		isConnecting = false;
 		connectDlg.m_connect.SetWindowTextW(L"连线");
-		TerminateThread(drawThreadHandle, 0);
-		d3d.exit();
+		/*TerminateThread(drawThreadHandle, 0);
+		d3d.exit();*/
 		return 0;
 	}
 	else {
@@ -1219,29 +1949,7 @@ LRESULT  CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 }
 
 
-LRESULT CChessAIDlg::ClickedCheckFront(WPARAM wParam, LPARAM lParam)
-{
-	// TODO: 在此添加控件通知处理程序代码
-	if (connectDlg.m_front.GetCheck())
-	{
-		CRect rect;
-		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
-		//::SetWindowPos(gameHwnd, HWND_TOPMOST, 0,0,0,0,NULL);
-		::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
-	}
-	else {
-		CRect rect;
-		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
-		//::SetWindowPos(gameHwnd, HWND_NOTOPMOST, 0,0,0,0, NULL);
-		::SetWindowPos(::GetParent(gameHwnd), HWND_NOTOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
-
-	}
-
-	return 0;
-}
-
-
-void CChessAIDlg::ClickedCheckFront1()
+void CChessAIDlg::ClickedCheckFront()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	if (connectDlg.m_front.GetCheck())
@@ -1260,6 +1968,8 @@ void CChessAIDlg::ClickedCheckFront1()
 	}
 
 }
+
+
 
 void CChessAIDlg::OnInputfen()
 {
@@ -1297,105 +2007,91 @@ void CChessAIDlg::OnBnClickedMfcbuttonBegin()
 	game.show();
 
 	m_navigation.DeleteAllItems();
-
 }
 
-
-struct calcFenParam {
-	std::string fen;
-	CChessAIDlg* dlg;
-};
-
-void execEngineAndReadData(LPVOID param) {
-	CChessAIDlg* dlg = ((calcFenParam*)param)->dlg;
-	std::string fen = ((calcFenParam*)param)->fen;
-
-
-	std::string* ret = new std::string();
-
-	std::future<std::string> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string* ret, std::string fen) {
-		std::future<std::string> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret) {
-			std::string step = engine.calcStep(fen, 8, 26, *ret);
-			printf("%s\n", step.c_str());
-
-			return step;
-			}, fen, ret);
-
-
-		bool isOk = false;
-		while (true) {
-			std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
-			if (status == std::future_status::ready)
-			{
-				isOk = true;
-			}
-			std::string info;
-			std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
-			for (int i = 0; i < strList.size(); i++)
-			{
-				if (strList[i].find("pv") != std::string::npos)
-				{
-					std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
-					std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
-					std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
-					std::string time = Utils::getCenterString(strList[i], "time ", " ");
-
-					std::string pv = Utils::getRightString(strList[i], " pv ");
-
-					std::string stepListStr = stepListToQp(pv, game.maps);
-					info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
-				}
-			}
-			dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
-
-			if (isOk)
-			{
-				break;
-			}
-		}
-		return calcFuture.get();
-		}, dlg, ret, fen);
-
-	std::string step = readFuture.get();
-
-	delete ret;
-
-	game.moveChess(step);
-
-	int row = dlg->m_navigation.GetItemCount();
-	dlg->m_navigation.InsertItem(row, L"");
-	if (!game.toWhoMove) //红棋记录回合数
-	{
-		dlg->m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
-	}
-	dlg->m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
-	dlg->m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
-	dlg->m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
-
-	dlg->m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
-	dlg->m_navigation.EnsureVisible(row, FALSE);
-}
-
-calcFenParam param;
 
 void CChessAIDlg::OnBnClickedMfcbuttonExec()
 {
-	if (engine.enginePath.empty())
-	{
-		engine.open(engineConfigList[m_engineList.GetCurSel()].path); //设计引擎
-	}
-
-
 
 	//直接异步执行 然后异步把ret不断写入编辑框
 	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
 	printf("fen:%s\n", fen.c_str());
 
-	param.fen = fen;
-	param.dlg = this;
-	//启动线程来进行读取ret
-	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)execEngineAndReadData, (LPVOID)&param, NULL, NULL);
+	CString thinkTimeStr;
+	m_thinkTime.GetWindowTextW(thinkTimeStr);
+	CString thinkDepthStr;
+	m_thinkDepth.GetWindowTextW(thinkDepthStr);
+	float thinkTime = atof(CW2A(thinkTimeStr));
+	int thinkDepth = atoi(CW2A(thinkDepthStr));
 
+	std::thread thread([](CChessAIDlg* dlg,std::string fen,float thinkTime,int thinkDepth) {
+
+		std::string* ret = new std::string();
+
+		std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret ) {
+			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+				std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+				return stepPair;
+				}, fen, ret,thinkTime,thinkDepth);
+
+
+			bool isOk = false;
+			while (true) {
+				std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
+				if (status == std::future_status::ready)
+				{
+					isOk = true;
+				}
+				std::string info;
+				std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+				for (int i = 0; i < strList.size(); i++)
+				{
+					if (strList[i].find("pv") != std::string::npos)
+					{
+						std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+						std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+						std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+						std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+						std::string pv = Utils::getRightString(strList[i], " pv ");
+
+						std::string stepListStr = stepListToQp(pv, game.maps);
+						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+					}
+				}
+				dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+				if (isOk)
+				{
+					break;
+				}
+			}
+			return calcFuture.get();
+			}, dlg, fen , thinkTime, thinkDepth, ret);
+
+		std::pair<std::string, std::string> stepPair = readFuture.get();
+		delete ret;
+
+		game.moveChess(stepPair.first);
+
+		game.addIndicate(stepPair.first,stepPair.second);
+
+		int row = dlg->m_navigation.GetItemCount();
+		dlg->m_navigation.InsertItem(row, L"");
+		if (!game.toWhoMove) //红棋记录回合数
+		{
+			dlg->m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
+		}
+		dlg->m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
+		dlg->m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
+		dlg->m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
+
+		dlg->m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
+		dlg->m_navigation.EnsureVisible(row, FALSE);
+
+
+		},this,fen, thinkTime,thinkDepth);
+	thread.detach();
 
 }
 
@@ -1404,4 +2100,12 @@ void CChessAIDlg::OnBnClickedButtonBoardpic()
 {
 	// TODO: 在此添加控件通知处理程序代码
 
+}
+
+
+
+void CChessAIDlg::OnCbnSelchangeComboEnginelist()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	loadEngine();
 }

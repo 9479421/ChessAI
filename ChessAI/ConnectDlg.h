@@ -34,8 +34,7 @@ public:
 	HBRUSH hbr;
 	virtual BOOL OnInitDialog();
 	QButton m_connect;
-	CComboBox m_thinkTime;
-	CComboBox m_thinkDepth;
+
 	CButton m_front;
 	CButton m_autoPlay;
 	CButton m_autoNext;

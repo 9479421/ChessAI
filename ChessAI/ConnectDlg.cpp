@@ -27,8 +27,6 @@ void ConnectDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LOGO, m_logo);
 	DDX_Control(pDX, IDC_BUTTON_CONNECT, m_connect);
-	DDX_Control(pDX, IDC_COMBO_THINKTIME, m_thinkTime);
-	DDX_Control(pDX, IDC_COMBO_THINKDEPTH, m_thinkDepth);
 	DDX_Control(pDX, IDC_CHECK_FRONT, m_front);
 	DDX_Control(pDX, IDC_CHECK_AUTOPLAY, m_autoPlay);
 	DDX_Control(pDX, IDC_CHECK_AUTONEXT, m_autoNext);
@@ -228,7 +226,7 @@ void ConnectDlg::OnBnClickedCheckFront()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	//mainDlg->SendMessage(10087, 0, 0);
-	mainDlg->ClickedCheckFront1();
+	mainDlg->ClickedCheckFront();
 }
 
 

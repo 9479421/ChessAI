@@ -84,7 +84,7 @@ std::string Process::execute(std::string endFlag)
 				std::string tmp = strRet.substr(idx + endFlag.size() + i, 1);
 				if (tmp == "\r" || tmp == "\n")
 				{
-					printf("all:\n%s\n", strRet.c_str());
+					//printf("all:\n%s\n", strRet.c_str());
 					goto end;
 				}
 			}
@@ -131,7 +131,7 @@ void Process::execute(std::string endFlag, std::string endCmd, float maxWaitingT
 				std::string tmp = ret.substr(idx + endFlag.size() + i, 1);
 				if (tmp == "\r" || tmp == "\n")
 				{
-					printf("all:\n%s\n", ret.c_str());
+					//printf("all:\n%s\n", ret.c_str());
 					goto end;
 				}
 			}
@@ -140,7 +140,7 @@ void Process::execute(std::string endFlag, std::string endCmd, float maxWaitingT
 		if (!isEnd)
 		{
 			std::chrono::steady_clock::time_point endTime = std::chrono::high_resolution_clock::now();
-			if (std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() > maxWaitingTime)
+			if (std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() > maxWaitingTime*1000)
 			{
 				//强行结束，直接拿到最佳走法
 				WriteFile(hInWrite, endCmd.c_str(), endCmd.size(), NULL, NULL);

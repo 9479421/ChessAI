@@ -33,6 +33,7 @@ public:
 
 };
 
+
 class Game
 {
 public:
@@ -43,6 +44,8 @@ public:
 	void setFen(std::string fen);
 	void setChess(int x, int y, std::string name);
 	void moveChess(std::string step);
+
+	void addIndicate(std::string bestMoveStep, std::string ponderStep);
 	//初始化，摆棋
 	void init(CDC* dc, int destX, int destY);
 	//绘制出来
@@ -64,6 +67,7 @@ public:
 	//到谁走棋了
 	bool toWhoMove; //true是红 false黑
 
+	std::vector<stepIdx> indicates;
 public:
 	//最终绘制往的DC
 	CDC* dc;

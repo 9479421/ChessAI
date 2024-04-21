@@ -122,6 +122,7 @@ void Game::setFen(std::string fen)
 		for (int j = 0; j < 9; j++)
 		{
 			maps[i][j].id = -1;
+			maps[i][j].status = 0;
 		}
 	}
 
@@ -254,6 +255,44 @@ void Game::moveChess(std::string step)
 	}
 }
 
+void Game::addIndicate(std::string bestMoveStep,std::string ponderStep)
+{
+	indicates.clear();
+
+
+	std::vector<std::string> steps;
+	steps.push_back(bestMoveStep);
+	steps.push_back(ponderStep);
+	for (int i = 0; i < steps.size(); i++)
+	{
+		stepIdx stepIdx;
+		int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
+
+		if (steps[i].size() == 4)  //ab转坐标
+		{
+			std::string s1 = steps[i].substr(0, 1);
+			std::string s2 = steps[i].substr(1, 1);
+			std::string s3 = steps[i].substr(2, 1);
+			std::string s4 = steps[i].substr(3, 1);
+			row_begin = getNumsByRowFlag(s1);
+			col_begin = atoi(s2.c_str());
+			row_end = getNumsByRowFlag(s3);
+			col_end = atoi(s4.c_str());
+			if (isRed)
+			{
+				stepIdx.set(9 - col_begin, row_begin, 9 - col_end, row_end);
+			}
+			else {
+				stepIdx.set(col_begin, 8 - row_begin, col_end, 8 - row_end);
+			}
+			indicates.push_back(stepIdx);
+		}
+	}
+
+
+	show();
+}
+
 void Game::init(CDC* dc, int destX, int destY)
 {
 	this->dc = dc;
@@ -288,6 +327,8 @@ void Game::begin(boolean isRed)
 	//红棋先走
 	this->toWhoMove = true;
 	this->stepList.clear(); //清空走过的步子
+	indicates.clear();//清空指示
+
 
 	//初始化棋子
 	for (int i = 0; i < 10; i++)
@@ -383,6 +424,9 @@ void Game::begin(boolean isRed)
 	}
 }
 
+#define h2a 180 / 3.1415926
+#define a2h 3.1415926 / 180 
+extern double calcFC(double a, double b, double c, bool add);
 void Game::show()
 {
 	//初始化缓冲区
@@ -404,7 +448,6 @@ void Game::show()
 	Graphics graphics(gameCdc);
 	graphics.SetSmoothingMode(SmoothingModeHighQuality);
 	graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
-
 
 
 	//画棋子
@@ -449,6 +492,29 @@ void Game::show()
 	}
 
 
+	//画指示
+	for (int i = 0; i < indicates.size(); i++)
+	{
+		float start_left = maps[indicates[i].beginX][indicates[i].beginY].x;
+		float start_top = maps[indicates[i].beginX][indicates[i].beginY].y;
+		float end_left = maps[indicates[i].endX][indicates[i].endY].x;
+		float end_top = maps[indicates[i].endX][indicates[i].endY].y;
+
+
+		CPen pen;
+		pen.CreatePen(PS_SOLID, 2, RGB(30, 30, 30));
+		CPen* oldPen = gameCdc.SelectObject(&pen);
+
+
+		MoveToEx(gameCdc, start_left, start_top, NULL);
+		LineTo(gameCdc, end_left, end_top);
+
+		Ellipse(gameCdc, end_left- 5, end_top- 5, end_left + 5, end_top + 5);
+
+		pen.DeleteObject();
+		gameCdc.SelectObject(oldPen);
+	}
+
 
 	gameImage.Draw(dc->m_hDC, CRect(destX, destY, destX + gameWidth, destY + gameHeight)); //源大小复制
 
@@ -486,6 +552,13 @@ void Game::changeTeam()
 		}
 	}
 
+	for (int i = 0; i < indicates.size(); i++)
+	{
+		indicates[i].beginX = 9 - indicates[i].beginX;
+		indicates[i].beginY = 8 - indicates[i].beginY;
+		indicates[i].endX = 9 - indicates[i].endX;
+		indicates[i].endY = 8 - indicates[i].endY;
+	}
 
 	show();
 }

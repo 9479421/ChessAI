@@ -31,6 +31,7 @@
 #define IDC_BUTTON_CHOOSEWINDOW         1036
 #define IDC_CHECK1                      1038
 #define IDC_CHECK_SHOWRECT              1038
+#define IDC_CHECK_PKMODE                1038
 #define IDC_CHECK2                      1039
 #define IDC_CHECK_SHOWARROW             1039
 #define IDC_CHECK3                      1040

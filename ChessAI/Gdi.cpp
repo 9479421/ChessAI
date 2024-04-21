@@ -25,7 +25,7 @@ double GdiClass::calcFC(double a, double b, double c, bool add) {
 void GdiClass::render() {
 	PAINTSTRUCT ps;
 	BeginPaint(hwnd, &ps);
-	
+
 
 
 	//清空先
@@ -57,8 +57,8 @@ void GdiClass::render() {
 		D3DCOLOR color = hollowRects[i].color;
 
 		D3DXVECTOR2 Vertex[5] = { {left,top},{left + width,top},{left + width,top + height},{left,top + height},{left,top} };
-	/*	g_line->SetWidth(weight);
-		g_line->Draw(Vertex, 5, color);*/
+		/*	g_line->SetWidth(weight);
+			g_line->Draw(Vertex, 5, color);*/
 	}
 	//绘制空心矩形美化版
 	for (int i = 0; i < hollowHalfRects.size(); i++)
@@ -73,12 +73,12 @@ void GdiClass::render() {
 
 
 
-		HPEN pen = CreatePen(PS_SOLID, weight,color);
+		HPEN pen = CreatePen(PS_SOLID, weight, color);
 		HPEN oldPen = (HPEN)SelectObject(hMemDC, pen);
 
 		MoveToEx(hMemDC, left, top + height / 5, NULL);
 		LineTo(hMemDC, left, top);
-		MoveToEx(hMemDC, left, top ,NULL);
+		MoveToEx(hMemDC, left, top, NULL);
 		LineTo(hMemDC, left + width / 5, top);
 
 
@@ -120,6 +120,10 @@ void GdiClass::render() {
 		float start_top = (float)lines[i].start_top;
 		float end_left = (float)lines[i].end_left;
 		float end_top = (float)lines[i].end_top;
+
+		float lengthPow2 = sqrt(pow(abs(start_left - end_left), 2) + pow(abs(end_top - start_top), 2)) * 2;
+
+
 		float weight = lines[i].weight;
 		int color = lines[i].color;
 
@@ -133,7 +137,16 @@ void GdiClass::render() {
 		if (width == 0)
 		{
 			//这种情况单独算
-			x = 90;
+			
+			if (height > 0 )
+			{
+				x = 90;
+
+			}
+			else {
+				x = -90;
+			}
+
 		}
 		else {
 			x = std::atan(height / width) * h2a;
@@ -141,8 +154,8 @@ void GdiClass::render() {
 
 		double k1, k2;
 
-		k1 = std::tan((x - 45) * a2h);
-		k2 = std::tan((x + 45) * a2h);
+		k1 = std::tan((x - 42) * a2h);
+		k2 = std::tan((x + 42) * a2h);
 
 		double b1, b2;
 		b1 = height - k1 * width;
@@ -151,27 +164,64 @@ void GdiClass::render() {
 		float x1, y1, x2, y2;
 		//y1 = k1*x + b1    y2 = k2*x + b2
 		//printf("x==%f  width==%f\n", x, width);
+		if (x <= 0 && x > -45)
+		{
+			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, width <= 0);
+			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, width <= 0);
+		}
+		else if (x < -45 && x >-90)
+		{
+			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, !(width <= 0));
+			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, width <= 0);
+		}
+		else if (x >= 0 && x < 45)
+		{
+			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, !(width >= 0));
+			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, !(width >= 0));
+		}
+		else if (x > 45 && x < 90)
+		{
+			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, !(width >= 0));
+			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, width >= 0);
+		}
+		else if ((int)x == -45)
+		{
+			if (height < 0)
+			{
+				x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, false);
+				x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, false);
+			}
+			else {
+				x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, true);
+				x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, true);
+			}
+		}
+		else if ((int)x == 45)
+		{
+			if (height < 0)
+			{
+				x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, true);
+				x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, true);
+			}
+			else {
+				x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, false);
+				x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, false);
+			}
+		}
+		else if ((int)x == 90)
+		{
+			if (height < 0)
+			{
+				x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, true);
+				x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, false);
+			}
+			else {
+				x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - lengthPow2 - 2 * b1 * height + b1 * b1, false);
+				x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - lengthPow2 - 2 * b2 * height + b2 * b2, true);
 
-		if (x <= 0 && x >= -45)
-		{
-			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - 400 - 2 * b1 * height + b1 * b1, width <= 0);
-			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - 400 - 2 * b2 * height + b2 * b2, width <= 0);
+			}
 		}
-		else if (x <= -45 && x >= -90)
-		{
-			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - 400 - 2 * b1 * height + b1 * b1, !(width <= 0));
-			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - 400 - 2 * b2 * height + b2 * b2, width <= 0);
-		}
-		else if (x >= 0 && x <= 45)
-		{
-			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - 400 - 2 * b1 * height + b1 * b1, !(width >= 0));
-			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - 400 - 2 * b2 * height + b2 * b2, !(width >= 0));
-		}
-		else if (x >= 45 && x <= 90)
-		{
-			x1 = calcFC(1 + k1 * k1, 2 * b1 * k1 - 2 * width - 2 * k1 * height, width * width + height * height - 400 - 2 * b1 * height + b1 * b1, !(width >= 0));
-			x2 = calcFC(1 + k2 * k2, 2 * b2 * k2 - 2 * width - 2 * k2 * height, width * width + height * height - 400 - 2 * b2 * height + b2 * b2, width >= 0);
-		}
+
 
 		y1 = k1 * x1 + b1;
 		y2 = k2 * x2 + b2;
@@ -291,7 +341,7 @@ boolean Gdi::init(int width, int height)
 	::SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT);
 
 
-	SetLayeredWindowAttributes(hwnd, RGB(1,2,3), 0, LWA_COLORKEY);
+	SetLayeredWindowAttributes(hwnd, RGB(1, 2, 3), 0, LWA_COLORKEY);
 
 	return true;
 }
@@ -323,7 +373,7 @@ void Gdi::drawHollowHalfRect(int left, int top, int width, int height, float wei
 unsigned __stdcall GdiClass::showWindowThread(LPVOID lpParam) {
 	ShowWindow(hwnd, TRUE);
 	UpdateWindow(hwnd);
-	//SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE); //设置绘制窗口禁止截图
+	SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE); //设置绘制窗口禁止截图
 
 	HWND gameHwnd = (HWND)lpParam;
 
@@ -338,7 +388,7 @@ unsigned __stdcall GdiClass::showWindowThread(LPVOID lpParam) {
 		InvalidateRect(::hwnd, NULL, TRUE);
 		Sleep(100);
 	}
-	
+
 
 	UnregisterClassA("ChessAI", NULL);
 	return 0;
@@ -346,7 +396,7 @@ unsigned __stdcall GdiClass::showWindowThread(LPVOID lpParam) {
 
 boolean Gdi::showWindow(HWND hwnd)
 {
-	
+
 	threadHandle = (HANDLE)_beginthreadex(NULL, 0, showWindowThread, hwnd, 0, &threadId);
 	//MSG msg = {};
 	//while (GetMessage(&msg, NULL, 0, 0)) {
@@ -396,8 +446,8 @@ void GdiClass::Gdi::exit()
 {
 	clear();
 
-	TerminateThread(threadHandle,NULL);
+	TerminateThread(threadHandle, NULL);
 
-	SendMessage(hwnd,WM_CLOSE,0,0);
-	
+	SendMessage(hwnd, WM_CLOSE, 0, 0);
+
 }

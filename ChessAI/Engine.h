@@ -27,7 +27,7 @@ public:
 
 	std::pair<std::string, std::string> calcStep(std::string fen);
 	void uci();
-	std::string calcStep(std::string fen, float time, int depth, std::string& ret);
+	std::pair<std::string, std::string> calcStep(std::string fen, float time, int depth, std::string& ret);
 	
 };
 

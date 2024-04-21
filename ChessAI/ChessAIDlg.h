@@ -11,6 +11,7 @@
 #include "EngineDlg.h"
 
 #include "ConnectDlg.h"
+#include <string>
 
 // CChessAIDlg 对话框
 class CChessAIDlg : public CDialogEx
@@ -65,8 +66,8 @@ public:
 
 	LRESULT  Connect(WPARAM wParam, LPARAM lParam);
 	CStatic m_picture;
-	LRESULT ClickedCheckFront(WPARAM wParam, LPARAM lParam);
-	void ClickedCheckFront1();
+	void ClickedCheckFront();
+
 	afx_msg void OnInputfen();
 	afx_msg void OnBnClickedButtonChoosewindow();
 	QButton m_back;
@@ -79,4 +80,12 @@ public:
 	afx_msg void OnBnClickedMfcbuttonBegin();
 	afx_msg void OnBnClickedMfcbuttonExec();
 	afx_msg void OnBnClickedButtonBoardpic();
+	CComboBox m_thinkTime;
+	CComboBox m_thinkDepth;
+	
+	void Log(std::string str);
+	afx_msg void OnCbnSelchangeComboEnginelist();
+
+	void loadEngine();
+	CButton m_pkmode;
 };

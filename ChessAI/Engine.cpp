@@ -154,12 +154,11 @@ void Engine::uci()
 	printf("author:%s\n", author.c_str());
 }
 
-std::string Engine::calcStep(std::string fen, float time, int depth, std::string& ret)
+std::pair<std::string, std::string> Engine::calcStep(std::string fen, float time, int depth, std::string& ret)
 {
 
 	process.addCmdLine("position fen " + fen);
 	process.addCmdLine("go depth " + std::to_string(depth));
-
 
 	try {
 
@@ -168,7 +167,7 @@ std::string Engine::calcStep(std::string fen, float time, int depth, std::string
 		{
 			process.exit();
 			process.createProcess(this->enginePath);
-			return "";
+			return std::make_pair("","");
 		}
 
 		printf("result:%s\n", ret.c_str());
@@ -178,19 +177,15 @@ std::string Engine::calcStep(std::string fen, float time, int depth, std::string
 		int idx2 = ret.find("ponder");
 		if (idx1 != std::string::npos && idx2 == std::string::npos)
 		{
-			//最后一步绝杀
-			return ret.substr(idx1 + 9, 4);
+			//最后一步绝杀 
+			return std::make_pair(ret.substr(idx1 + 9, 4), "");
 		}
 		else {
-			return ret.substr(idx1 + 9, idx2 - 1 - (idx1 + 9));
+			return std::make_pair(ret.substr(idx1 + 9, idx2 - 1 - (idx1 + 9)), ret.substr(idx2+7,4));
 		}
-
-
-
-
 	}
 	catch (std::exception e) {
 
 	}
-	return "";
+	return std::make_pair("", "");
 }
