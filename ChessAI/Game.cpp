@@ -116,6 +116,7 @@ void Game::setBoardSource(std::string boardPath, int centerX, int topcenterY, in
 
 void Game::setFen(std::string fen)
 {
+	indicates.clear();
 	//清空
 	for (int i = 0; i < 10; i++)
 	{
@@ -192,7 +193,7 @@ template<typename T>
 extern std::string stepListToQp(std::string stepListStr, T maps[10][9]);
 
 
-void Game::moveChess(std::string step)
+void Game::moveChess(std::string step,std::string score)
 {
 
 	stepIdx stepIdx;
@@ -220,13 +221,19 @@ void Game::moveChess(std::string step)
 
 		//判断规则
 
-		//记录走之前后的fen 以及走法
-		stepList.push_back(moveInfo(step, stepToQp(step, maps), calcFEN(maps, 1)));
+		//记录走之前的fen 以及走法
+		std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
+		stepList.push_back(moveInfo(step, stepToQp(step, maps), calcFEN(maps, toWhoMove ? 2 : 1), score, std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPlayTime).count())));
 
 
 		//出棋
 		maps[stepIdx.endX][stepIdx.endY].setName(maps[stepIdx.beginX][stepIdx.beginY].name);
 		maps[stepIdx.beginX][stepIdx.beginY].setName("");
+
+
+
+		//开始新一步的计时
+		lastPlayTime = now;
 
 
 		//把对面的方框取消掉
@@ -250,8 +257,14 @@ void Game::moveChess(std::string step)
 
 
 
-
-		toWhoMove = !toWhoMove; //换人走
+		if (maps[stepIdx.endX][stepIdx.endY].id <=6 ) //说明走的是红旗
+		{
+			toWhoMove = false;
+		}
+		else {
+			toWhoMove = true;
+		}
+		//toWhoMove = !toWhoMove; //换人走，这个在导航定位的时候有BUG
 	}
 }
 
@@ -323,6 +336,7 @@ void Game::begin(boolean isRed)
 {
 	this->isRed = isRed;
 
+	lastPlayTime = std::chrono::high_resolution_clock::now(); //开始计时了
 
 	//红棋先走
 	this->toWhoMove = true;
@@ -345,13 +359,13 @@ void Game::begin(boolean isRed)
 	{
 		//上半部分
 		maps[0][0].setName("黑车");
-		maps[0][1].setName("黑馬");
+		maps[0][1].setName("黑马");
 		maps[0][2].setName("黑象");
 		maps[0][3].setName("黑士");
 		maps[0][4].setName("黑将");
 		maps[0][5].setName("黑士");
 		maps[0][6].setName("黑象");
-		maps[0][7].setName("黑馬");
+		maps[0][7].setName("黑马");
 		maps[0][8].setName("黑车");
 
 		maps[2][1].setName("黑炮");
@@ -364,13 +378,13 @@ void Game::begin(boolean isRed)
 		maps[3][8].setName("黑卒");
 		//下半部分
 		maps[9][0].setName("红车");
-		maps[9][1].setName("红馬");
+		maps[9][1].setName("红马");
 		maps[9][2].setName("红相");
 		maps[9][3].setName("红仕");
 		maps[9][4].setName("红帅");
 		maps[9][5].setName("红仕");
 		maps[9][6].setName("红相");
-		maps[9][7].setName("红馬");
+		maps[9][7].setName("红马");
 		maps[9][8].setName("红车");
 
 		maps[7][1].setName("红炮");
@@ -385,13 +399,13 @@ void Game::begin(boolean isRed)
 	else {
 		//上半部分
 		maps[0][0].setName("红车");
-		maps[0][1].setName("红馬");
+		maps[0][1].setName("红马");
 		maps[0][2].setName("红相");
 		maps[0][3].setName("红仕");
 		maps[0][4].setName("红帅");
 		maps[0][5].setName("红仕");
 		maps[0][6].setName("红相");
-		maps[0][7].setName("红馬");
+		maps[0][7].setName("红马");
 		maps[0][8].setName("红车");
 
 		maps[2][1].setName("红炮");
@@ -404,13 +418,13 @@ void Game::begin(boolean isRed)
 		maps[3][8].setName("红兵");
 		//下半部分
 		maps[9][0].setName("黑车");
-		maps[9][1].setName("黑馬");
+		maps[9][1].setName("黑马");
 		maps[9][2].setName("黑象");
 		maps[9][3].setName("黑士");
 		maps[9][4].setName("黑将");
 		maps[9][5].setName("黑士");
 		maps[9][6].setName("黑象");
-		maps[9][7].setName("黑馬");
+		maps[9][7].setName("黑马");
 		maps[9][8].setName("黑车");
 
 		maps[7][1].setName("黑炮");

@@ -31,7 +31,7 @@
 
 #include "stepIdx.h"
 #include <future>
-
+#include <tuple>
 
 ConnectDlg connectDlg;
 
@@ -144,6 +144,10 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_BOARDPIC, &CChessAIDlg::OnBnClickedButtonBoardpic)
 	ON_WM_CREATE()
 	ON_CBN_SELCHANGE(IDC_COMBO_ENGINELIST, &CChessAIDlg::OnCbnSelchangeComboEnginelist)
+
+	ON_NOTIFY(NM_CLICK, IDC_LIST_NAVIGATION, &CChessAIDlg::OnNMClickListNavigation)
+	ON_BN_CLICKED(IDC_BUTTON_BACK, &CChessAIDlg::OnBnClickedButtonBack)
+	ON_BN_CLICKED(IDC_BUTTON_NEXT, &CChessAIDlg::OnBnClickedButtonNext)
 END_MESSAGE_MAP()
 
 
@@ -159,7 +163,7 @@ void CChessAIDlg::loadEngine()
 {
 
 	std::thread thread([](CChessAIDlg* dlg) {
-		if (dlg->m_engineList.GetCount() > 0 && dlg->m_engineList.GetCurSel()>=0)
+		if (dlg->m_engineList.GetCount() > 0 && dlg->m_engineList.GetCurSel() >= 0)
 		{
 			dlg->Log("引擎初始化中……");
 			engine.open(engineConfigList[dlg->m_engineList.GetCurSel()].path); //设计引擎
@@ -352,7 +356,7 @@ std::string stepToQp(std::string step, T maps[10][9]) {
 							else {
 								qpstep = "前";
 							}
-							
+
 						}
 						else {
 							if (i < stepIdx.beginX)
@@ -533,8 +537,8 @@ std::string stepToQp(std::string step, T maps[10][9]) {
 				}
 			}
 		}
-		
-		
+
+
 
 		return qpstep;
 	}
@@ -583,15 +587,15 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 	int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
 
 
-	
+
 	std::vector<std::string> stepList = Utils::splitStr(stepListStr, " ");
-	
+
 
 	for (size_t i = 0; i < stepList.size(); i++)
 	{
 		if (stepList[i].size() == 4) //走一波 傻逼
 		{
-			
+
 
 			qpRet += stepToQp(stepList[i], maps) + " ";
 			if ((i + 1) % 6 == 0 && i != stepList.size() - 1)
@@ -670,6 +674,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 
+
 	//打开连线窗口
 	connectDlg.Create(IDD_DIALOG_CONNECT);
 	connectDlg.ShowWindow(SW_SHOW);
@@ -679,6 +684,13 @@ BOOL CChessAIDlg::OnInitDialog()
 	setlocale(LC_ALL, "Chinese-simplified");
 	AllocConsole();//控制台调试窗口开启  
 	freopen("CONOUT$", "w", stdout);//开启中文控制台输出支持  
+
+
+
+
+
+	printf("cuda支持设备数：%d\n", cv::cuda::getCudaEnabledDeviceCount());
+
 
 
 	//白色背景刷子
@@ -738,6 +750,38 @@ BOOL CChessAIDlg::OnInitDialog()
 	//m_Statusbar.SetPaneText(1, _T("这里是窗口初始化自带状态文本"), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
 
 
+	//计算深度和时间
+	m_thinkDepth.AddString(_T("12"));
+	m_thinkDepth.AddString(_T("13"));
+	m_thinkDepth.AddString(_T("14"));
+	m_thinkDepth.AddString(_T("15"));
+	m_thinkDepth.AddString(_T("16"));
+	m_thinkDepth.AddString(_T("17"));
+	m_thinkDepth.AddString(_T("18"));
+	m_thinkDepth.AddString(_T("19"));
+	m_thinkDepth.AddString(_T("20"));
+	m_thinkDepth.AddString(_T("21"));
+	m_thinkDepth.AddString(_T("22"));
+	m_thinkDepth.AddString(_T("23"));
+	m_thinkDepth.AddString(_T("24"));
+	m_thinkDepth.AddString(_T("25"));
+	m_thinkDepth.AddString(_T("26"));
+
+
+	m_thinkTime.AddString(_T("1"));
+	m_thinkTime.AddString(_T("2"));
+	m_thinkTime.AddString(_T("3"));
+	m_thinkTime.AddString(_T("4"));
+	m_thinkTime.AddString(_T("5"));
+	m_thinkTime.AddString(_T("6"));
+	m_thinkTime.AddString(_T("7"));
+	m_thinkTime.AddString(_T("8"));
+	m_thinkTime.AddString(_T("9"));
+	m_thinkTime.AddString(_T("10"));
+
+
+
+
 	CFont font;
 	font.CreatePointFont(200, _T("宋体"), NULL);
 	m_bottom.SetFont(&font);
@@ -751,9 +795,10 @@ BOOL CChessAIDlg::OnInitDialog()
 	//导航
 	m_navigation.InsertColumn(0, L"", LVCFMT_LEFT, 30, 0);
 	m_navigation.InsertColumn(1, L"招法", LVCFMT_LEFT, 100, 0);
-	m_navigation.InsertColumn(2, L"分数", LVCFMT_LEFT, 60, 0);
+	m_navigation.InsertColumn(2, L"分数", LVCFMT_LEFT, 80, 0);
 	m_navigation.InsertColumn(3, L"时间", LVCFMT_LEFT, 80, 0);
 	m_navigation.InsertColumn(4, L"注释", LVCFMT_LEFT, 110, 0);
+	m_navigation.InsertColumn(5, L"FEN", LVCFMT_LEFT, 480, 0);
 	m_navigation.SetExtendedStyle(m_navigation.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
 
 	//读取引擎目录配置，没有的话写入新的
@@ -774,7 +819,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	{
 		qJsonObject json;
 		json.setString("thinkTime", "3");
-		json.setString("thinkDepth", "20");
+		json.setString("thinkDepth", "16");
 		json.setBool("isFront", true);
 
 		json.setInt("rectRedColor", RGB(255, 0, 0));
@@ -854,7 +899,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
 	connectDlg.m_schemeList.SetCurSel(0);
-	
+
 
 
 
@@ -871,8 +916,8 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 	//游戏
-	game.setChessSource("./pic/红车.png", "./pic/红馬.png", "./pic/红相.png", "./pic/红仕.png", "./pic/红帅.png", "./pic/红炮.png", "./pic/红兵.png",
-		"./pic/黑车.png", "./pic/黑馬.png", "./pic/黑象.png", "./pic/黑士.png", "./pic/黑将.png", "./pic/黑炮.png", "./pic/黑卒.png", '\0');
+	game.setChessSource("./pic/红车.png", "./pic/红马.png", "./pic/红相.png", "./pic/红仕.png", "./pic/红帅.png", "./pic/红炮.png", "./pic/红兵.png",
+		"./pic/黑车.png", "./pic/黑马.png", "./pic/黑象.png", "./pic/黑士.png", "./pic/黑将.png", "./pic/黑炮.png", "./pic/黑卒.png", '\0');
 	game.setBoardSource("./pic/棋盘.png", 260, 31, 546, 58, 58, 57, 57);
 	game.init(GetDC(), 26, 70);//计算出棋盘每个点的坐标
 	game.begin(true); //摆棋
@@ -957,7 +1002,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 	CChessAIDlg* dlg = (CChessAIDlg*)lpParam;
 
-	
+
 	CString thinkTimeStr;
 	dlg->m_thinkTime.GetWindowTextW(thinkTimeStr);
 	CString thinkDepthStr;
@@ -1016,7 +1061,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		std::vector<Output> result;
 		yolo.Detect(img, net, result);
 
-		
+
 		//
 		//chess hongshuai(4);
 		//chess heijiang(11);
@@ -1161,7 +1206,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 
-		
+
 		////开始定义棋盘每个落点的坐标
 		//for (int i = 0; i < 10; i++)
 		//{
@@ -1258,9 +1303,9 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		for (int i = 0; i < result.size(); i++)
 		{
-			
 
-			if (abs(result[i].box.y - bottomY ) < abs(result[i].box.y - topY))
+
+			if (abs(result[i].box.y - bottomY) < abs(result[i].box.y - topY))
 			{
 				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / margin);
 				int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / margin);
@@ -1304,7 +1349,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		{
 			for (int j = 0; j < 9; j++)
 			{
-				if (maps[i][j].id!=-1)
+				if (maps[i][j].id != -1)
 				{
 					if (maps[i][j].id <= 6)
 					{
@@ -1338,7 +1383,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		}
 		if (isRed)
 		{
-			if (std::equal(objPosVec.begin(),objPosVec.end(),blackPosVec.begin(),blackPosVec.end()))
+			if (std::equal(objPosVec.begin(), objPosVec.end(), blackPosVec.begin(), blackPosVec.end()))
 			{
 				//没变动
 				validateTime++;
@@ -1355,7 +1400,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			}
 			else {
 				dlg->Log("对方棋产生了变动");
-				
+
 				//产生了变动
 				objPosVec = blackPosVec;
 				validateTime = 0;
@@ -1526,6 +1571,39 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			}
 		}
 
+
+		//自动走判断
+		if (connectDlg.m_autoPlay)
+		{
+			CRect rect;
+			GetWindowRect(gameHwnd, rect);
+			int x = rect.left + maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2;
+			int y = rect.top + maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2;
+
+			SetCursorPos(x, y);
+
+
+			mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
+			mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+			/*		SendMessage((gameHwnd), WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
+					SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));*/
+
+
+			Sleep(500);
+			x = rect.left + maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2;
+			y = rect.top + maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2;
+
+			SetCursorPos(x, y);
+
+			mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
+			mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+
+			//SendMessage(gameHwnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
+			//SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));
+
+			Sleep(1000);
+		}
+
 		Sleep(10);
 
 	}
@@ -1659,10 +1737,19 @@ int status = 0; //啥也没干  1是选中棋子了
 Pot* tmp;
 int tmpI, tmpJ;
 
+
+std::pair<std::string, std::string> bestStep;
+bool enableClick = true;
+
+
 void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if (isConnecting)
+	{
+		return;
+	}
+	if (!enableClick)
 	{
 		return;
 	}
@@ -1706,6 +1793,10 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 						tmpJ = j;
 						//框框
 						game.maps[i][j].status = 1;
+
+
+
+						game.show();
 					}
 				}
 				else {
@@ -1722,8 +1813,17 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 							tmp = &game.maps[i][j];
 							tmpI = i;
 							tmpJ = j;
+
+
+
+							game.show();
 						}
 						else {
+							//吃完棋老老实实等着引擎计算，谁也不能点
+							enableClick = false;
+
+
+
 							status = 0;
 							//tmp是原来的位置 maps[i][j]是要走的位置
 							std::string rowFlags[9] = { "a","b","c","d","e","f","g","h","i" };
@@ -1736,33 +1836,72 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 							else {
 								step = rowFlags[8 - tmpJ] + std::to_string(tmpI) + rowFlags[8 - j] + std::to_string(i);
 							}
+
+
+							//走棋前先判断当前导航的位置
+							POSITION pos = m_navigation.GetFirstSelectedItemPosition();
+							int idx = m_navigation.GetNextSelectedItem(pos); 
+							int count = m_navigation.GetItemCount();
+							if (idx!=-1  && idx < count -1)
+							{
+								//说明要进行一部分回退
+								for (int i = 0; i < count - 1 - idx; i++)
+								{
+									m_navigation.DeleteItem(count - 1 - i);
+									game.stepList.erase(game.stepList.begin() + count - 1 - i);
+								}
+							}
+							
+
+
 							//走棋
-							game.moveChess(step);
+							if (step.compare(bestStep.first) == 0)
+							{
+								game.moveChess(step, bestStep.second);
+							}
+							else {
+								game.moveChess(step);
+							}
+
+
+							int row = m_navigation.GetItemCount();
+							m_navigation.InsertItem(row, L"");
+							if (!game.toWhoMove) //红棋记录回合数
+							{
+								m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
+							}
+							m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
+							m_navigation.SetItemText(row, 5, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
+							m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
+							m_navigation.SetItemText(row, 2, CA2W(game.stepList[game.stepList.size() - 1].getScore().c_str()));
+							m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getTime().c_str()));
+
+
+							m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
+							m_navigation.EnsureVisible(row, FALSE);
 
 
 
 							//走完棋自动分析
 							//直接异步执行 然后异步把ret不断写入编辑框
-							std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
-							printf("fen:%s\n", fen.c_str());
-
-							
-
 							CString thinkTimeStr;
 							m_thinkTime.GetWindowTextW(thinkTimeStr);
 							CString thinkDepthStr;
 							m_thinkDepth.GetWindowTextW(thinkDepthStr);
 							float thinkTime = atof(CW2A(thinkTimeStr));
 							int thinkDepth = atoi(CW2A(thinkDepthStr));
+							
 
+
+							std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
+							printf("fen:%s\n", fen.c_str());
 							std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
 
 								std::string* ret = new std::string();
-
 								std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
 									std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
 										std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
-										
+
 										return stepPair;
 										}, fen, ret, thinkTime, thinkDepth);
 
@@ -1787,6 +1926,14 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 												std::string pv = Utils::getRightString(strList[i], " pv ");
 
+												//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+												std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+												if (stepList.size() > 0)
+												{
+													bestStep = std::make_pair(stepList[0], score);
+												}
+												
+
 												std::string stepListStr = stepListToQp(pv, game.maps);
 												info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 											}
@@ -1809,43 +1956,124 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 								game.addIndicate(step, ponder); //添加指示
 
-
 								if (dlg->m_pkmode.GetCheck() && game.toWhoMove != game.isRed)
 								{
-									game.moveChess(step);
-								}
+									game.moveChess(step,bestStep.second);
 
+									//电脑走完到我走了，所以在执行一次
+									//=============================================================================================
+
+									int row = dlg->m_navigation.GetItemCount();
+									dlg->m_navigation.InsertItem(row, L"");
+									if (!game.toWhoMove) //红棋记录回合数
+									{
+										dlg->m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
+									}
+									dlg->m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
+									dlg->m_navigation.SetItemText(row, 5, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
+									dlg->m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
+									dlg->m_navigation.SetItemText(row, 2, CA2W(game.stepList[game.stepList.size() - 1].getScore().c_str()));
+									dlg->m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getTime().c_str()));
+
+
+									dlg->m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
+									dlg->m_navigation.EnsureVisible(row, FALSE);
+
+
+									std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
+									printf("fen:%s\n", fen.c_str());
+									std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
+
+										std::string* ret = new std::string();
+										std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
+											std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+												std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+
+												return stepPair;
+												}, fen, ret, thinkTime, thinkDepth);
+
+
+											bool isOk = false;
+											while (true) {
+												std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
+												if (status == std::future_status::ready)
+												{
+													isOk = true;
+												}
+												std::string info;
+												std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+												for (int i = 0; i < strList.size(); i++)
+												{
+													if (strList[i].find("pv") != std::string::npos)
+													{
+														std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+														std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+														std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+														std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+														std::string pv = Utils::getRightString(strList[i], " pv ");
+
+														//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+														std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+														if (stepList.size() > 0)
+														{
+															bestStep = std::make_pair(stepList[0], score);
+														}
+
+														std::string stepListStr = stepListToQp(pv, game.maps);
+														info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+													}
+												}
+												dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+												if (isOk)
+												{
+													break;
+												}
+											}
+											return calcFuture.get();
+											}, dlg, fen, thinkTime, thinkDepth, ret);
+
+										std::pair<std::string, std::string> stepPair = readFuture.get();
+
+										std::string step = stepPair.first;
+										std::string ponder = stepPair.second;
+										printf("%s %s\n", step.c_str(), ponder.c_str());
+
+										game.addIndicate(step, ponder); //添加指示
+
+
+										//开了对弈模式，那就要等到现在了
+										enableClick = true;
+
+										delete ret;
+										}, dlg, fen, thinkTime, thinkDepth);
+									thread.detach();
+
+
+									//===========================================================================
+								}
+								else {
+									//如果没有开启对弈模式，拿到最佳走法就可以点了
+									enableClick = true;
+								}
 
 								delete ret;
 								}, this, fen, thinkTime, thinkDepth);
 							thread.detach();
 
 
-							int row = m_navigation.GetItemCount();
-							m_navigation.InsertItem(row, L"");
-							if (!game.toWhoMove) //红棋记录回合数
-							{
-								m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
-							}
-							m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
-							m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
-							m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
 
-							m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
-							m_navigation.EnsureVisible(row, FALSE);
 						}
 					}
 
 				}
 
-				game.show();
-				goto end;
+
 			}
 		}
 
 	}
-
-end:
 
 
 
@@ -1856,7 +2084,7 @@ end:
 void CChessAIDlg::OnCopyfen()
 {
 
-	MessageBoxA(m_hWnd, ("当前局面FEN:\n" + calcFEN(game.maps, 1/*这里后面要改成当前到谁走了*/) + "\n复制成功！").c_str(), "复制局面", 0);
+	MessageBoxA(m_hWnd, ("当前局面FEN:\n" + calcFEN(game.maps, game.toWhoMove?1:2/*这里后面要改成当前到谁走了*/) + "\n复制成功！").c_str(), "复制局面", 0);
 	// TODO: 在此添加命令处理程序代码
 }
 
@@ -1885,9 +2113,9 @@ void CChessAIDlg::OnClose()
 	qJsonObject json;
 
 	CString thinkTime;
-	GetWindowTextW(thinkTime);
+	m_thinkTime.GetWindowTextW(thinkTime);
 	CString thinkDepth;
-	GetWindowTextW(thinkDepth);
+	m_thinkDepth.GetWindowTextW(thinkDepth);
 	json.setString("thinkTime", std::string(CW2A(thinkTime)));
 	json.setString("thinkDepth", std::string(CW2A(thinkDepth)));
 
@@ -1934,6 +2162,8 @@ LRESULT CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 	// 检查OpenCV是否支持CUDA  
 	std::cout << cv::cuda::getCudaEnabledDeviceCount() << std::endl;
 
+
+
 	gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
 
 
@@ -1974,7 +2204,11 @@ void CChessAIDlg::ClickedCheckFront()
 void CChessAIDlg::OnInputfen()
 {
 	// TODO: 在此添加命令处理程序代码
+	inputFenDlg.DoModal();
+
 	game.setFen("1nbakabnr/r8/4c2c1/p1p1p1p1p/9/9/P1P1P1P1P/2N3CC1/9/R1BAKABNR w");
+	game.stepList.clear();
+	m_navigation.DeleteAllItems();
 }
 
 
@@ -2012,10 +2246,8 @@ void CChessAIDlg::OnBnClickedMfcbuttonBegin()
 
 void CChessAIDlg::OnBnClickedMfcbuttonExec()
 {
-
-	//直接异步执行 然后异步把ret不断写入编辑框
-	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
-	printf("fen:%s\n", fen.c_str());
+	m_exec.EnableWindow(FALSE);
+	
 
 	CString thinkTimeStr;
 	m_thinkTime.GetWindowTextW(thinkTimeStr);
@@ -2024,15 +2256,18 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 	float thinkTime = atof(CW2A(thinkTimeStr));
 	int thinkDepth = atoi(CW2A(thinkDepthStr));
 
-	std::thread thread([](CChessAIDlg* dlg,std::string fen,float thinkTime,int thinkDepth) {
+	//直接异步执行 然后异步把ret不断写入编辑框
+	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
+	printf("fen:%s\n", fen.c_str());
+	std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
 
 		std::string* ret = new std::string();
 
-		std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret ) {
+		std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
 			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
 				std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
 				return stepPair;
-				}, fen, ret,thinkTime,thinkDepth);
+				}, fen, ret, thinkTime, thinkDepth);
 
 
 			bool isOk = false;
@@ -2055,6 +2290,13 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 
 						std::string pv = Utils::getRightString(strList[i], " pv ");
 
+						//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+						std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+						if (stepList.size() > 0)
+						{
+							bestStep = std::make_pair(stepList[0], score);
+						}
+
 						std::string stepListStr = stepListToQp(pv, game.maps);
 						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 					}
@@ -2067,14 +2309,32 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 				}
 			}
 			return calcFuture.get();
-			}, dlg, fen , thinkTime, thinkDepth, ret);
+			}, dlg, fen, thinkTime, thinkDepth, ret);
 
 		std::pair<std::string, std::string> stepPair = readFuture.get();
 		delete ret;
 
-		game.moveChess(stepPair.first);
 
-		game.addIndicate(stepPair.first,stepPair.second);
+
+		//走棋前先判断当前导航的位置
+		POSITION pos = dlg->m_navigation.GetFirstSelectedItemPosition();
+		int idx = dlg->m_navigation.GetNextSelectedItem(pos);
+		int count = dlg->m_navigation.GetItemCount();
+		if (idx != -1 && idx < count - 1)
+		{
+			//说明要进行一部分回退
+			for (int i = 0; i < count - 1 - idx; i++)
+			{
+				dlg->m_navigation.DeleteItem(count - 1 - i);
+				game.stepList.erase(game.stepList.begin() + count - 1 - i);
+			}
+		}
+
+
+
+
+		game.moveChess(stepPair.first, bestStep.second);
+		game.addIndicate(stepPair.first, stepPair.second);
 
 		int row = dlg->m_navigation.GetItemCount();
 		dlg->m_navigation.InsertItem(row, L"");
@@ -2083,15 +2343,94 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 			dlg->m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
 		}
 		dlg->m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
-		dlg->m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
+		dlg->m_navigation.SetItemText(row, 5, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
 		dlg->m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
+		dlg->m_navigation.SetItemText(row, 2, CA2W(game.stepList[game.stepList.size() - 1].getScore().c_str()));
+		dlg->m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getTime().c_str()));
+
 
 		dlg->m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
 		dlg->m_navigation.EnsureVisible(row, FALSE);
 
+		//电脑走完，再识别一次
+		//==================================================================
+		fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
+		printf("fen:%s\n", fen.c_str());
+		std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
 
-		},this,fen, thinkTime,thinkDepth);
+			std::string* ret = new std::string();
+
+			std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
+				std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+					std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+					return stepPair;
+					}, fen, ret, thinkTime, thinkDepth);
+
+
+				bool isOk = false;
+				while (true) {
+					std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
+					if (status == std::future_status::ready)
+					{
+						isOk = true;
+					}
+					std::string info;
+					std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+					for (int i = 0; i < strList.size(); i++)
+					{
+						if (strList[i].find("pv") != std::string::npos)
+						{
+							std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+							std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+							std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+							std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+							std::string pv = Utils::getRightString(strList[i], " pv ");
+
+							//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+							std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+							if (stepList.size() > 0)
+							{
+								bestStep = std::make_pair(stepList[0], score);
+							}
+
+							std::string stepListStr = stepListToQp(pv, game.maps);
+							info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+						}
+					}
+					dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+					if (isOk)
+					{
+						break;
+					}
+				}
+				return calcFuture.get();
+				}, dlg, fen, thinkTime, thinkDepth, ret);
+
+			std::pair<std::string, std::string> stepPair = readFuture.get();
+			delete ret;
+
+
+			game.addIndicate(stepPair.first, stepPair.second);
+
+
+			dlg->m_exec.EnableWindow(TRUE);
+
+			}, dlg, fen, thinkTime, thinkDepth);
+		thread.detach();
+
+
+		//===================================================================
+
+
+		}, this, fen, thinkTime, thinkDepth);
 	thread.detach();
+
+
+
+
+	
 
 }
 
@@ -2108,4 +2447,118 @@ void CChessAIDlg::OnCbnSelchangeComboEnginelist()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	loadEngine();
+}
+
+
+
+void CChessAIDlg::OnNMClickListNavigation(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	*pResult = 0;
+
+
+	status = 0; //把点击的棋子状态先给取消掉
+
+
+
+	POSITION pos = m_navigation.GetFirstSelectedItemPosition();
+	if (pos == NULL)
+	{
+		//MessageBox("请至少选择一项");
+		return;
+	}
+	
+	int nId = (int)m_navigation.GetNextSelectedItem(pos);
+
+	std::string fen = CW2A(m_navigation.GetItemText(nId, 5));
+	std::string step = CW2A(m_navigation.GetItemText(nId, 4));
+
+	game.setFen(fen);
+	game.moveChess(step);
+
+	game.stepList.erase(game.stepList.begin() + game.stepList.size() - 1); //删掉刚刚走的那一步的stepList,这是个BUG
+
+	
+	/*int size = game.stepList.size();
+	for (int i = size - 1; i > nId; i--)
+	{
+		game.stepList.erase(game.stepList.begin() + i);
+	}*/
+}
+
+
+void CChessAIDlg::OnBnClickedButtonBack()
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+	POSITION pos = m_navigation.GetFirstSelectedItemPosition();
+	if (pos == NULL)
+	{
+		//MessageBox("请至少选择一项");
+		return;
+	}
+
+	int nId = (int)m_navigation.GetNextSelectedItem(pos);
+	m_navigation.SetItemState(nId - 1, LVNI_FOCUSED | LVIS_SELECTED, LVNI_FOCUSED | LVIS_SELECTED);
+
+
+
+
+	pos = m_navigation.GetFirstSelectedItemPosition();
+	if (pos == NULL)
+	{
+		//MessageBox("请至少选择一项");
+		return;
+	}
+
+	nId = (int)m_navigation.GetNextSelectedItem(pos);
+
+	std::string fen = CW2A(m_navigation.GetItemText(nId, 5));
+	std::string step = CW2A(m_navigation.GetItemText(nId, 4));
+
+	game.setFen(fen);
+	game.moveChess(step);
+
+
+	game.stepList.erase(game.stepList.begin() + game.stepList.size() - 1); //删掉刚刚走的那一步的stepList,这是个BUG
+
+}
+
+
+void CChessAIDlg::OnBnClickedButtonNext()
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+	POSITION pos = m_navigation.GetFirstSelectedItemPosition();
+	if (pos == NULL)
+	{
+		//MessageBox("请至少选择一项");
+		return;
+	}
+
+	int nId = (int)m_navigation.GetNextSelectedItem(pos);
+	m_navigation.SetItemState(nId + 1, LVNI_FOCUSED | LVIS_SELECTED, LVNI_FOCUSED | LVIS_SELECTED);
+
+
+
+
+	pos = m_navigation.GetFirstSelectedItemPosition();
+	if (pos == NULL)
+	{
+		//MessageBox("请至少选择一项");
+		return;
+	}
+
+	nId = (int)m_navigation.GetNextSelectedItem(pos);
+
+	std::string fen = CW2A(m_navigation.GetItemText(nId, 5));
+	std::string step = CW2A(m_navigation.GetItemText(nId, 4));
+
+	game.setFen(fen);
+	game.moveChess(step);
+
+
+	game.stepList.erase(game.stepList.begin() + game.stepList.size() - 1); //删掉刚刚走的那一步的stepList,这是个BUG
+
 }

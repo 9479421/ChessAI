@@ -156,6 +156,7 @@ void Engine::uci()
 
 std::pair<std::string, std::string> Engine::calcStep(std::string fen, float time, int depth, std::string& ret)
 {
+	ret = ""; //ÏÈÇå¿Õ
 
 	process.addCmdLine("position fen " + fen);
 	process.addCmdLine("go depth " + std::to_string(depth));

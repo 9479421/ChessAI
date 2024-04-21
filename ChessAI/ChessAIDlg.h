@@ -11,6 +11,7 @@
 #include "EngineDlg.h"
 
 #include "ConnectDlg.h"
+#include "InputFenDlg.h"
 #include <string>
 
 // CChessAIDlg 对话框
@@ -88,4 +89,10 @@ public:
 
 	void loadEngine();
 	CButton m_pkmode;
+
+	afx_msg void OnNMClickListNavigation(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnBnClickedButtonBack();
+	afx_msg void OnBnClickedButtonNext();
+	
+	InputFenDlg inputFenDlg;
 };

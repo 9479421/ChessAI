@@ -19,6 +19,7 @@
 #define IDI_ICON_BEGIN                  175
 #define IDI_ICON_SWAP                   176
 #define IDI_ICON_EXEC                   178
+#define IDD_DIALOG_INPUTFEN             179
 #define IDC_TAB                         1002
 #define IDC_BUTTON_CONNECT              1005
 #define IDC_BUTTON5                     1006
@@ -80,6 +81,7 @@
 #define IDC_BUTTON1                     1069
 #define IDC_BUTTON_COPYFEN              1069
 #define IDC_BUTTON_BACK                 1069
+#define IDC_BUTTON_SETFEN               1069
 #define IDC_BUTTON_NEXT                 1070
 #define IDC_STATIC_PICTURE              1071
 #define IDC_MFCBUTTON_SWAP              1074
@@ -113,7 +115,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        179
+#define _APS_NEXT_RESOURCE_VALUE        181
 #define _APS_NEXT_COMMAND_VALUE         32793
 #define _APS_NEXT_CONTROL_VALUE         1078
 #define _APS_NEXT_SYMED_VALUE           101

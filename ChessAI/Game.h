@@ -23,13 +23,13 @@ public:
 	//坐标
 	int x;
 	int y;
-	int id = -1;	//-1无棋 -2是标记刚走过棋  0 红车 1 红馬 2 红相 3 红仕 4 红帅 5 红炮 6 红兵 7 黑车 8 黑马 9 黑象 10 黑士 11 黑将
+	int id = -1;	//-1无棋 -2是标记刚走过棋  0 红车 1 红马 2 红相 3 红仕 4 红帅 5 红炮 6 红兵 7 黑车 8 黑马 9 黑象 10 黑士 11 黑将
 	std::string name;
 	std::string path;
 	CImage image;
 	int status = 0; //0是正常状态  1是选中没走状态  2是走完的状态
 public:
-	std::string nameList[14]{ "红车","红馬","红相","红仕","红帅","红炮","红兵","黑车","黑馬","黑象","黑士","黑将","黑炮","黑卒" };
+	std::string nameList[14]{ "红车","红马","红相","红仕","红帅","红炮","红兵","黑车","黑马","黑象","黑士","黑将","黑炮","黑卒" };
 
 };
 
@@ -43,7 +43,7 @@ public:
 	void setBoardSource(std::string boardPath, int centerX, int topcenterY, int bottomcenterY, int gapX, int gapY, int chessWidth, int chessHeight);
 	void setFen(std::string fen);
 	void setChess(int x, int y, std::string name);
-	void moveChess(std::string step);
+	void moveChess(std::string step, std::string score="0");
 
 	void addIndicate(std::string bestMoveStep, std::string ponderStep);
 	//初始化，摆棋
@@ -68,6 +68,9 @@ public:
 	bool toWhoMove; //true是红 false黑
 
 	std::vector<stepIdx> indicates;
+
+
+	std::chrono::steady_clock::time_point lastPlayTime;
 public:
 	//最终绘制往的DC
 	CDC* dc;

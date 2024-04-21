@@ -102,6 +102,9 @@
     <ClInclude Include="Config.h">
       <Filter>头文件\pojo</Filter>
     </ClInclude>
+    <ClInclude Include="InputFenDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp">
@@ -159,6 +162,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Engine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="InputFenDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
