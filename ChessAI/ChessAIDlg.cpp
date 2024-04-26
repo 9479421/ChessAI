@@ -33,55 +33,37 @@
 #include <future>
 #include <tuple>
 
+#include "AboutDlg.h"
+
+#include "Picture.h"
+
 ConnectDlg connectDlg;
 
 
 
+
+GdiClass::Gdi d3d;
+Yolo yolo;
+cv::dnn::Net net;
+
+
+HWND gameHwnd;
+
 //游戏大小，这个是可自由调节的
 #define gameWidth 375  //521 / 1.2
 #define gameHeight 413 //577 / 1.2
-
-
 Game game(gameWidth, gameHeight);
+
+//图片大小，可以自由调节
+Pic pic(310, 310);
+
+
 HANDLE drawThreadHandle;
 DWORD drawThreadId;
 bool isConnecting = false;
 
 Engine engine;
 
-
-
-// 用于应用程序“关于”菜单项的 CAboutDlg 对话框
-
-class CAboutDlg : public CDialogEx
-{
-public:
-	CAboutDlg();
-
-	// 对话框数据
-#ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_ABOUTBOX };
-#endif
-
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
-
-	// 实现
-protected:
-	DECLARE_MESSAGE_MAP()
-};
-
-CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
-{
-}
-
-void CAboutDlg::DoDataExchange(CDataExchange* pDX)
-{
-	CDialogEx::DoDataExchange(pDX);
-}
-
-BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-END_MESSAGE_MAP()
 
 
 // CChessAIDlg 对话框
@@ -114,10 +96,11 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_COMBO_THINKTIME, m_thinkTime);
 	DDX_Control(pDX, IDC_COMBO_THINKDEPTH, m_thinkDepth);
 	DDX_Control(pDX, IDC_CHECK_PKMODE, m_pkmode);
+	DDX_Control(pDX, IDC_SLIDER_RATE, m_rate);
+	DDX_Control(pDX, IDC_BUTTON_RECOGNIZEPIC, m_recognizePic);
 }
 
 BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
-	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_CLOSE()
@@ -148,6 +131,11 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_NOTIFY(NM_CLICK, IDC_LIST_NAVIGATION, &CChessAIDlg::OnNMClickListNavigation)
 	ON_BN_CLICKED(IDC_BUTTON_BACK, &CChessAIDlg::OnBnClickedButtonBack)
 	ON_BN_CLICKED(IDC_BUTTON_NEXT, &CChessAIDlg::OnBnClickedButtonNext)
+	ON_COMMAND(ID_ABOUT, &CChessAIDlg::OnAbout)
+	ON_WM_LBUTTONDOWN()
+	ON_WM_MOUSEMOVE()
+	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER_RATE, &CChessAIDlg::OnNMCustomdrawSliderRate)
+	ON_BN_CLICKED(IDC_BUTTON_RECOGNIZEPIC, &CChessAIDlg::OnBnClickedButtonRecognizepic)
 END_MESSAGE_MAP()
 
 
@@ -161,7 +149,6 @@ void CChessAIDlg::Log(std::string str)
 
 void CChessAIDlg::loadEngine()
 {
-
 	std::thread thread([](CChessAIDlg* dlg) {
 		if (dlg->m_engineList.GetCount() > 0 && dlg->m_engineList.GetCurSel() >= 0)
 		{
@@ -174,7 +161,24 @@ void CChessAIDlg::loadEngine()
 		}
 		}, this);
 	thread.detach();
+}
 
+void CChessAIDlg::loadYolo()
+{
+	std::thread thread([](CChessAIDlg* dlg) {
+		dlg->Log("初始化Yolo识别库中");
+		std::string modelPath = "best1.onnx";
+		if (yolo.readModel(net, modelPath, true)) {
+			std::cout << "read net ok!" << std::endl;
+			dlg->Log("初始化Yolo识别库成功");
+		}
+		else {
+			std::cout << "read onnx model failed!";
+			dlg->Log("初始化Yolo识别库失败！部分功能将失效");
+			MessageBoxA(NULL, "初始化Yolo识别库失败！部分功能将失效", "警告", 0);
+		}
+		}, this);
+	thread.detach();
 }
 
 
@@ -892,17 +896,15 @@ BOOL CChessAIDlg::OnInitDialog()
 		m_engineList.InsertString(count, CA2W(engineConfigList[i].name.c_str()));
 	}
 	m_engineList.SetCurSel(0);
-	loadEngine();
 
+
+	loadEngine();
+	loadYolo();
 
 	//方案
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
 	connectDlg.m_schemeList.SetCurSel(0);
-
-
-
-
 	//if (IsProcessExists("QQChess2021.exe"))
 	//{
 
@@ -911,8 +913,6 @@ BOOL CChessAIDlg::OnInitDialog()
 	//{
 
 	//}
-
-
 
 
 	//游戏
@@ -923,80 +923,11 @@ BOOL CChessAIDlg::OnInitDialog()
 	game.begin(true); //摆棋
 
 
+	m_rate.SetPos(50);
+
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
-
-//
-//class pos
-//{
-//public:
-//	int x;
-//	int y;
-//public:
-//	pos(int x, int y) {
-//		this->x = x;
-//		this->y = y;
-//	}
-//	bool equals(pos p) {
-//		return p.x == x && p.y == y;
-//	}
-//};
-//
-//
-//class chess
-//{
-//public:
-//	chess(int id) {
-//		this->id = id;
-//	}
-//	void addPos(pos p) {
-//		poses.push_back(p);
-//	}
-//public:
-//	int id;
-//	std::vector<pos> poses;
-//
-//public:
-//	std::pair<int,int> equalsY(chess objChess) {
-//		for (int i = 0; i < objChess.poses.size(); i++)
-//		{
-//			for (int j = 0; j < poses.size(); j++)
-//			{
-//				if (abs(poses[j].y- objChess.poses[i].y) <= 5)
-//				{
-//					return std::make_pair(j, abs(poses[j].x - objChess.poses[i].x));
-//				}
-//			}
-//		}
-//		return std::make_pair(-1,-1);
-//	}
-//	std::pair<int, int> equalsX(chess objChess) {
-//		for (int i = 0; i < objChess.poses.size(); i++)
-//		{
-//			for (int j = 0; j < poses.size(); j++)
-//			{
-//				if ( abs(poses[j].x - objChess.poses[i].x ) <= 5)
-//				{
-//					return std::make_pair(j, abs(poses[j].y - objChess.poses[i].y));
-//				}
-//			}
-//		}
-//		return std::make_pair(-1, -1);
-//	}
-//};
-//
-//bool Equal(int m1, int m2) {
-//	return abs(m1 - m2) < 20;
-//}
-
-
-
-GdiClass::Gdi d3d;
-Yolo yolo;
-
-cv::dnn::Net net;
-HWND gameHwnd;
 
 DWORD WINAPI drawThread(LPVOID lpParam) {
 
@@ -1024,250 +955,31 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 	std::vector<std::string>objPosVec;
 	int validateTime = 0;
 
-
-
-	//float centerX;
-	//float topcenterY, bottomcenterY;
-
 	while (true) {
 
 		if (isConnecting == false)
 		{
 			d3d.exit();
 			ExitThread(NULL);
-			//TerminateThread(drawThreadHandle,NULL);
 		}
 
 		//问题出在这里 gameHwnd失效了
-
 		HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd, false);
 		//显示缩略图
 		HBITMAP bitmap_small = Utils::stretchBitMap(bitmap, 243, 243);
 		dlg->m_picture.SetBitmap(bitmap_small);
 
-
 		Utils::saveBitMap(L"1.png", bitmap);
 		cv::Mat img = cv::imread("1.png");
-
 
 		DeleteObject(bitmap);
 		DeleteObject(bitmap_small);
 
-
 		int width = img.size().width;
 		int height = img.size().height;
-		//std::cout << width << " " << height << std::endl;
 
 		std::vector<Output> result;
 		yolo.Detect(img, net, result);
-
-
-		//
-		//chess hongshuai(4);
-		//chess heijiang(11);
-		//chess hongxiang(2);
-		//chess heixiang(9);
-		//chess hongbing(6);
-		//chess heizu(13);
-		//chess hongshi(3);
-		//chess heishi(10);
-
-		//float minMargin = 999;
-		//float maxMargin = 0;
-		////拿到最小的x和y坐标间隔，即为棋子间距
-		//for (int i = 0; i < result.size(); i++)
-		//{
-		//	//把特殊棋子都给标出来
-		//	if (result[i].id == 11)
-		//	{
-		//		heijiang.addPos(pos(result[i].box.x + result[i].box.width/2, result[i].box.y + result[i].box.height/2));
-		//	}
-		//	if (result[i].id == 4)
-		//	{
-		//		hongshuai.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
-		//	}
-		//	if (result[i].id == 2)
-		//	{
-		//		hongxiang.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
-		//	}
-		//	if (result[i].id == 9)
-		//	{
-		//		heixiang.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
-		//	}
-		//	if (result[i].id == 6)
-		//	{
-		//		hongbing.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
-		//	}
-		//	if (result[i].id == 13)
-		//	{
-		//		heizu.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
-		//	}
-		//	if (result[i].id == 3)
-		//	{
-		//		hongshi.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
-		//	}
-		//	if (result[i].id == 10)
-		//	{
-		//		heishi.addPos(pos(result[i].box.x + result[i].box.width / 2, result[i].box.y + result[i].box.height / 2));
-		//	}
-
-		//	for (int j = i + 1; j < result.size(); j++)
-		//	{
-		//		int marginX = abs(result[i].box.x + result[i].box.width / 2 - result[j].box.x + result[j].box.width / 2);
-		//		if (marginX < minMargin  &&  marginX> result[i].box.height)
-		//		{
-		//			minMargin = marginX;
-		//		}
-		//		if (marginX > maxMargin &&  marginX < result[i].box.height * 1.5)
-		//		{
-		//			maxMargin = marginX;
-		//		}
-
-		//		int marginY = abs(result[i].box.y + result[i].box.height / 2 - result[j].box.y + result[j].box.height / 2);
-		//		if (marginY < minMargin && marginY>  result[i].box.height)
-		//		{
-		//			minMargin = marginY;
-		//		}
-		//		if (marginY > maxMargin && marginY < result[i].box.height * 1.5)
-		//		{
-		//			maxMargin = marginY;
-		//		}
-		//	}
-		//}
-
-
-
-		//bool isRed;
-		//if (hongshuai.poses.size() > 0 && heijiang.poses.size()>0)
-		//{
-		//	if (hongshuai.poses[0].y > heijiang.poses[0].y) {
-		//		isRed = true;
-		//	}
-		//	else {
-		//		isRed = false;
-		//	}
-		//}
-		//else {
-		//	//还没识别到，等待识别把！
-		//	continue;
-		//}
-
-
-		////红帅和某个红象在一排里，且相距2格，说明帅在原位
-		//if (Equal(hongshuai.equalsY(hongxiang).second,2*minMargin))
-		//{
-		//	centerX = hongshuai.poses[hongshuai.equalsY(hongxiang).first].x;
-		//	if(isRed){
-		//		bottomcenterY = hongshuai.poses[hongshuai.equalsY(hongxiang).first].y;
-		//	}
-		//	else {
-		//		topcenterY = hongshuai.poses[hongshuai.equalsY(hongxiang).first].y;
-		//	}
-		//}
-		////红仕红象在竖排里，只有一种情况，就是士象都撑起来了，这种时候红帅的位置在士的正下方一格子
-		//if (Equal(hongshi.equalsX(hongxiang).second, minMargin))
-		//{
-		//	centerX = hongshi.poses[hongshi.equalsX(hongxiang).first].x;
-		//	if (isRed)
-		//	{
-		//		bottomcenterY = hongshi.poses[hongshi.equalsX(hongxiang).first].y + 5;
-		//	}
-		//	else {
-		//		topcenterY = hongshi.poses[hongshi.equalsX(hongxiang).first].y - 5;
-		//	}
-		//	
-		//}
-
-		////黑将和某个黑象在一排里，且相距2格，说明将在原位
-		//
-		//if (Equal(heijiang.equalsY(heixiang).second, 2 * minMargin))
-		//{
-		//	centerX = heijiang.poses[heijiang.equalsY(heixiang).first].x;
-		//	if (isRed)
-		//	{
-		//		topcenterY = heijiang.poses[heijiang.equalsY(heixiang).first].y;
-		//	}
-		//	else {
-		//		bottomcenterY = heijiang.poses[heijiang.equalsY(heixiang).first].y;
-		//	}
-		//}
-		////黑仕黑象在竖排里，只有一种情况，就是士象都撑起来了，这种时候黑将的位置在士的正下方一格子
-		//if (Equal(heishi.equalsX(heixiang).second, minMargin))
-		//{
-		//	centerX = heishi.poses[heishi.equalsX(heixiang).first].x;
-		//	if (isRed)
-		//	{
-		//		topcenterY = heishi.poses[heishi.equalsX(heixiang).first].y - 5;
-		//	}
-		//	else {
-		//		bottomcenterY = heishi.poses[heishi.equalsX(heixiang).first].y + 5;
-		//	}
-		//}
-
-
-
-
-		////开始定义棋盘每个落点的坐标
-		//for (int i = 0; i < 10; i++)
-		//{
-		//	for (int j = 0; j < 9; j++)
-		//	{
-		//		//0,4
-		//		//楚河汉界上面
-		//		int y = 0;
-		//		if (i <= 4) {
-		//			y = topcenterY + i * minMargin;
-		//		}
-		//		else {
-		//			y = bottomcenterY - (9 - i) * minMargin;
-		//		}
-		//		int x = centerX + (j - 4) * minMargin;
-		//		maps[i][j].box.x = x;
-		//		maps[i][j].box.y = y;
-		//	}
-		//}
-		////算出棋子的位置
-		//for (int i = 0; i < result.size(); i++)
-		//{
-		//	if (abs(result[i].box.y - bottomcenterY ) < abs(result[i].box.y - topcenterY))
-		//	{
-		//		int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / minMargin);
-		//		int yIndex = 9 - (int)round((bottomcenterY - (result[i].box.y + result[i].box.height / 2)) / minMargin);
-		//		if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
-		//		{
-		//			maps[yIndex][xIndex] = result[i];
-		//		}
-		//		else {
-		//			//有不成立因素
-		//		}
-		//	}
-		//	else {
-		//		int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / minMargin);
-		//		int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topcenterY) / minMargin);
-		//		if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
-		//		{
-		//			maps[yIndex][xIndex] = result[i];
-		//		}
-		//		else {
-		//			//有不成立因素
-		//		}
-		//	}
-
-		//}
-
-
-		////开始冒泡排序坐标y
-		//for (int i = 0; i < result.size(); i++)
-		//{
-		//	for (int j = 1; j < result.size() - i; j++)
-		//	{
-		//		if (result[j - 1].box.y > result[j].box.y) {
-		//			Output temp = result[j - 1];
-		//			result[j - 1] = result[j];
-		//			result[j] = temp;
-		//		}
-		//	}
-		//}
 
 		bool isRed;
 
@@ -1280,7 +992,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		float centerX = width * 420 / 838;
 
 
-		float margin = width * 55 / 838;
+		float marginX = width * 55 / 838;
+		float marginY = width * 55 / 838;
 
 		//给空格也计算出大概的位置
 		for (int i = 0; i < 10; i++)
@@ -1289,12 +1002,12 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			{
 				int y = 0;
 				if (i <= 4) {
-					y = topY + i * margin;
+					y = topY + i * marginY;
 				}
 				else {
-					y = bottomY - (9 - i) * margin;
+					y = bottomY - (9 - i) * marginY;
 				}
-				int x = centerX + (j - 4) * margin;
+				int x = centerX + (j - 4) * marginX;
 
 				maps[i][j].box.x = x;
 				maps[i][j].box.y = y;
@@ -1303,12 +1016,10 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		for (int i = 0; i < result.size(); i++)
 		{
-
-
 			if (abs(result[i].box.y - bottomY) < abs(result[i].box.y - topY))
 			{
-				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / margin);
-				int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / margin);
+				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
+				int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / marginY);
 				if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
 				{
 					maps[yIndex][xIndex] = result[i];
@@ -1318,8 +1029,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				}
 			}
 			else {
-				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / margin);
-				int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topY) / margin);
+				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
+				int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topY) / marginY);
 				if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
 				{
 					maps[yIndex][xIndex] = result[i];
@@ -1328,23 +1039,10 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 					//有不成立因素
 				}
 			}
-
-
-			//int xIndex = (int)round((result[i].box.x + (result[i].box.width / 2) - left_top_Point[0]) / margin);
-			//int yIndex = (int)round((result[i].box.y + (result[i].box.height / 2) - left_top_Point[1]) / margin);
-			//if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
-			//{
-			//	maps[yIndex][xIndex] = result[i];
-			//}
-			//else {
-			//	//有不成立因素
-			//}
-
 		}
 
 		//获取maps对方的棋子，产生变动才会进行绘制
 		std::vector<std::string>redPosVec, blackPosVec;
-		/*bool isRed = false;*/
 		for (int i = 0; i < 10; i++)
 		{
 			for (int j = 0; j < 9; j++)
@@ -1381,6 +1079,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				}
 			}
 		}
+
 		if (isRed)
 		{
 			if (std::equal(objPosVec.begin(), objPosVec.end(), blackPosVec.begin(), blackPosVec.end()))
@@ -1433,10 +1132,6 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			}
 		}
 
-
-
-
-		printf("fen:%s\n", calcFEN(maps, 0).c_str());
 		std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
 		for (int i = 0; i < 10; i++)
 		{
@@ -1453,9 +1148,9 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			printf("\n");
 		}
 
-
-
 		std::string fen = calcFEN(maps, 0);
+		printf("fen:%s\n", fen.c_str());
+
 
 
 		game.setFen(fen); //直接显示到窗口棋盘里了
@@ -1621,20 +1316,6 @@ std::string validateVersion() {
 	return response;
 }
 
-
-void CChessAIDlg::OnSysCommand(UINT nID, LPARAM lParam)
-{
-	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
-	{
-		CAboutDlg dlgAbout;
-		dlgAbout.DoModal();
-	}
-	else
-	{
-		CDialogEx::OnSysCommand(nID, lParam);
-	}
-}
-
 // 如果向对话框添加最小化按钮，则需要下面的代码
 //  来绘制该图标。  对于使用文档/视图模型的 MFC 应用程序，
 //  这将由框架自动完成。
@@ -1742,26 +1423,28 @@ std::pair<std::string, std::string> bestStep;
 bool enableClick = true;
 
 
+int picFlag = 0; //1是左上角 2是右上角 3是左下角 4是右下角
+
 void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	if (isConnecting)
-	{
-		return;
-	}
-	if (!enableClick)
-	{
-		return;
-	}
+
+
 
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 9; j++)
 		{
-
-
 			if (abs(game.destX + game.maps[i][j].x - point.x) <= game.chessWidth / 2 && abs(game.destY + game.maps[i][j].y - point.y) <= game.chessHeight / 2)
 			{
+				if (isConnecting)
+				{
+					return;
+				}
+				if (!enableClick)
+				{
+					return;
+				}
 
 
 				if (status == 0)
@@ -2076,15 +1759,155 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	}
 
 
+	//抬起了
+	picFlag = 0;
+
 
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
 
+
+void CChessAIDlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+
+	if (abs( pic.getDestX()+pic.getX1() - point.x) < 10 && abs(pic.getDestY() + pic.getY1() - point.y) < 10)
+	{
+		//左上角
+		picFlag = 1;
+	}
+	else if (abs(pic.getDestX() + pic.getX2() - point.x) < 10 && abs(pic.getDestY() + pic.getY1() - point.y) < 10)
+	{
+		//右上角
+		picFlag = 2;
+	}
+	else if (abs(pic.getDestX() + pic.getX1() - point.x) < 10 && abs(pic.getDestY() + pic.getY2() - point.y) < 10)
+	{
+		//左下角
+		picFlag = 3;
+	}
+	else if (abs(pic.getDestX() + pic.getX2() - point.x) < 10 && abs(pic.getDestY() + pic.getY2() - point.y) < 10)
+	{
+		//右下角
+		picFlag = 4;
+	}
+	else if (point.x < pic.getDestX() + pic.getX2()
+		&& point.x > pic.getDestX() + pic.getX1()
+		&& abs(pic.getDestY() + pic.getY1() - point.y) < 10)
+	{
+		//正北
+		picFlag = 5;
+	}
+	else if (point.x < pic.getDestX() + pic.getX2()
+		&& point.x > pic.getDestX() + pic.getX1()
+		&& abs(pic.getDestY() + pic.getY2() - point.y) < 10)
+	{
+		//正南
+		picFlag = 6;
+	}
+	else if (point.y < pic.getDestX() + pic.getY2()
+		&& point.y > pic.getDestX() + pic.getY1()
+		&& abs(pic.getDestY() + pic.getX1() - point.x) < 10)
+	{
+		//正西
+		picFlag = 7;
+	}
+	else if (point.y < pic.getDestX() + pic.getY2()
+		&& point.y > pic.getDestX() + pic.getY1()
+		&& abs(pic.getDestY() + pic.getX2() - point.x) < 10)
+	{
+		//正东
+		picFlag = 8;
+	}
+
+	CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+
+void CChessAIDlg::OnAbout()
+{
+	AboutDlg aboutDlg;
+	aboutDlg.DoModal();
+	// TODO: 在此添加命令处理程序代码
+}
+
+
+void CChessAIDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+
+	if (picFlag) //非0 说明被点击了
+	{
+		if (picFlag == 1)
+		{
+			pic.setX1(point.x - pic.getDestX());
+			pic.setY1(point.y - pic.getDestY());
+		}
+		if (picFlag == 2)
+		{
+			pic.setX2(point.x - pic.getDestX());
+			pic.setY1(point.y - pic.getDestY());
+		}
+		if (picFlag == 3)
+		{
+			pic.setX1(point.x - pic.getDestX());
+			pic.setY2(point.y - pic.getDestY());
+		}
+		if (picFlag == 4)
+		{
+			pic.setX2(point.x - pic.getDestX());
+			pic.setY2(point.y - pic.getDestY());
+		}
+
+		if (picFlag == 5)
+		{
+			pic.setY1(point.y - pic.getDestY());
+		}
+		if (picFlag == 6)
+		{
+			pic.setY2(point.y - pic.getDestY());
+		}
+		if (picFlag == 7)
+		{
+			pic.setX1(point.x - pic.getDestX());
+		}
+		if (picFlag == 8)
+		{
+			pic.setX2(point.x - pic.getDestX());
+		}
+
+		pic.show();
+	}
+
+
+	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+
+
 void CChessAIDlg::OnCopyfen()
 {
+	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2) ;
+	
+	//复制到剪切板
+	if (::OpenClipboard(m_hWnd))
+	{
+		::EmptyClipboard();
+		HANDLE hData = ::GlobalAlloc(GMEM_MOVEABLE, fen.size() + 1);
+		LPSTR pData = (LPSTR)::GlobalLock(hData);
 
-	MessageBoxA(m_hWnd, ("当前局面FEN:\n" + calcFEN(game.maps, game.toWhoMove?1:2/*这里后面要改成当前到谁走了*/) + "\n复制成功！").c_str(), "复制局面", 0);
+		strcpy(pData, fen.c_str());
+		GlobalUnlock(hData);
+
+		::SetClipboardData(CF_TEXT, hData);
+		::CloseClipboard();
+	}
+	
+	MessageBoxA(m_hWnd, ("当前局面FEN:\n" + fen + "\n复制成功！").c_str(), "复制局面", 0);
+	
+
+
 	// TODO: 在此添加命令处理程序代码
 }
 
@@ -2205,8 +2028,6 @@ void CChessAIDlg::OnInputfen()
 {
 	// TODO: 在此添加命令处理程序代码
 	inputFenDlg.DoModal();
-
-	game.setFen("1nbakabnr/r8/4c2c1/p1p1p1p1p/9/9/P1P1P1P1P/2N3CC1/9/R1BAKABNR w");
 	game.stepList.clear();
 	m_navigation.DeleteAllItems();
 }
@@ -2218,7 +2039,28 @@ void CChessAIDlg::OnBnClickedButtonChoosewindow()
 	//Connect();
 	/*game.moveChess("a0b1");*/
 
+	m_choosewindow.EnableWindow(FALSE);
+	Utils::XSleep(2000);
 
+
+	POINT point;
+	GetCursorPos(&point);
+	CWnd* cwnd = WindowFromPoint(point);
+	if (cwnd->m_hWnd == NULL || cwnd->m_hWnd == INVALID_HANDLE_VALUE) {
+		printf("WindowFromPoint point=(%ld, %ld) -> hwnd=%p -> fail(%ld)\n", point.x, point.y, cwnd->m_hWnd, GetLastError());
+	}
+	else {
+		printf("WindowFromPoint -> hwnd=%p\n", cwnd->m_hWnd);
+
+		HBITMAP bitmap = Utils::WindowCapture_Front(cwnd->m_hWnd,false);
+		HBITMAP bitmap_small = Utils::stretchBitMap(bitmap, 305, 305);
+		m_picture.SetBitmap(bitmap_small);
+
+		DeleteObject(bitmap);
+		DeleteObject(bitmap_small);
+	}
+
+	m_choosewindow.EnableWindow(TRUE);
 }
 
 
@@ -2434,10 +2276,41 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 
 }
 
-
 void CChessAIDlg::OnBnClickedButtonBoardpic()
 {
-	// TODO: 在此添加控件通知处理程序代码
+
+	
+	CImage image;
+	image.Load(L"./1008.png"); //这里是测试图片，后面换成剪切板图片
+	pic.setImage(image);
+	pic.init(GetDC(), 457, 450);
+
+	//保存到本地供opencv识别
+	pic.getImage().Save(L"0.png");
+	cv::Mat img = cv::imread("0.png");
+
+	int width = img.size().width;
+	int height = img.size().height;
+
+	std::vector<Output> result;
+	yolo.Detect(img, net, result);
+
+	for (int i = 0; i < result.size(); i++)
+	{
+		if (result[i].id == 14) {
+			pic.setX1(result[i].box.x * (1/pic.getRateX()));
+			pic.setY1(result[i].box.y * (1 / pic.getRateY()));
+			pic.setX2( (result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
+			pic.setY2( (result[i].box.y + result[i].box.height )* (1 / pic.getRateY()));
+
+			 
+			
+			float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
+			pic.setTbRate(tbRate);
+		}
+	}
+
+	pic.show();
 
 }
 
@@ -2478,13 +2351,6 @@ void CChessAIDlg::OnNMClickListNavigation(NMHDR* pNMHDR, LRESULT* pResult)
 	game.moveChess(step);
 
 	game.stepList.erase(game.stepList.begin() + game.stepList.size() - 1); //删掉刚刚走的那一步的stepList,这是个BUG
-
-	
-	/*int size = game.stepList.size();
-	for (int i = size - 1; i > nId; i--)
-	{
-		game.stepList.erase(game.stepList.begin() + i);
-	}*/
 }
 
 
@@ -2560,5 +2426,121 @@ void CChessAIDlg::OnBnClickedButtonNext()
 
 
 	game.stepList.erase(game.stepList.begin() + game.stepList.size() - 1); //删掉刚刚走的那一步的stepList,这是个BUG
+
+}
+
+
+
+void CChessAIDlg::OnNMCustomdrawSliderRate(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	*pResult = 0;
+
+
+	int pos = m_rate.GetPos();
+	if (pos <= 50)
+	{
+		pic.setTbRate( (100-pos) / 50.0);
+	}
+	else {
+		pic.setTbRate((150 - pos) * 0.01);
+	}
+	//pic.show();
+}
+
+
+void CChessAIDlg::OnBnClickedButtonRecognizepic()
+{
+	
+
+	pic.getImage().Save(L"0.png");
+	cv::Mat img = cv::imread("0.png");
+
+	int width = img.size().width;
+	int height = img.size().height;
+
+	std::vector<Output> result;
+	yolo.Detect(img, net, result);
+
+	Output maps[10][9];
+
+	float topY = pic.getOriTopY();
+	float bottomY = pic.getOriBottomY();
+
+	float centerX = pic.getOriCenterX();
+
+
+	float marginX = pic.getOriMarginHor();
+	float marginY = pic.getOriMarginVer();
+
+	//给空格也计算出大概的位置
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 9; j++)
+		{
+			int y = 0;
+			if (i <= 4) {
+				y = topY + i * marginY;
+			}
+			else {
+				y = bottomY - (9 - i) * marginY;
+			}
+			int x = centerX + (j - 4) * marginX;
+
+			maps[i][j].box.x = x;
+			maps[i][j].box.y = y;
+		}
+	}
+
+	for (int i = 0; i < result.size(); i++)
+	{
+		if (abs(result[i].box.y - bottomY) < abs(result[i].box.y - topY))
+		{
+			int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
+			int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / marginY);
+			if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+			{
+				maps[yIndex][xIndex] = result[i];
+			}
+			else {
+				//有不成立因素
+			}
+		}
+		else {
+			int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
+			int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topY) / marginY);
+			if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
+			{
+				maps[yIndex][xIndex] = result[i];
+			}
+			else {
+				//有不成立因素
+			}
+		}
+	}
+
+
+	std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 9; j++)
+		{
+			if (maps[i][j].id == -1)
+			{
+				printf("  ");
+			}
+			else {
+				printf("%s", className[maps[i][j].id].c_str());
+			}
+		}
+		printf("\n");
+	}
+
+	std::string fen = calcFEN(maps, 0);
+	printf("fen:%s\n", fen.c_str());
+
+	game.setFen(fen);
+
 
 }

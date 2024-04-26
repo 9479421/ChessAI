@@ -37,7 +37,9 @@ private:
 	float nmsThreshold = 0.45;
 	float nmsScoreThreshold = boxThreshold * classThreshold;
 	std::vector<std::string> className = { "red_che", "red_ma", "red_xiang", "red_shi", "red_shuai", "red_pao", "red_bing", "black_che", "black_ma", "black_xiang",
-	"black_shi", "black_jiang", "black_pao", "black_zu" };
+	"black_shi", "black_jiang", "black_pao", "black_zu","board"};
+
+
 	//	std::vector<std::string> className = { "红车", "红马", "红相", "红仕", "红帅", "红炮", "红兵", "黑车", "黑马", "黑象",
 	//"黑士", "黑将", "黑炮", "黑卒" };
 	//std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };

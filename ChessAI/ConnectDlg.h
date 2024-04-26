@@ -59,4 +59,5 @@ public:
 	afx_msg void OnBnClickedCheckFront();
 	CStatic m_bottom;
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
+	afx_msg void OnBnClickedCheckAutonext();
 };

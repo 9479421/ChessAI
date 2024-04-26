@@ -51,7 +51,7 @@ BEGIN_MESSAGE_MAP(ConnectDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &ConnectDlg::OnBnClickedButtonConnect)
 	ON_WM_DESTROY()
 	ON_BN_CLICKED(IDC_CHECK_FRONT, &ConnectDlg::OnBnClickedCheckFront)
-	ON_WM_SYSCOMMAND()
+	ON_BN_CLICKED(IDC_CHECK_AUTONEXT, &ConnectDlg::OnBnClickedCheckAutonext)
 END_MESSAGE_MAP()
 
 
@@ -230,10 +230,8 @@ void ConnectDlg::OnBnClickedCheckFront()
 }
 
 
-void ConnectDlg::OnSysCommand(UINT nID, LPARAM lParam)
+void ConnectDlg::OnBnClickedCheckAutonext()
 {
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	/*if (nID == SC_MOVE || nID == 0xF012)
-		return;*/
-	CDialogEx::OnSysCommand(nID, lParam);
+	// TODO: 在此添加控件通知处理程序代码
+	MessageBoxA(NULL, "该功能还在开发阶段", "提示", 0);
 }

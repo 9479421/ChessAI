@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "afxdialogex.h"
 
-
 // InputFenDlg 对话框
 
 class InputFenDlg : public CDialogEx
@@ -21,4 +20,10 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
 	DECLARE_MESSAGE_MAP()
+
+public:
+	virtual BOOL OnInitDialog();
+	CString m_fen;
+	afx_msg void OnBnClickedButtonSetfen();
+
 };

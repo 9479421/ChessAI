@@ -45,6 +45,7 @@
 #define IDC_CHECK_FRONT                 1042
 #define IDC_EDIT1                       1043
 #define IDC_EDIT_ENGINEINFO             1043
+#define IDC_EDIT_UPDATEINFO             1043
 #define IDC_CHECK6                      1044
 #define IDC_CHECK_AUTOPLAY              1044
 #define IDC_COMBO1                      1045
@@ -88,6 +89,8 @@
 #define IDC_MFCBUTTON_BEGIN             1075
 #define IDC_MFCBUTTON_EXEC              1076
 #define IDC_STATIC_BOTTOM               1077
+#define IDC_SLIDER_RATE                 1081
+#define IDC_BUTTON_RECOGNIZEPIC         1083
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -110,14 +113,19 @@
 #define ID_32790                        32790
 #define ID_32791                        32791
 #define ID_CHANGETEAM                   32792
+#define ID_32793                        32793
+#define ID_32794                        32794
+#define ID_32795                        32795
+#define ID_ABOUT                        32796
+#define ID_REG                          32797
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        181
-#define _APS_NEXT_COMMAND_VALUE         32793
-#define _APS_NEXT_CONTROL_VALUE         1078
+#define _APS_NEXT_COMMAND_VALUE         32798
+#define _APS_NEXT_CONTROL_VALUE         1084
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -193,6 +193,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AboutDlg.h" />
     <ClInclude Include="ChessAI.h" />
     <ClInclude Include="ChessAIDlg.h" />
     <ClInclude Include="Config.h" />
@@ -207,6 +208,7 @@
     <ClInclude Include="InputFenDlg.h" />
     <ClInclude Include="moveInfo.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Picture.h" />
     <ClInclude Include="Pojo.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="QButton.h" />
@@ -222,6 +224,7 @@
     <ClInclude Include="yolov7.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="ChessAI.cpp" />
     <ClCompile Include="ChessAIDlg.cpp" />
     <ClCompile Include="ConnectDlg.cpp" />
@@ -238,6 +241,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Picture.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="QButton.cpp" />
     <ClCompile Include="QEdit.cpp" />

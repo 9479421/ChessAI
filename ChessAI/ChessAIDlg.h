@@ -88,6 +88,7 @@ public:
 	afx_msg void OnCbnSelchangeComboEnginelist();
 
 	void loadEngine();
+	void loadYolo();
 	CButton m_pkmode;
 
 	afx_msg void OnNMClickListNavigation(NMHDR* pNMHDR, LRESULT* pResult);
@@ -95,4 +96,12 @@ public:
 	afx_msg void OnBnClickedButtonNext();
 	
 	InputFenDlg inputFenDlg;
+	afx_msg void OnAbout();
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	CSliderCtrl m_rate;
+	afx_msg void OnTRBNThumbPosChangingSliderRate(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnNMCustomdrawSliderRate(NMHDR* pNMHDR, LRESULT* pResult);
+	QButton m_recognizePic;
+	afx_msg void OnBnClickedButtonRecognizepic();
 };

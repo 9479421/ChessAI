@@ -105,6 +105,12 @@
     <ClInclude Include="InputFenDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="AboutDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Picture.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp">
@@ -165,6 +171,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="InputFenDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AboutDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Picture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

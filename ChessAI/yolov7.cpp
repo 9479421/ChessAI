@@ -92,7 +92,7 @@ bool Yolo::Detect(cv::Mat& SrcImg, cv::dnn::Net& net, std::vector<Output>& outpu
 		result.confidence = confidences[idx];
 		result.box = boxes[idx];
 		/*result.name = className[result.id];*/
-		if (confidences[idx] > 0.8)
+		if (confidences[idx] > 0.7)
 		{
 			output.push_back(result);
 		}
