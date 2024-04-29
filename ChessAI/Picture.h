@@ -8,7 +8,7 @@ public:
 	explicit Pic();
 	explicit Pic(int width,int height);
 
-	void setImage(CImage image);
+	void setImage(CImage& image);
 
 	CImage getImage();
 

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "afxdialogex.h"
-
+#include"EditEngineDlg.h"
 
 // EngineDlg 对话框
 
@@ -30,4 +30,6 @@ public:
 	afx_msg void OnDeleteEngine();
 
 	void reReadEngineConfigList();
+
+	EditEngineDlg editEngineDlg;
 };

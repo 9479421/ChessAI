@@ -37,16 +37,17 @@
 
 #include "Picture.h"
 
+
+#include"QPacket.h"
+#include"QClientSocket.h"
+
+
 ConnectDlg connectDlg;
-
-
 
 
 GdiClass::Gdi d3d;
 Yolo yolo;
 cv::dnn::Net net;
-
-
 HWND gameHwnd;
 
 //游戏大小，这个是可自由调节的
@@ -63,8 +64,6 @@ DWORD drawThreadId;
 bool isConnecting = false;
 
 Engine engine;
-
-
 
 // CChessAIDlg 对话框
 CChessAIDlg::CChessAIDlg(CWnd* pParent /*=nullptr*/)
@@ -86,7 +85,6 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 
 	DDX_Control(pDX, IDC_EDIT_ENGINEINFO, m_engineInfo);
 
-	DDX_Control(pDX, IDC_STATIC_PICTURE, m_picture);
 	DDX_Control(pDX, IDC_BUTTON_BACK, m_back);
 	DDX_Control(pDX, IDC_BUTTON_NEXT, m_next);
 	DDX_Control(pDX, IDC_MFCBUTTON_SWAP, m_swap);
@@ -136,10 +134,67 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_WM_MOUSEMOVE()
 	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER_RATE, &CChessAIDlg::OnNMCustomdrawSliderRate)
 	ON_BN_CLICKED(IDC_BUTTON_RECOGNIZEPIC, &CChessAIDlg::OnBnClickedButtonRecognizepic)
+	ON_COMMAND(ID_MANAGEOPENBOOK, &CChessAIDlg::OnManageopenbook)
+	ON_COMMAND(ID_CHANGESKIN, &CChessAIDlg::OnChangeskin)
 END_MESSAGE_MAP()
 
 
+void CChessAIDlg::InitComponent() {
+	std::thread thread([](CChessAIDlg* dlg) {
+		//初始化版本号
+		QClientSocket* qClientSocket = QClientSocket::getInstance();
+		qClientSocket->initSocket("192.168.89.131", 9000);
+		bool ret = qClientSocket->ConnectServer();
+		if (!ret)
+		{
+			MessageBoxA(dlg->m_hWnd, "连接服务器失败！", "提示", 0);
+			ExitProcess(0);
+		}
+		qClientSocket->SendCommand(1, NULL, 0); //获取版本号和更新公告
+		int mCmd = qClientSocket->DealCommand();
+		qJsonObject json = qJson::parseJsonObject(qClientSocket->getPacket().getStrData());
+		if (json.getString("version").compare(Config::version)!=0)
+		{
+			MessageBoxA(dlg->m_hWnd, "当前版本已更新，请下载最新版", "提示", 0);
+			ShellExecute(NULL, NULL, CA2W(json.getString("uploadUrl").c_str()), NULL, NULL, SW_SHOWNORMAL);
+			ExitProcess(0);
+		}
+		else {
+			//是最新版，读取是否有公告
+			if (!json.getString("msg").empty())
+			{
+				MessageBoxA(dlg->m_hWnd, ("服务器通知：\n"+ json.getString("msg")).c_str(), "提示", 0);
+			}
+		}
 
+		//初始化Engine
+		if (dlg->m_engineList.GetCount() > 0 && dlg->m_engineList.GetCurSel() >= 0)
+		{
+			dlg->Log("引擎初始化中……");
+			engine.open(Config::engineConfigList[dlg->m_engineList.GetCurSel()].path); //设计引擎
+			dlg->Log("引擎初始化完毕");
+		}
+		else {
+			dlg->Log("当前无引擎，请配置");
+		}
+
+		//初始化Yolo
+		dlg->Log("初始化Yolo识别库中");
+		std::string modelPath = "best1.onnx";
+		if (yolo.readModel(net, modelPath, true)) {
+			std::cout << "read net ok!" << std::endl;
+			dlg->Log("初始化Yolo识别库成功");
+		}
+		else {
+			std::cout << "read onnx model failed!";
+			dlg->Log("初始化Yolo识别库失败！部分功能将失效");
+			MessageBoxA(dlg->m_hWnd, "初始化Yolo识别库失败！部分功能将失效", "警告", 0);
+		}
+
+
+		}, this);
+	thread.detach();
+}
 
 
 void CChessAIDlg::Log(std::string str)
@@ -153,29 +208,11 @@ void CChessAIDlg::loadEngine()
 		if (dlg->m_engineList.GetCount() > 0 && dlg->m_engineList.GetCurSel() >= 0)
 		{
 			dlg->Log("引擎初始化中……");
-			engine.open(engineConfigList[dlg->m_engineList.GetCurSel()].path); //设计引擎
+			engine.open(Config::engineConfigList[dlg->m_engineList.GetCurSel()].path); //设计引擎
 			dlg->Log("引擎初始化完毕");
 		}
 		else {
 			dlg->Log("当前无引擎，请配置");
-		}
-		}, this);
-	thread.detach();
-}
-
-void CChessAIDlg::loadYolo()
-{
-	std::thread thread([](CChessAIDlg* dlg) {
-		dlg->Log("初始化Yolo识别库中");
-		std::string modelPath = "best1.onnx";
-		if (yolo.readModel(net, modelPath, true)) {
-			std::cout << "read net ok!" << std::endl;
-			dlg->Log("初始化Yolo识别库成功");
-		}
-		else {
-			std::cout << "read onnx model failed!";
-			dlg->Log("初始化Yolo识别库失败！部分功能将失效");
-			MessageBoxA(NULL, "初始化Yolo识别库失败！部分功能将失效", "警告", 0);
 		}
 		}, this);
 	thread.detach();
@@ -640,11 +677,8 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 
 
 
-
-std::string validateVersion();
 // CChessAIDlg 消息处理程序
-QButton q;
-extern std::vector<EngineConfig>engineConfigList;
+//extern std::vector<EngineConfig>engineConfigList;
 
 BOOL CChessAIDlg::OnInitDialog()
 {
@@ -752,6 +786,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	//m_Statusbar.MoveWindow(0, clientRect.bottom - 30, clientRect.right, 30, TRUE);//这里设置了状态栏高度
 	////m_Statusbar.SetPaneText(0,  CA2W(("当前版本：V" + validateVersion()).c_str()), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
 	//m_Statusbar.SetPaneText(1, _T("这里是窗口初始化自带状态文本"), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
+
 
 
 	//计算深度和时间
@@ -888,18 +923,19 @@ BOOL CChessAIDlg::OnInitDialog()
 		std::string author = jsonArray.getJsonObject(i).getString("author");
 		std::string path = jsonArray.getJsonObject(i).getString("path");
 		std::string threadNum = jsonArray.getJsonObject(i).getString("threadNum");
-		engineConfigList.push_back(EngineConfig(name, author, path, threadNum));
+		Config::engineConfigList.push_back(EngineConfig(name, author, path, threadNum));
 	}
-	for (size_t i = 0; i < engineConfigList.size(); i++)
+	for (size_t i = 0; i < Config::engineConfigList.size(); i++)
 	{
 		int count = m_engineList.GetCount();
-		m_engineList.InsertString(count, CA2W(engineConfigList[i].name.c_str()));
+		m_engineList.InsertString(count, CA2W(Config::engineConfigList[i].name.c_str()));
 	}
 	m_engineList.SetCurSel(0);
 
 
-	loadEngine();
-	loadYolo();
+	// 加载引擎 Yolo 以及版本号检测
+	InitComponent();
+
 
 	//方案
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
@@ -924,7 +960,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 	m_rate.SetPos(50);
-
+	pic.init(GetDC(), 457, 450);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -943,13 +979,13 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 	int thinkDepth = atoi(CW2A(thinkDepthStr));
 
 
-	std::string modelPath = "best.onnx";
-	if (yolo.readModel(net, modelPath, true)) {
-		std::cout << "read net ok!" << std::endl;
-	}
-	else {
-		std::cout << "read onnx model failed!";
-	}
+	//std::string modelPath = "best1.onnx";
+	//if (yolo.readModel(net, modelPath, true)) {
+	//	std::cout << "read net ok!" << std::endl;
+	//}
+	//else {
+	//	std::cout << "read onnx model failed!";
+	//}
 
 
 	std::vector<std::string>objPosVec;
@@ -965,21 +1001,38 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		//问题出在这里 gameHwnd失效了
 		HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd, false);
-		//显示缩略图
-		HBITMAP bitmap_small = Utils::stretchBitMap(bitmap, 243, 243);
-		dlg->m_picture.SetBitmap(bitmap_small);
+		
 
 		Utils::saveBitMap(L"1.png", bitmap);
 		cv::Mat img = cv::imread("1.png");
 
+
+		//显示缩略图
+		CImage image;
+		image.Attach(bitmap);
+		pic.setImage(image);
+		pic.show();
+
 		DeleteObject(bitmap);
-		DeleteObject(bitmap_small);
+		//DeleteObject(bitmap_small);
 
 		int width = img.size().width;
 		int height = img.size().height;
 
 		std::vector<Output> result;
 		yolo.Detect(img, net, result);
+
+		//删除棋盘
+		for (std::vector<Output>::iterator i = result.begin(); i != result.end();)
+		{
+			if (i->id == 14) {
+				result.erase(i);
+			}
+			else {
+				i++;
+			}
+		}
+
 
 		bool isRed;
 
@@ -1016,6 +1069,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		for (int i = 0; i < result.size(); i++)
 		{
+
 			if (abs(result[i].box.y - bottomY) < abs(result[i].box.y - topY))
 			{
 				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
@@ -1268,7 +1322,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 		//自动走判断
-		if (connectDlg.m_autoPlay)
+		if (connectDlg.m_autoPlay.GetCheck())
 		{
 			CRect rect;
 			GetWindowRect(gameHwnd, rect);
@@ -1307,18 +1361,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 }
 
 
-std::string validateVersion() {
-	http http;
-	http.open(url + "/version");
-	std::string response = http.get();
-	//printf("url:%s\n", (url + "/version").c_str());
-	//printf("%s\n", response.c_str());
-	return response;
-}
 
-// 如果向对话框添加最小化按钮，则需要下面的代码
-//  来绘制该图标。  对于使用文档/视图模型的 MFC 应用程序，
-//  这将由框架自动完成。
+
 void CChessAIDlg::OnPaint()
 {
 
@@ -1346,7 +1390,6 @@ void CChessAIDlg::OnPaint()
 
 
 	game.show();
-
 }
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
@@ -1385,19 +1428,19 @@ size_t hash_vector(const std::vector<EngineConfig>& v) {
 	return seed;
 }
 
-extern std::vector<EngineConfig> engineConfigList;
+//extern std::vector<EngineConfig> engineConfigList;
 void CChessAIDlg::OnBnClickedButtonManageengine()
 {
-	size_t hash = hash_vector(engineConfigList);
+	size_t hash = hash_vector(Config::engineConfigList);
 	engineDlg.DoModal(); //关闭引擎窗口后自动刷新读取
 
-	if (hash != hash_vector(engineConfigList)) //产生了编辑
+	if (hash != hash_vector(Config::engineConfigList)) //产生了编辑
 	{
 		m_engineList.ResetContent();
-		for (size_t i = 0; i < engineConfigList.size(); i++)
+		for (size_t i = 0; i < Config::engineConfigList.size(); i++)
 		{
 			int count = m_engineList.GetCount();
-			m_engineList.InsertString(count, CA2W(engineConfigList[i].name.c_str()));
+			m_engineList.InsertString(count, CA2W(Config::engineConfigList[i].name.c_str()));
 		}
 	}
 
@@ -1878,6 +1921,7 @@ void CChessAIDlg::OnMouseMove(UINT nFlags, CPoint point)
 		}
 
 		pic.show();
+
 	}
 
 
@@ -2053,12 +2097,44 @@ void CChessAIDlg::OnBnClickedButtonChoosewindow()
 		printf("WindowFromPoint -> hwnd=%p\n", cwnd->m_hWnd);
 
 		HBITMAP bitmap = Utils::WindowCapture_Front(cwnd->m_hWnd,false);
-		HBITMAP bitmap_small = Utils::stretchBitMap(bitmap, 305, 305);
-		m_picture.SetBitmap(bitmap_small);
+
+		CImage image;
+		image.Attach(bitmap);
+		pic.setImage(image);
+
+		//保存到本地供opencv识别
+		pic.getImage().Save(L"0.png");
+		cv::Mat img = cv::imread("0.png");
+
+		int width = img.size().width;
+		int height = img.size().height;
+
+		std::vector<Output> result;
+		yolo.Detect(img, net, result);
+
+		for (int i = 0; i < result.size(); i++)
+		{
+			if (result[i].id == 14) {
+				pic.setX1(result[i].box.x * (1 / pic.getRateX()));
+				pic.setY1(result[i].box.y * (1 / pic.getRateY()));
+				pic.setX2((result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
+				pic.setY2((result[i].box.y + result[i].box.height) * (1 / pic.getRateY()));
+
+
+
+				float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
+				pic.setTbRate(tbRate);
+			}
+		}
+
+		pic.show();
+
 
 		DeleteObject(bitmap);
-		DeleteObject(bitmap_small);
 	}
+
+
+
 
 	m_choosewindow.EnableWindow(TRUE);
 }
@@ -2276,14 +2352,17 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 
 }
 
+
+
 void CChessAIDlg::OnBnClickedButtonBoardpic()
 {
 
-	
 	CImage image;
 	image.Load(L"./1008.png"); //这里是测试图片，后面换成剪切板图片
 	pic.setImage(image);
-	pic.init(GetDC(), 457, 450);
+
+
+	//pic.init(GetDC(), 457, 450);
 
 	//保存到本地供opencv识别
 	pic.getImage().Save(L"0.png");
@@ -2542,5 +2621,170 @@ void CChessAIDlg::OnBnClickedButtonRecognizepic()
 
 	game.setFen(fen);
 
+
+}
+
+
+void CChessAIDlg::OnManageopenbook()
+{
+	// TODO: 在此添加命令处理程序代码
+	openBookDlg.DoModal();
+}
+
+
+
+
+
+
+#define IDC_BUTTON_ADD 150
+void OnButtonClick()
+{
+	::MessageBox(NULL, L"你好", L"呵呵呵", MB_OK);
+}
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
+{
+	switch (msgID)
+	{
+	case WM_LBUTTONDOWN:
+		OutputDebugString(L"左键窗口按下");
+		break;
+	case WM_CLOSE:
+		MessageBoxW(NULL, L"不准关", L"提示", MB_OK);
+		//DestroyWindow(hWnd);
+		break;
+	case WM_CREATE:
+	{
+		QClientSocket* qClientSocket = QClientSocket::getInstance();
+		qClientSocket->initSocket("192.168.89.131", 9000);
+		qClientSocket->ConnectServer();
+		qClientSocket->SendCommand(10, NULL, 0);
+		qClientSocket->DealCommand();
+		qJsonArray jsonArray = qJson::parseJsonArray(qClientSocket->getPacket().getStrData().c_str());
+		//MessageBoxA(NULL, jsonArray.toString().c_str(), "hah", 0);
+
+		for (size_t i = 0; i < jsonArray.size(); i++)
+		{
+			CreateWindowExA(0, "BUTTON", jsonArray.getJsonObject(i).getString("name").c_str(), WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 10 + i * 300, 10, 288, 200, hWnd, (HMENU)1001, GetModuleHandle(NULL), 0);
+			CreateWindow(L"button",
+				L"设 置",
+				WS_CHILD | WS_VISIBLE,
+				100 + i * 300, 150, 140, 40,
+				hWnd, (HMENU)IDC_BUTTON_ADD, 
+				GetModuleHandle(NULL), NULL);
+
+		}
+
+		break;
+	}
+	case WM_DESTROY://销毁窗口
+		PostQuitMessage(0);
+		break;
+	case WM_COMMAND: //WM_COMMAND是子窗口向父窗口发送的通知消息
+	{
+		//控件ID
+		WORD wControlID = LOWORD(wParam);
+		//消息码
+		WORD wCode = HIWORD(wParam);
+		if (wControlID == IDC_BUTTON_ADD &&
+			wCode == BN_CLICKED)
+		{
+			//进入按钮点击事件
+			OnButtonClick();
+			//PostQuitMessage(0);
+		}
+		break;
+	}
+	//键盘按钮按下
+	case WM_KEYDOWN:
+	{
+		//详见各按钮id
+		//https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+		//回车
+		LPCWSTR lpwzText = L"未知按钮按下";
+		if (wParam == VK_ESCAPE)
+		{
+			lpwzText = L"ESC";
+		}
+		else if (wParam == VK_RETURN)
+		{
+			//动态创建一个按钮
+			lpwzText = L"回车";
+			//界面上创建一个按钮
+			CreateWindowW(L"button",//必须为：button，这是一个按钮类名
+				L"回车",//按钮上显示的字符    
+				WS_CHILD | WS_VISIBLE,
+				100, 100, 50, 30,  //按钮在界面上出现的位置
+				hWnd, (HMENU)(IDC_BUTTON_ADD + 1),  //设置按钮的ID，随便设置一个数即可
+				(HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+		}
+		::MessageBox(NULL, lpwzText, L"提示", MB_OK);
+		UpdateWindow(hWnd);
+		break;
+	}
+	case WM_PAINT:
+	{
+		//划线必须放到WM_PAINT里
+		//https://learn.microsoft.com/en-us/windows/win32/learnwin32/painting-the-window
+		//
+		//画几条线
+		PAINTSTRUCT ps;
+		HDC hdc;   // DC(可画图的内存对象) 的句柄
+		HPEN hpen; // 画笔
+		// 通过窗口句柄获取该窗口的 DC
+		hdc = BeginPaint(hWnd, &ps);
+		// 创建画笔
+		hpen = CreatePen(PS_SOLID, 10, RGB(255, 0, 0));
+		// DC 选择画笔
+		SelectObject(hdc, hpen);
+		// (画笔)从初始点移动到 50,50
+		MoveToEx(hdc, 50, 50, NULL);
+		// (画笔)从初始点画线到 100,100
+		LineTo(hdc, 150, 100);
+
+		EndPaint(hWnd, &ps);
+		break;
+	}
+	default:
+		DefWindowProc(hWnd, msgID, wParam, lParam);
+	}
+	return 1;
+}
+
+void CChessAIDlg::OnChangeskin()
+{
+	// TODO: 在此添加命令处理程序代码
+
+	WNDCLASS wc = { 0 };
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wc.hCursor = NULL;
+	wc.hIcon = NULL;
+	wc.hInstance = NULL;
+	wc.lpfnWndProc = WndProc;
+	wc.lpszClassName = L"Main";
+	wc.lpszMenuName = NULL;
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	RegisterClass(&wc); //将以上所有赋值全部写入操作系统中
+	//在内存创建窗口
+	HWND hWnd = CreateWindowW(L"Main", L"更换皮肤", WS_OVERLAPPEDWINDOW, 400, 400, 924, 780, NULL, NULL
+		, NULL
+		, NULL);
+
+	//关闭最大化按钮
+	LONG style = GetWindowLong(hWnd, GWL_STYLE);
+	style &= ~(WS_MAXIMIZEBOX);
+	SetWindowLong(hWnd, GWL_STYLE, style);
+
+	//显示窗口
+	::ShowWindow(hWnd, SW_SHOW);
+	::UpdateWindow(hWnd);
+	//消息循环
+	MSG nMsg = { 0 };
+	while (GetMessage(&nMsg, NULL, 0, 0)) { //从消息队列获取消息
+		TranslateMessage(&nMsg);//翻译消息
+		DispatchMessage(&nMsg);//派发消息：将消息交给窗口处理函数来处理。
+	}
 
 }

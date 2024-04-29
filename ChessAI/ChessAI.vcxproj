@@ -199,6 +199,7 @@
     <ClInclude Include="Config.h" />
     <ClInclude Include="ConnectDlg.h" />
     <ClInclude Include="d3d9.h" />
+    <ClInclude Include="EditEngineDlg.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="EngineDlg.h" />
     <ClInclude Include="framework.h" />
@@ -207,13 +208,16 @@
     <ClInclude Include="http.h" />
     <ClInclude Include="InputFenDlg.h" />
     <ClInclude Include="moveInfo.h" />
+    <ClInclude Include="OpenBookDlg.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Picture.h" />
-    <ClInclude Include="Pojo.h" />
+    <ClInclude Include="EngineConfig.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="QButton.h" />
+    <ClInclude Include="QClientSocket.h" />
     <ClInclude Include="QEdit.h" />
     <ClInclude Include="qJson.h" />
+    <ClInclude Include="QPacket.h" />
     <ClInclude Include="QRoundPicture.h" />
     <ClInclude Include="QStatusBar.h" />
     <ClInclude Include="Resource.h" />
@@ -227,14 +231,17 @@
     <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="ChessAI.cpp" />
     <ClCompile Include="ChessAIDlg.cpp" />
+    <ClCompile Include="Config.cpp" />
     <ClCompile Include="ConnectDlg.cpp" />
     <ClCompile Include="d3d9.cpp" />
+    <ClCompile Include="EditEngineDlg.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="EngineDlg.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Gdi.cpp" />
     <ClCompile Include="http.cpp" />
     <ClCompile Include="InputFenDlg.cpp" />
+    <ClCompile Include="OpenBookDlg.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -244,8 +251,10 @@
     <ClCompile Include="Picture.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="QButton.cpp" />
+    <ClCompile Include="QClientSocket.cpp" />
     <ClCompile Include="QEdit.cpp" />
     <ClCompile Include="qJson.cpp" />
+    <ClCompile Include="QPacket.cpp" />
     <ClCompile Include="QRoundPicture.cpp" />
     <ClCompile Include="QStatusBar.cpp" />
     <ClCompile Include="SkinColors.cpp" />

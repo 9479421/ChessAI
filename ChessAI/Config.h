@@ -1,11 +1,15 @@
 
 #include<string>
 #include<vector>
-#include"Pojo.h"
-static std::string url = "http://192.168.89.129:9006";
+#include"EngineConfig.h"
 
-
-std::vector<EngineConfig> engineConfigList;
+class Config {
+public:
+	static std::string g_ip;
+	static int g_port;
+	static std::vector<EngineConfig> engineConfigList;
+	static std::string version;
+};
 
 
 

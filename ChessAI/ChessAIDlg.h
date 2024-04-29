@@ -13,6 +13,7 @@
 #include "ConnectDlg.h"
 #include "InputFenDlg.h"
 #include <string>
+#include "OpenBookDlg.h"
 
 // CChessAIDlg 对话框
 class CChessAIDlg : public CDialogEx
@@ -66,7 +67,6 @@ public:
 	//QButton m_connect;
 
 	LRESULT  Connect(WPARAM wParam, LPARAM lParam);
-	CStatic m_picture;
 	void ClickedCheckFront();
 
 	afx_msg void OnInputfen();
@@ -87,8 +87,9 @@ public:
 	void Log(std::string str);
 	afx_msg void OnCbnSelchangeComboEnginelist();
 
+	void InitComponent();
 	void loadEngine();
-	void loadYolo();
+
 	CButton m_pkmode;
 
 	afx_msg void OnNMClickListNavigation(NMHDR* pNMHDR, LRESULT* pResult);
@@ -104,4 +105,8 @@ public:
 	afx_msg void OnNMCustomdrawSliderRate(NMHDR* pNMHDR, LRESULT* pResult);
 	QButton m_recognizePic;
 	afx_msg void OnBnClickedButtonRecognizepic();
+	afx_msg void OnManageopenbook();
+
+	OpenBookDlg openBookDlg;
+	afx_msg void OnChangeskin();
 };

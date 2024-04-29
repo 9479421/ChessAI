@@ -20,6 +20,8 @@
 #define IDI_ICON_SWAP                   176
 #define IDI_ICON_EXEC                   178
 #define IDD_DIALOG_INPUTFEN             179
+#define IDD_DIALOG_EDITENGINE           181
+#define IDD_DIALOG_OPENBOOK             183
 #define IDC_TAB                         1002
 #define IDC_BUTTON_CONNECT              1005
 #define IDC_BUTTON5                     1006
@@ -91,6 +93,7 @@
 #define IDC_STATIC_BOTTOM               1077
 #define IDC_SLIDER_RATE                 1081
 #define IDC_BUTTON_RECOGNIZEPIC         1083
+#define IDC_RADIO1                      1084
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -118,14 +121,16 @@
 #define ID_32795                        32795
 #define ID_ABOUT                        32796
 #define ID_REG                          32797
+#define ID_CHANGESKIN                   32798
+#define ID_MANAGEOPENBOOK               32799
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        181
-#define _APS_NEXT_COMMAND_VALUE         32798
-#define _APS_NEXT_CONTROL_VALUE         1084
+#define _APS_NEXT_RESOURCE_VALUE        185
+#define _APS_NEXT_COMMAND_VALUE         32800
+#define _APS_NEXT_CONTROL_VALUE         1085
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

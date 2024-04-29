@@ -19,22 +19,27 @@ Pic::Pic(int width, int height) //设置窗口大小
 	tbRate = 1.0;
 }
 
-void Pic::setImage(CImage image)
+void Pic::setImage(CImage& image)
 {
 	int width = image.GetWidth();
 	int height = image.GetHeight();
 
-	m_image.ReleaseDC();
-	m_image.Destroy();
+	if (!m_image.IsNull())
+	{
+		m_image.ReleaseDC();
+		m_image.Destroy();
+	}
 
 	m_image.Create(width,height, image.GetBPP());
 	BitBlt(m_image.GetDC(),0,0, width, height,image.GetDC(),0,0,SRCCOPY);
+	
 
 	this->rateX = width * 1.0 / m_width ;
 	this->rateY = height * 1.0 / m_height;
 
 	image.ReleaseDC();
 	image.Destroy();
+
 }
 
 CImage Pic::getImage()

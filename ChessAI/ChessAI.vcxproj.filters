@@ -22,12 +22,15 @@
     <Filter Include="头文件\pojo">
       <UniqueIdentifier>{691516f8-27c3-459e-b2f8-a02a80c7ea91}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\Dlg">
+      <UniqueIdentifier>{9b902689-2b88-4da1-83f0-489ad1d0c434}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\Dlg">
+      <UniqueIdentifier>{3ca9a59d-8ce6-4e43-bcf9-a844f5df394e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChessAI.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ChessAIDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="framework.h">
@@ -69,12 +72,6 @@
     <ClInclude Include="QStatusBar.h">
       <Filter>头文件\UI</Filter>
     </ClInclude>
-    <ClInclude Include="EngineDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Pojo.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="qJson.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -90,9 +87,6 @@
     <ClInclude Include="d3d9.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ConnectDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="stepIdx.h">
       <Filter>头文件\pojo</Filter>
     </ClInclude>
@@ -102,21 +96,42 @@
     <ClInclude Include="Config.h">
       <Filter>头文件\pojo</Filter>
     </ClInclude>
-    <ClInclude Include="InputFenDlg.h">
+    <ClInclude Include="Picture.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="AboutDlg.h">
+      <Filter>头文件\Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="ChessAIDlg.h">
+      <Filter>头文件\Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectDlg.h">
+      <Filter>头文件\Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineDlg.h">
+      <Filter>头文件\Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="InputFenDlg.h">
+      <Filter>头文件\Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="QClientSocket.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Picture.h">
+    <ClInclude Include="QPacket.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineConfig.h">
+      <Filter>头文件\pojo</Filter>
+    </ClInclude>
+    <ClInclude Include="EditEngineDlg.h">
+      <Filter>头文件\Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenBookDlg.h">
+      <Filter>头文件\Dlg</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ChessAIDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
@@ -146,9 +161,6 @@
     <ClCompile Include="QStatusBar.cpp">
       <Filter>源文件\UI</Filter>
     </ClCompile>
-    <ClCompile Include="EngineDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="qJson.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -164,20 +176,41 @@
     <ClCompile Include="d3d9.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ConnectDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Engine.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="InputFenDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="AboutDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Picture.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AboutDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="ChessAIDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="InputFenDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="QPacket.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="QClientSocket.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>头文件\pojo</Filter>
+    </ClCompile>
+    <ClCompile Include="EditEngineDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenBookDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

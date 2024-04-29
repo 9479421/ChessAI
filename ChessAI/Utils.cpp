@@ -176,7 +176,7 @@ void Utils::saveBitMap(CString path, HBITMAP bitmap)
 	image.Save(path);
 	image.Detach();
 
-	DeleteObject(bitmap);
+	//DeleteObject(bitmap);
 }
 
 HBITMAP Utils::stretchBitMap(HBITMAP bitmap, int width, int height)
