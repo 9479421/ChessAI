@@ -1,4 +1,4 @@
-#include "QPacket.h"
+ï»¿#include "QPacket.h"
 
 QPacket::QPacket()
 {
@@ -36,25 +36,25 @@ QPacket::QPacket(const unsigned char* pData, size_t& nSize)
 			break;
 		}
 	}
-	if (i + 4 + 2 + 2 > nSize)  //Ã»ÕÒµ½°üÍ·£¬»òÕßÊı¾İÃ»ÓĞÍêÈ«½ÓÊÕµ½
+	if (i + 4 + 2 + 2 > nSize)  //æ²¡æ‰¾åˆ°åŒ…å¤´ï¼Œæˆ–è€…æ•°æ®æ²¡æœ‰å®Œå…¨æ¥æ”¶åˆ°
 	{
 		nSize = 0;
 		return;
 	}
 	this->nLength = *(uint32_t*)(pData + i);
 	i += 4;
-	if (this->nLength + i > nSize)  //Êı¾İÃ»ÓĞÍêÈ«½ÓÊÕµ½
+	if (this->nLength + i > nSize)  //æ•°æ®æ²¡æœ‰å®Œå…¨æ¥æ”¶åˆ°
 	{
 		nSize = 0;
 		return;
 	}
 	this->sCmd = *(uint16_t*)(pData + i);
 	i += 2;
-	if (this->nLength > 4) //ËµÃ÷ÓĞstrDataÄÚÈİ
+	if (this->nLength > 4) //è¯´æ˜æœ‰strDataå†…å®¹
 	{
 		strData.resize(this->nLength - 4);
 		memcpy((void*)strData.c_str(), pData + i, this->nLength - 4);
-		i += nLength - 4; //¼ÓÉÏstrDataµÄ³¤¶È£¬µ½ºÍĞ£ÑéµÄÎ»ÖÃ
+		i += nLength - 4; //åŠ ä¸ŠstrDataçš„é•¿åº¦ï¼Œåˆ°å’Œæ ¡éªŒçš„ä½ç½®
 	}
 	sSum = *(uint16_t*)(pData + i);
 	i += 2;
@@ -64,7 +64,7 @@ QPacket::QPacket(const unsigned char* pData, size_t& nSize)
 	{
 		sum += (unsigned char)(this->strData[i]) & 0xFF;
 	}
-	if (sum == this->sSum) //ÕâÀïËµÃ÷½â°ü³É¹¦ÁË
+	if (sum == this->sSum) //è¿™é‡Œè¯´æ˜è§£åŒ…æˆåŠŸäº†
 	{
 		nSize = i;
 		return;

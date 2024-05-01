@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "d3d9.h"
 
 #include <gdiplus.h> 
@@ -46,11 +46,11 @@ void render() {
 
 	//g_device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backbuffer);
 
-	g_device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(1, 2, 3), 1.0f, 0); //Çå¿Õ
+	g_device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(1, 2, 3), 1.0f, 0); //æ¸…ç©º
 	g_device->BeginScene();
 
 
-	//»æÖÆ¿ÕĞÄ¾ØĞÎ
+	//ç»˜åˆ¶ç©ºå¿ƒçŸ©å½¢
 	for (int i = 0; i < hollowRects.size(); i++)
 	{
 		float left = (float)hollowRects[i].left;
@@ -64,7 +64,7 @@ void render() {
 		g_line->SetWidth(weight);
 		g_line->Draw(Vertex, 5, color);
 	}
-	//»æÖÆ¿ÕĞÄ¾ØĞÎÃÀ»¯°æ
+	//ç»˜åˆ¶ç©ºå¿ƒçŸ©å½¢ç¾åŒ–ç‰ˆ
 	for (int i = 0; i < hollowHalfRects.size(); i++)
 	{
 		float left = (float)hollowHalfRects[i].left;
@@ -90,7 +90,7 @@ void render() {
 
 		g_device->Clear(1, &d3dRect, D3DCLEAR_TARGET, color, 1.0f, 0);
 	}
-	//»æÖÆÖ±Ïß
+	//ç»˜åˆ¶ç›´çº¿
 	for (int i = 0; i < lines.size(); i++)
 	{
 		float start_left = (float)lines[i].start_left;
@@ -103,15 +103,15 @@ void render() {
 		g_line->SetWidth(weight);
 		g_line->Draw(Vertex, 2, color);
 
-		//»æÖÆ¼ıÍ·
-		//¼ÆËã
+		//ç»˜åˆ¶ç®­å¤´
+		//è®¡ç®—
 		double width = end_left - start_left;
 		double height = start_top - end_top;
 
-		double x; //¶ÈÊı
+		double x; //åº¦æ•°
 		if (width == 0)
 		{
-			//ÕâÖÖÇé¿öµ¥¶ÀËã
+			//è¿™ç§æƒ…å†µå•ç‹¬ç®—
 			x = 90;
 		}
 		else {
@@ -163,7 +163,7 @@ void render() {
 		D3DXVECTOR2 VertexArrow[3] = { {x1,y1},{end_left,end_top},{x2,y2} };
 		g_line->Draw(VertexArrow, 3, color);
 	}
-	//»æÖÆÎÄ×Ö
+	//ç»˜åˆ¶æ–‡å­—
 	for (int i = 0; i < words.size(); i++)
 	{
 		float left = (float)words[i].left;
@@ -225,7 +225,7 @@ boolean d3d9::init(int width, int height)
 	RegisterClass(&wc);
 
 
-	hwnd_d3d = CreateWindowA("ChessAI", "»æÖÆ´°¿Ú", /*WS_OVERLAPPEDWINDOW | WS_SYSMENU | WS_VISIBLE*/WS_POPUP, 0, 0, width, height, NULL, NULL, NULL, NULL); //AfxGetMainWnd()->m_hWnd
+	hwnd_d3d = CreateWindowA("ChessAI", "ç»˜åˆ¶çª—å£", /*WS_OVERLAPPEDWINDOW | WS_SYSMENU | WS_VISIBLE*/WS_POPUP, 0, 0, width, height, NULL, NULL, NULL, NULL); //AfxGetMainWnd()->m_hWnd
 	::SetWindowLong(hwnd_d3d, GWL_EXSTYLE, GetWindowLong(hwnd_d3d, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT);
 
 
@@ -251,16 +251,16 @@ boolean d3d9::init(int width, int height)
 
 	D3DXFONT_DESC df;
 	ZeroMemory(&df, sizeof(D3DXFONT_DESC));
-	df.Height = 12;							//¸ß¶È£¬Âß¼­µ¥Î»
-	df.Width = 8;							//¿í¶È£¬Âß¼­µ¥Î»
-	df.Weight = 300;						//´ÖÌå·¶Î§
+	df.Height = 12;							//é«˜åº¦ï¼Œé€»è¾‘å•ä½
+	df.Width = 8;							//å®½åº¦ï¼Œé€»è¾‘å•ä½
+	df.Weight = 300;						//ç²—ä½“èŒƒå›´
 	df.MipLevels = D3DX_DEFAULT;
 	df.Italic = false;
 	df.CharSet = DEFAULT_CHARSET;
 	df.OutputPrecision = 0;
 	df.Quality = 0;
 	df.PitchAndFamily = 0;
-	strcpy(CW2A(df.FaceName), "Times New Roman");//×ÖÌåÑùÊ½
+	strcpy(CW2A(df.FaceName), "Times New Roman");//å­—ä½“æ ·å¼
 	D3DXCreateFontIndirect(g_device, &df, &font);
 
 
@@ -295,7 +295,7 @@ unsigned threadId_d3d;
 unsigned __stdcall showWindowThread(LPVOID lpParam) {
 	ShowWindow(hwnd_d3d, TRUE);
 	UpdateWindow(hwnd_d3d);
-	SetWindowDisplayAffinity(hwnd_d3d, WDA_EXCLUDEFROMCAPTURE); //ÉèÖÃ»æÖÆ´°¿Ú½ûÖ¹½ØÍ¼
+	SetWindowDisplayAffinity(hwnd_d3d, WDA_EXCLUDEFROMCAPTURE); //è®¾ç½®ç»˜åˆ¶çª—å£ç¦æ­¢æˆªå›¾
 
 	HWND gameHwnd = (HWND)lpParam;
 	while (true)

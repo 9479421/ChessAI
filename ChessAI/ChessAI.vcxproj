@@ -216,6 +216,8 @@
     <ClInclude Include="QButton.h" />
     <ClInclude Include="QClientSocket.h" />
     <ClInclude Include="QEdit.h" />
+    <ClInclude Include="QEncrypt.h" />
+    <ClInclude Include="QHttp.h" />
     <ClInclude Include="qJson.h" />
     <ClInclude Include="QPacket.h" />
     <ClInclude Include="QRoundPicture.h" />
@@ -253,6 +255,8 @@
     <ClCompile Include="QButton.cpp" />
     <ClCompile Include="QClientSocket.cpp" />
     <ClCompile Include="QEdit.cpp" />
+    <ClCompile Include="QEncrypt.cpp" />
+    <ClCompile Include="QHttp.cpp" />
     <ClCompile Include="qJson.cpp" />
     <ClCompile Include="QPacket.cpp" />
     <ClCompile Include="QRoundPicture.cpp" />

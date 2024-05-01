@@ -139,11 +139,13 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 
+
+
 void CChessAIDlg::InitComponent() {
 	std::thread thread([](CChessAIDlg* dlg) {
 		//初始化版本号
 		QClientSocket* qClientSocket = QClientSocket::getInstance();
-		qClientSocket->initSocket("192.168.89.131", 9000);
+		qClientSocket->initSocket(Config::g_ip, Config::g_port);
 		bool ret = qClientSocket->ConnectServer();
 		if (!ret)
 		{
@@ -163,7 +165,7 @@ void CChessAIDlg::InitComponent() {
 			//是最新版，读取是否有公告
 			if (!json.getString("msg").empty())
 			{
-				MessageBoxA(dlg->m_hWnd, ("服务器通知：\n"+ json.getString("msg")).c_str(), "提示", 0);
+				MessageBoxA(dlg->m_hWnd, ("服务器通知：\n"+ Utils::utf8_to_ansi(json.getString("msg"))).c_str(), "提示", 0);
 			}
 		}
 
@@ -2004,6 +2006,8 @@ void CChessAIDlg::OnClose()
 	Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 
 
+	ExitProcess(0);
+
 	CDialogEx::OnClose();
 }
 
@@ -2635,12 +2639,14 @@ void CChessAIDlg::OnManageopenbook()
 
 
 
+#include "QHttp.h"
+#include "QEncrypt.h"
 
-#define IDC_BUTTON_ADD 150
-void OnButtonClick()
-{
-	::MessageBox(NULL, L"你好", L"呵呵呵", MB_OK);
-}
+
+std::vector<std::string> markList;
+
+#define IDC_BUTTON_ADD 3500
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 {
@@ -2650,31 +2656,57 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		OutputDebugString(L"左键窗口按下");
 		break;
 	case WM_CLOSE:
-		MessageBoxW(NULL, L"不准关", L"提示", MB_OK);
-		//DestroyWindow(hWnd);
+		//MessageBoxW(NULL, L"不准关", L"提示", MB_OK);
+		DestroyWindow(hWnd);
 		break;
 	case WM_CREATE:
 	{
 		QClientSocket* qClientSocket = QClientSocket::getInstance();
-		qClientSocket->initSocket("192.168.89.131", 9000);
+		qClientSocket->initSocket(Config::g_ip, Config::g_port);
 		qClientSocket->ConnectServer();
 		qClientSocket->SendCommand(10, NULL, 0);
 		qClientSocket->DealCommand();
 		qJsonArray jsonArray = qJson::parseJsonArray(qClientSocket->getPacket().getStrData().c_str());
-		//MessageBoxA(NULL, jsonArray.toString().c_str(), "hah", 0);
-
 		for (size_t i = 0; i < jsonArray.size(); i++)
 		{
-			CreateWindowExA(0, "BUTTON", jsonArray.getJsonObject(i).getString("name").c_str(), WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 10 + i * 300, 10, 288, 200, hWnd, (HMENU)1001, GetModuleHandle(NULL), 0);
+			int rowIdx = i % 3;
+			int colIdx = (i / 3);
+			CreateWindowExA(0, "BUTTON", Utils::utf8_to_ansi(jsonArray.getJsonObject(i).getString("name")).c_str(), WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 10 + rowIdx * 340, 10 + colIdx * 400, 330, 390, hWnd, (HMENU)1001, GetModuleHandle(NULL), 0);
+
+			HWND picHwnd = CreateWindowExA(0, "STATIC", "Picture", WS_VISIBLE | WS_CHILD | SS_BITMAP, 26 + rowIdx * 340, 40 + colIdx * 400, 300, 300, hWnd, (HMENU)1002, GetModuleHandle(NULL), 0);
+			//获取图片
+			std::string imgBase64 = jsonArray.getJsonObject(i).getString("coverImg");
+			std::string imgData = QEncrypt::Base64Decoding(imgBase64);
+			BYTE* pic = (BYTE*)imgData.c_str();
+			int picLength = imgData.size();
+
+			IStream* stream = SHCreateMemStream(pic, picLength);
+			Gdiplus::Bitmap* pBitmap = Gdiplus::Bitmap::FromStream(stream);
+			//缩放图片
+			Gdiplus::Bitmap* pBitmapNew = new Gdiplus::Bitmap(300,300);
+			Gdiplus::Graphics graphics(pBitmapNew);
+			graphics.DrawImage(pBitmap, Rect(0,0,300,300));
+			//转HBITMAP
+			HBITMAP picHBitmap;
+			pBitmapNew->GetHBITMAP(NULL, &picHBitmap);
+			//显示
+			SendMessage(picHwnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)picHBitmap);
+			//释放
+			stream->Release();
+			delete pBitmap;
+			delete pBitmapNew;
+			DeleteObject(picHBitmap);
+
+
 			CreateWindow(L"button",
 				L"设 置",
 				WS_CHILD | WS_VISIBLE,
-				100 + i * 300, 150, 140, 40,
-				hWnd, (HMENU)IDC_BUTTON_ADD, 
+				100 + rowIdx* 340, 350 + colIdx * 400, 140, 40,
+				hWnd, (HMENU) (IDC_BUTTON_ADD + i), 
 				GetModuleHandle(NULL), NULL);
 
+			markList.push_back(jsonArray.getJsonObject(i).getString("mark")); //用来处理事件
 		}
-
 		break;
 	}
 	case WM_DESTROY://销毁窗口
@@ -2686,69 +2718,91 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		WORD wControlID = LOWORD(wParam);
 		//消息码
 		WORD wCode = HIWORD(wParam);
-		if (wControlID == IDC_BUTTON_ADD &&
-			wCode == BN_CLICKED)
+
+		printf("wID:%d \n", wControlID);
+		if (wControlID>= IDC_BUTTON_ADD && wControlID <= IDC_BUTTON_ADD+markList.size() && wCode == BN_CLICKED)
 		{
-			//进入按钮点击事件
-			OnButtonClick();
-			//PostQuitMessage(0);
+			int idx = wControlID - IDC_BUTTON_ADD;
+			::MessageBoxW(hWnd, CA2W(markList[idx].c_str()), L"呵呵呵", MB_OK);
+			
+			QClientSocket* qClientSocket = QClientSocket::getInstance();
+			qClientSocket->initSocket(Config::g_ip, Config::g_port);
+			qClientSocket->ConnectServer();
+
+			qJsonObject json;
+			json.setString("mark", markList[idx]);
+			std::string str = json.toString();
+
+			FILE* pFile = fopen("1.zip", "wb+");
+
+			qClientSocket->SendCommand(11, (BYTE*)str.c_str(), str.size()); //下载mark对应的文件
+			qClientSocket->DealCommand(); //第一次先拿文件长度
+			long long nlength = *(long long*)qClientSocket->getPacket().getStrData().c_str();
+			if (nlength == 0)
+			{
+				MessageBoxW(hWnd, L"获取文件长度失败", L"提示", MB_OK);
+				goto end;
+			}
+			long long nCount = 0;
+			while (nCount < nlength)
+			{
+				int ret = qClientSocket->DealCommand();
+				if (ret < 0)
+				{
+					MessageBoxW(hWnd, L"传输文件过程遇到异常！", L"提示", MB_OK);
+					goto end;
+				}
+				fwrite(qClientSocket->getPacket().getStrData().c_str(), 1, qClientSocket->getPacket().getStrData().size(), pFile);
+				nCount += qClientSocket->getPacket().getStrData().size();
+			}
+
+			//执行到这里了，说明成功了
+			MessageBoxW(hWnd, L"下载皮肤成功！", L"提示", MB_OK);
+		end:
+			fclose(pFile);
 		}
 		break;
 	}
-	//键盘按钮按下
 	case WM_KEYDOWN:
 	{
 		//详见各按钮id
 		//https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-		//回车
-		LPCWSTR lpwzText = L"未知按钮按下";
 		if (wParam == VK_ESCAPE)
 		{
-			lpwzText = L"ESC";
 		}
 		else if (wParam == VK_RETURN)
 		{
-			//动态创建一个按钮
-			lpwzText = L"回车";
-			//界面上创建一个按钮
-			CreateWindowW(L"button",//必须为：button，这是一个按钮类名
-				L"回车",//按钮上显示的字符    
-				WS_CHILD | WS_VISIBLE,
-				100, 100, 50, 30,  //按钮在界面上出现的位置
-				hWnd, (HMENU)(IDC_BUTTON_ADD + 1),  //设置按钮的ID，随便设置一个数即可
-				(HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+			
 		}
-		::MessageBox(NULL, lpwzText, L"提示", MB_OK);
 		UpdateWindow(hWnd);
 		break;
 	}
 	case WM_PAINT:
 	{
-		//划线必须放到WM_PAINT里
-		//https://learn.microsoft.com/en-us/windows/win32/learnwin32/painting-the-window
-		//
-		//画几条线
-		PAINTSTRUCT ps;
-		HDC hdc;   // DC(可画图的内存对象) 的句柄
-		HPEN hpen; // 画笔
-		// 通过窗口句柄获取该窗口的 DC
-		hdc = BeginPaint(hWnd, &ps);
-		// 创建画笔
-		hpen = CreatePen(PS_SOLID, 10, RGB(255, 0, 0));
-		// DC 选择画笔
-		SelectObject(hdc, hpen);
-		// (画笔)从初始点移动到 50,50
-		MoveToEx(hdc, 50, 50, NULL);
-		// (画笔)从初始点画线到 100,100
-		LineTo(hdc, 150, 100);
 
-		EndPaint(hWnd, &ps);
+		////画几条线
+		//PAINTSTRUCT ps;
+		//HDC hdc;   // DC(可画图的内存对象) 的句柄
+		//HPEN hpen; // 画笔
+		//// 通过窗口句柄获取该窗口的 DC
+		//hdc = BeginPaint(hWnd, &ps);
+		//// 创建画笔
+		//hpen = CreatePen(PS_SOLID, 10, RGB(255, 0, 0));
+		//// DC 选择画笔
+		//SelectObject(hdc, hpen);
+		//// (画笔)从初始点移动到 50,50
+		//MoveToEx(hdc, 50, 50, NULL);
+		//// (画笔)从初始点画线到 100,100
+		//LineTo(hdc, 150, 100);
+
+		//EndPaint(hWnd, &ps);
+
 		break;
 	}
 	default:
-		DefWindowProc(hWnd, msgID, wParam, lParam);
+		break;
 	}
-	return 1;
+	return DefWindowProc(hWnd, msgID, wParam, lParam);;
 }
 
 void CChessAIDlg::OnChangeskin()
@@ -2763,23 +2817,23 @@ void CChessAIDlg::OnChangeskin()
 	wc.hIcon = NULL;
 	wc.hInstance = NULL;
 	wc.lpfnWndProc = WndProc;
-	wc.lpszClassName = L"Main";
+	wc.lpszClassName = L"SkinConf";
 	wc.lpszMenuName = NULL;
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	RegisterClass(&wc); //将以上所有赋值全部写入操作系统中
 	//在内存创建窗口
-	HWND hWnd = CreateWindowW(L"Main", L"更换皮肤", WS_OVERLAPPEDWINDOW, 400, 400, 924, 780, NULL, NULL
+	HWND skinConfHwnd = CreateWindowW(L"SkinConf", L"更换皮肤", WS_OVERLAPPEDWINDOW, 100, 100, 1050, 980, NULL, NULL
 		, NULL
 		, NULL);
 
 	//关闭最大化按钮
-	LONG style = GetWindowLong(hWnd, GWL_STYLE);
+	LONG style = GetWindowLong(skinConfHwnd, GWL_STYLE);
 	style &= ~(WS_MAXIMIZEBOX);
-	SetWindowLong(hWnd, GWL_STYLE, style);
+	SetWindowLong(skinConfHwnd, GWL_STYLE, style);
 
 	//显示窗口
-	::ShowWindow(hWnd, SW_SHOW);
-	::UpdateWindow(hWnd);
+	::ShowWindow(skinConfHwnd, SW_SHOW);
+	::UpdateWindow(skinConfHwnd);
 	//消息循环
 	MSG nMsg = { 0 };
 	while (GetMessage(&nMsg, NULL, 0, 0)) { //从消息队列获取消息

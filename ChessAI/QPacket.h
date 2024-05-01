@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <cstdint>
 #include<string>
@@ -6,26 +6,26 @@
 #include<memory>
 
 #pragma pack(push)
-#pragma pack(1) //ÄÚ´æ1×Ö½Ú¶ÔÆë
+#pragma pack(1) //å†…å­˜1å­—èŠ‚å¯¹é½
 class QPacket
 {
 public:
 	QPacket();
-	QPacket(uint16_t nCmd, const unsigned char* pData, size_t nSize); //×é°ü
-	QPacket(const unsigned char* pData, size_t& nSize); //½â°ü
+	QPacket(uint16_t nCmd, const unsigned char* pData, size_t nSize); //ç»„åŒ…
+	QPacket(const unsigned char* pData, size_t& nSize); //è§£åŒ…
 	const unsigned char* Data();
 
 	int Size();
 	uint16_t getCmd();
 	std::string getStrData();
 private:
-	uint16_t sHead; //¹Ì¶¨Î»FE FF
-	uint32_t nLength; //ÏÂÃæµÄ°ü³¤
-	uint16_t sCmd; //ÃüÁî
+	uint16_t sHead; //å›ºå®šä½FE FF
+	uint32_t nLength; //ä¸‹é¢çš„åŒ…é•¿
+	uint16_t sCmd; //å‘½ä»¤
 	std::string strData;
-	uint16_t sSum; //ºÍĞ£Ñé
+	uint16_t sSum; //å’Œæ ¡éªŒ
 public:
-	//ÖÇÄÜÖ¸Õë
+	//æ™ºèƒ½æŒ‡é’ˆ
 	std::shared_ptr<unsigned char> dataPtr;
 };
 #pragma pack(pop)

@@ -129,6 +129,12 @@
     <ClInclude Include="OpenBookDlg.h">
       <Filter>头文件\Dlg</Filter>
     </ClInclude>
+    <ClInclude Include="QHttp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="QEncrypt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp">
@@ -211,6 +217,12 @@
     </ClCompile>
     <ClCompile Include="OpenBookDlg.cpp">
       <Filter>源文件\Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="QHttp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="QEncrypt.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

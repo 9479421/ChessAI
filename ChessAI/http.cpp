@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "http.h"
 
 BOOL GetIpByDomainName(char* szHost, char* szIp)
@@ -27,16 +27,16 @@ BOOL GetIpByDomainName(char* szHost, char* szIp)
 bool containsLetter(const std::string& str) {
     for (char c : str) {
         if (std::isalpha(static_cast<unsigned char>(c))) {
-            return true; // Èç¹ûÕÒµ½×ÖÄ¸£¬·µ»Øtrue
+            return true; // å¦‚æœæ‰¾åˆ°å­—æ¯ï¼Œè¿”å›true
         }
     }
-    return false; // Èç¹ûÃ»ÓĞÕÒµ½×ÖÄ¸£¬·µ»Øfalse
+    return false; // å¦‚æœæ²¡æœ‰æ‰¾åˆ°å­—æ¯ï¼Œè¿”å›false
 }
 
 boolean http::open(std::string url)
 {
     this->url = url;
-    //»ñÈ¡domain 
+    //è·å–domain 
     int idx1 = url.find("://") + 3;
     int idx2 = url.find("/", idx1);
 
@@ -49,7 +49,7 @@ boolean http::open(std::string url)
     }
     //domain = "192.168.89.128:9006"; //www.chessdb.cn
 
-    //³õÊ¼»¯Ì×½Ó×Ö
+    //åˆå§‹åŒ–å¥—æ¥å­—
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
     {
@@ -66,7 +66,7 @@ boolean http::open(std::string url)
     SOCKADDR_IN serv_addr;
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    //ÅĞ¶ÏurlÊÇÓòÃû»¹ÊÇip:port
+    //åˆ¤æ–­urlæ˜¯åŸŸåè¿˜æ˜¯ip:port
     if (containsLetter(domain))
     {
         struct hostent* host;
@@ -96,12 +96,12 @@ boolean http::open(std::string url)
     
 
 
-    //memcpy(&serv_addr.sin_addr, gethostbyname("www.chessdb.cn")->h_addr, 4); //»ñÈ¡ÓòÃû¶ÔÓ¦µÄµÚÒ»¸öip
+    //memcpy(&serv_addr.sin_addr, gethostbyname("www.chessdb.cn")->h_addr, 4); //è·å–åŸŸåå¯¹åº”çš„ç¬¬ä¸€ä¸ªip
     if (connect(sock, (sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
     {
         return false;
     }
-    //ÉèÖÃÑÓÊ±
+    //è®¾ç½®å»¶æ—¶
     int timeout = 3000;
     setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(timeout));
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
@@ -177,7 +177,7 @@ std::string http::call(std::string method, std::string data)
         {
             responseBodyStr = bodyStr;
         }
-        else { //ËµÃ÷ÊÇÌØÊâÇé¿ö£¬gzipÏÂµÄÏÈÊä³ö³¤¶È
+        else { //è¯´æ˜æ˜¯ç‰¹æ®Šæƒ…å†µï¼Œgzipä¸‹çš„å…ˆè¾“å‡ºé•¿åº¦
             responseBodyStr = bodyStr.substr(idx + 2);
         }
        

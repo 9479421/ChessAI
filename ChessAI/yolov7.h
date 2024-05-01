@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include<iostream>
 #include<opencv2/opencv.hpp>
@@ -7,10 +7,10 @@
 
 
 struct Output {
-	int id = -1;             //½á¹ûÀà±ğid
-	float confidence;   //½á¹ûÖÃĞÅ¶È
-	cv::Rect box;       //¾ØĞÎ¿ò
-	std::string name;  //Æå×ÓÃû×Ö
+	int id = -1;             //ç»“æœç±»åˆ«id
+	float confidence;   //ç»“æœç½®ä¿¡åº¦
+	cv::Rect box;       //çŸ©å½¢æ¡†
+	std::string name;  //æ£‹å­åå­—
 };
 
 
@@ -28,21 +28,21 @@ private:
 		return static_cast<float>(1.f / (1.f + exp(-x)));
 	}
 	const float netAnchors[3][6] = { {12, 16, 19, 36, 40, 28},{36, 75, 76, 55, 72, 146},{142, 110, 192, 243, 459, 401} }; //yolov7-P5 anchors
-	const int netWidth = 640;   //ONNXÍ¼Æ¬ÊäÈë¿í¶È
-	const int netHeight = 640;  //ONNXÍ¼Æ¬ÊäÈë¸ß¶È
+	const int netWidth = 640;   //ONNXå›¾ç‰‡è¾“å…¥å®½åº¦
+	const int netHeight = 640;  //ONNXå›¾ç‰‡è¾“å…¥é«˜åº¦
 	const int strideSize = 3;   //stride size
 	const float netStride[4] = { 8, 16.0,32,64 };
 	float boxThreshold = 0.35;
-	float classThreshold = 0.35;   //ÖÃĞÅ¶È
+	float classThreshold = 0.35;   //ç½®ä¿¡åº¦
 	float nmsThreshold = 0.45;
 	float nmsScoreThreshold = boxThreshold * classThreshold;
 	std::vector<std::string> className = { "red_che", "red_ma", "red_xiang", "red_shi", "red_shuai", "red_pao", "red_bing", "black_che", "black_ma", "black_xiang",
 	"black_shi", "black_jiang", "black_pao", "black_zu","board"};
 
 
-	//	std::vector<std::string> className = { "ºì³µ", "ºìÂí", "ºìÏà", "ºìÊË", "ºìË§", "ºìÅÚ", "ºì±ø", "ºÚ³µ", "ºÚÂí", "ºÚÏó",
-	//"ºÚÊ¿", "ºÚ½«", "ºÚÅÚ", "ºÚ×ä" };
-	//std::vector<std::string> className = { "³µ", "Âí", "Ïà", "ÊË", "Ë§", "ÅÚ", "±ø", "³µ", "Âí", "Ïó","Ê¿", "½«", "ÅÚ", "×ä" };
+	//	std::vector<std::string> className = { "çº¢è½¦", "çº¢é©¬", "çº¢ç›¸", "çº¢ä»•", "çº¢å¸…", "çº¢ç‚®", "çº¢å…µ", "é»‘è½¦", "é»‘é©¬", "é»‘è±¡",
+	//"é»‘å£«", "é»‘å°†", "é»‘ç‚®", "é»‘å’" };
+	//std::vector<std::string> className = { "è½¦", "é©¬", "ç›¸", "ä»•", "å¸…", "ç‚®", "å…µ", "è½¦", "é©¬", "è±¡","å£«", "å°†", "ç‚®", "å’" };
 	//std::vector<std::string> className = { "R", "N", "B", "A", "K", "C", "P", "r", "n", "b","a", "k", "c", "p" };
 public:
 

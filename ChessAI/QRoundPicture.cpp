@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "QRoundPicture.h"
 #include "Utils.h"
 #include "resource.h"
@@ -7,34 +7,34 @@
 
 
 
-//ModifyStyle(0, SS_BITMAP | SS_CENTERIMAGE); // ĞŞ¸Ä  CStaticµÄÑùÊ½£¬ÕâÒ»²½ºÜÖØÒª
+//ModifyStyle(0, SS_BITMAP | SS_CENTERIMAGE); // ä¿®æ”¹  CStaticçš„æ ·å¼ï¼Œè¿™ä¸€æ­¥å¾ˆé‡è¦
 void QRoundPicture::DrawItem(LPDRAWITEMSTRUCT lpDIS)
 {
 	CRect rect;
 	GetClientRect(&rect);
 
 	CDC dc;
-	dc.Attach(lpDIS->hDC);//µÃµ½»æÖÆµÄÉè±¸»·¾³CDC
-	//ÉèÖÃ±ÊºÍË¢×ÓÑÕÉ«
+	dc.Attach(lpDIS->hDC);//å¾—åˆ°ç»˜åˆ¶çš„è®¾å¤‡ç¯å¢ƒCDC
+	//è®¾ç½®ç¬”å’Œåˆ·å­é¢œè‰²
 	CPen pen(PS_DOT, 1, RGB(0, 0, 0));
 	CPen* pOldPen = dc.SelectObject(&pen);
 	CBrush brush;
 	brush.CreateSolidBrush(RGB(0, 176, 255));
 	CBrush* pOldBrush = dc.SelectObject(&brush);
-	//»æÖÆµ×É«ºÍ±ß¿ò
+	//ç»˜åˆ¶åº•è‰²å’Œè¾¹æ¡†
 	dc.Ellipse(&rect);
-	//»Ö¸´Ô­À´µÄ±ÊºÍ»­Ë¢
+	//æ¢å¤åŸæ¥çš„ç¬”å’Œç”»åˆ·
 	DeleteObject(pen);
 	dc.SelectObject(pOldPen);
 	dc.SelectObject(pOldBrush);
-	//»æÖÆÍ¼Æ¬
+	//ç»˜åˆ¶å›¾ç‰‡
 	CImage image;
 	image.Attach(::LoadBitmapW(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BITMAP_LOGO)));
 	CImage imageNew;
 	imageNew.Create(rect.Width() - 10, rect.Height() - 10, 32);
 	image.StretchBlt(imageNew.GetDC(), 0, 0, rect.Width() - 10, rect.Height() - 10);
 
-	//³õÊ¼»¯Gdi
+	//åˆå§‹åŒ–Gdi
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
 	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -43,15 +43,15 @@ void QRoundPicture::DrawItem(LPDRAWITEMSTRUCT lpDIS)
 	int nWidth = imageNew.GetWidth();
 	int nHeight = imageNew.GetHeight();
 
-	// ÄÚ´æÎ»Í¼»­°å£¬¶àÁô2¸öÏñËØ£¬±ÜÃâ±»±ß¿òÇĞµô
+	// å†…å­˜ä½å›¾ç”»æ¿ï¼Œå¤šç•™2ä¸ªåƒç´ ï¼Œé¿å…è¢«è¾¹æ¡†åˆ‡æ‰
 	Gdiplus::Bitmap* bitmapTmp = new Gdiplus::Bitmap(m_bkGDIPimage->GetWidth() + 2, m_bkGDIPimage->GetHeight() + 2);
 	Gdiplus::Graphics gBig(bitmapTmp);
 	Gdiplus::Graphics g(dc);
 	gBig.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
 	Gdiplus::GraphicsPath path(Gdiplus::FillModeAlternate);
-	// Ô²ĞÎ´óĞ¡
+	// åœ†å½¢å¤§å°
 	path.AddEllipse(1, 1, m_bkGDIPimage->GetWidth(), m_bkGDIPimage->GetHeight());
-	// ÒÑ¾­½«Ô²ĞÎÍ¼Æ¬»­µ½ÁËgBigÉÏÁË
+	// å·²ç»å°†åœ†å½¢å›¾ç‰‡ç”»åˆ°äº†gBigä¸Šäº†
 	gBig.FillPath(&Gdiplus::TextureBrush(m_bkGDIPimage), &path);
 	Gdiplus::SmoothingMode mode = g.GetSmoothingMode();
 	g.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
@@ -59,7 +59,7 @@ void QRoundPicture::DrawItem(LPDRAWITEMSTRUCT lpDIS)
 	g.SetSmoothingMode(mode);
 
 
-	//ÊÍ·Å
+	//é‡Šæ”¾
 	delete m_bkGDIPimage;
 	m_bkGDIPimage = nullptr;
 	delete bitmapTmp;
@@ -91,6 +91,6 @@ void QRoundPicture::PreSubclassWindow()
 {
 	DWORD dwStyle = GetStyle();//0x5000000E 0x5000000D
 	//printf("%x\n", dwStyle)
-	SetWindowLong(GetSafeHwnd(), GWL_STYLE, 0x5000000D);//ÉèÖÃÎªown
+	SetWindowLong(GetSafeHwnd(), GWL_STYLE, 0x5000000D);//è®¾ç½®ä¸ºown
 	CStatic::PreSubclassWindow();
 }

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include<string>
 #include<vector>
 #include<atlconv.h>
@@ -7,7 +7,7 @@
 class Process
 {
 private:
-	//ÉèÖÃĞÂ½ø³Ì²ÎÊı
+	//è®¾ç½®æ–°è¿›ç¨‹å‚æ•°
 	PROCESS_INFORMATION pi = PROCESS_INFORMATION();
 	HANDLE hOutRead, hOutWrite;
 	HANDLE hInRead, hInWrite;

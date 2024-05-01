@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "SkinColors.h"
 class QButton : public CButton
 {
@@ -14,17 +14,17 @@ public:
 	void SetColor(COLORREF bkColor, COLORREF borderColor, COLORREF hoverColor, COLORREF clickColor, COLORREF textColor, int fontSize, int radis);
 	void SetStyle(THEME theme);
 private:
-	COLORREF m_bkColor; //Ä¬ÈÏ±³¾°ÑÕÉ«
-	COLORREF m_borderColor; //±ß¿òÑÕÉ«
-	COLORREF m_hoverColor; //Êó±êÒÆ¶¯ÉÏÈ¥µÄÑÕÉ«
-	COLORREF m_clickColor; //µã»÷ºóµÄÑÕÉ«
-	COLORREF m_textColor; //ÎÄ×ÖÑÕÉ«
-	int      m_fontSize; //×ÖÌå´óĞ¡
-	int      m_radis; //Ô²½Ç·ù¶È>0,=0 ÎŞÔ²½Ç
+	COLORREF m_bkColor; //é»˜è®¤èƒŒæ™¯é¢œè‰²
+	COLORREF m_borderColor; //è¾¹æ¡†é¢œè‰²
+	COLORREF m_hoverColor; //é¼ æ ‡ç§»åŠ¨ä¸Šå»çš„é¢œè‰²
+	COLORREF m_clickColor; //ç‚¹å‡»åçš„é¢œè‰²
+	COLORREF m_textColor; //æ–‡å­—é¢œè‰²
+	int      m_fontSize; //å­—ä½“å¤§å°
+	int      m_radis; //åœ†è§’å¹…åº¦>0,=0 æ— åœ†è§’
 
-	COLORREF m_drawColor; //´æ´¢ÁÙÊ±ÑÕÉ«
+	COLORREF m_drawColor; //å­˜å‚¨ä¸´æ—¶é¢œè‰²
 
-	boolean isIn = false;//ÅĞ¶ÏÊó±êÎ»ÖÃ
+	boolean isIn = false;//åˆ¤æ–­é¼ æ ‡ä½ç½®
 public:
 	DECLARE_MESSAGE_MAP()
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);

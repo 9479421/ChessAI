@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 class QEdit: public CStatic 
 {
 	DECLARE_DYNAMIC(QEdit)

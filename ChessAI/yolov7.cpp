@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "yolov7.h"
 
 bool Yolo::readModel(cv::dnn::Net& net, std::string& netPath, bool isCuda)
@@ -10,7 +10,7 @@ bool Yolo::readModel(cv::dnn::Net& net, std::string& netPath, bool isCuda)
 		return false;
 	}
 
-	//¼ÓËÙ´¦Àí
+	//åŠ é€Ÿå¤„ç†
 	if (isCuda)
 	{
 		net.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
@@ -23,7 +23,7 @@ bool Yolo::readModel(cv::dnn::Net& net, std::string& netPath, bool isCuda)
 	}
 	return true;
 }
-#include"Utils.h"
+
 bool Yolo::Detect(cv::Mat& SrcImg, cv::dnn::Net& net, std::vector<Output>& output) {
 
 	cv::Mat blob;
@@ -43,12 +43,12 @@ bool Yolo::Detect(cv::Mat& SrcImg, cv::dnn::Net& net, std::vector<Output>& outpu
 	net.setInput(blob);
 	std::vector<cv::Mat> netOutputImg(100);
 	net.forward(netOutputImg, net.getUnconnectedOutLayersNames());
-	std::vector<int> classIds(100);//½á¹ûidÊı×é
-	std::vector<float> confidences(100);//½á¹ûÃ¿¸öid¶ÔÓ¦ÖÃĞÅ¶ÈÊı×é
-	std::vector<cv::Rect> boxes(100);//Ã¿¸öid¾ØĞÎ¿ò
+	std::vector<int> classIds(100);//ç»“æœidæ•°ç»„
+	std::vector<float> confidences(100);//ç»“æœæ¯ä¸ªidå¯¹åº”ç½®ä¿¡åº¦æ•°ç»„
+	std::vector<cv::Rect> boxes(100);//æ¯ä¸ªidçŸ©å½¢æ¡†
 	float ratio_h = (float)netInputImg.rows / netHeight;
 	float ratio_w = (float)netInputImg.cols / netWidth;
-	int net_width = className.size() + 5;  //Êä³öµÄÍøÂç¿í¶ÈÊÇÀà±ğÊı+5
+	int net_width = className.size() + 5;  //è¾“å‡ºçš„ç½‘ç»œå®½åº¦æ˜¯ç±»åˆ«æ•°+5
 	for (int stride = 0; stride < strideSize; stride++) {    //stride
 		float* pdata = (float*)netOutputImg[stride].data;
 		int grid_x = (int)(netWidth / netStride[stride]);
@@ -58,7 +58,7 @@ bool Yolo::Detect(cv::Mat& SrcImg, cv::dnn::Net& net, std::vector<Output>& outpu
 			const float anchor_h = netAnchors[stride][anchor * 2 + 1];
 			for (int i = 0; i < grid_y; i++) {
 				for (int j = 0; j < grid_x; j++) {
-					float box_score = sigmoid_x(pdata[4]); ;//»ñÈ¡Ã¿Ò»ĞĞµÄbox¿òÖĞº¬ÓĞÄ³¸öÎïÌåµÄ¸ÅÂÊ
+					float box_score = sigmoid_x(pdata[4]); ;//è·å–æ¯ä¸€è¡Œçš„boxæ¡†ä¸­å«æœ‰æŸä¸ªç‰©ä½“çš„æ¦‚ç‡
 					if (box_score >= boxThreshold) {
 						cv::Mat scores(1, className.size(), CV_32FC1, pdata + 5);
 						cv::Point classIdPoint;
@@ -77,12 +77,12 @@ bool Yolo::Detect(cv::Mat& SrcImg, cv::dnn::Net& net, std::vector<Output>& outpu
 							boxes.push_back(cv::Rect(left, top, int(w * ratio_w), int(h * ratio_h)));
 						}
 					}
-					pdata += net_width;//ÏÂÒ»ĞĞ
+					pdata += net_width;//ä¸‹ä¸€è¡Œ
 				}
 			}
 		}
 	}
-	//Ö´ĞĞ·Ç×î´óÒÖÖÆÒÔÏû³ı¾ßÓĞ½ÏµÍÖÃĞÅ¶ÈµÄÈßÓàÖØµş¿ò£¨NMS£©
+	//æ‰§è¡Œéæœ€å¤§æŠ‘åˆ¶ä»¥æ¶ˆé™¤å…·æœ‰è¾ƒä½ç½®ä¿¡åº¦çš„å†—ä½™é‡å æ¡†ï¼ˆNMSï¼‰
 	std::vector<int> nms_result(100);
 	cv::dnn::NMSBoxes(boxes, confidences, nmsScoreThreshold, nmsThreshold, nms_result);
 	for (int i = 0; i < nms_result.size(); i++) {

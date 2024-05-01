@@ -1,4 +1,4 @@
-#include "Gdi.h"
+ï»¿#include "Gdi.h"
 
 using namespace GdiClass;
 
@@ -28,7 +28,7 @@ void GdiClass::render() {
 
 
 
-	//Çå¿ÕÏÈ
+	//æ¸…ç©ºå…ˆ
 	RECT rect;
 	GetClientRect(hwnd, &rect);
 
@@ -46,7 +46,7 @@ void GdiClass::render() {
 	HBRUSH oldBrush = (HBRUSH)SelectObject(hMemDC, brush);
 
 
-	//»æÖÆ¿ÕĞÄ¾ØĞÎ
+	//ç»˜åˆ¶ç©ºå¿ƒçŸ©å½¢
 	for (int i = 0; i < hollowRects.size(); i++)
 	{
 		float left = (float)hollowRects[i].left;
@@ -60,7 +60,7 @@ void GdiClass::render() {
 		/*	g_line->SetWidth(weight);
 			g_line->Draw(Vertex, 5, color);*/
 	}
-	//»æÖÆ¿ÕĞÄ¾ØĞÎÃÀ»¯°æ
+	//ç»˜åˆ¶ç©ºå¿ƒçŸ©å½¢ç¾åŒ–ç‰ˆ
 	for (int i = 0; i < hollowHalfRects.size(); i++)
 	{
 		float left = (float)hollowHalfRects[i].left;
@@ -99,7 +99,7 @@ void GdiClass::render() {
 
 
 
-		//³Ã×Å»­±ÊÑÕÉ«Ã»±ä»ØÈ¥Ö®Ç° »æÖÆ
+		//è¶ç€ç”»ç¬”é¢œè‰²æ²¡å˜å›å»ä¹‹å‰ ç»˜åˆ¶
 		HBRUSH pBrush = CreateSolidBrush(color);
 		HBRUSH pOldBrush = (HBRUSH)SelectObject(hMemDC, pBrush);
 		Rectangle(hMemDC, left, top - 4, left + width + weight, top + 1);
@@ -113,7 +113,7 @@ void GdiClass::render() {
 
 
 	}
-	//»æÖÆÖ±Ïß
+	//ç»˜åˆ¶ç›´çº¿
 	for (int i = 0; i < lines.size(); i++)
 	{
 		float start_left = (float)lines[i].start_left;
@@ -128,15 +128,15 @@ void GdiClass::render() {
 		int color = lines[i].color;
 
 
-		//»æÖÆ¼ıÍ·
-		//¼ÆËã
+		//ç»˜åˆ¶ç®­å¤´
+		//è®¡ç®—
 		double width = end_left - start_left;
 		double height = start_top - end_top;
 
-		double x; //¶ÈÊı
+		double x; //åº¦æ•°
 		if (width == 0)
 		{
-			//ÕâÖÖÇé¿öµ¥¶ÀËã
+			//è¿™ç§æƒ…å†µå•ç‹¬ç®—
 			
 			if (height > 0 )
 			{
@@ -248,7 +248,7 @@ void GdiClass::render() {
 		SelectObject(hMemDC, oldPen);
 		DeleteObject(pen);
 	}
-	//»æÖÆÎÄ×Ö
+	//ç»˜åˆ¶æ–‡å­—
 	for (int i = 0; i < words.size(); i++)
 	{
 		float left = (float)words[i].left;
@@ -279,15 +279,15 @@ void GdiClass::render() {
 
 
 	SelectObject(hMemDC, oldBrush);
-	DeleteObject(brush); //ÇåÀí¶ÔÏó
+	DeleteObject(brush); //æ¸…ç†å¯¹è±¡
 
 
 	BitBlt(ps.hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, hMemDC, 0, 0, SRCCOPY);
 
 
-	// Í¼ÒÑ¾­»­³öÀ´ÁË.É¾³ıÎ»Í¼
+	// å›¾å·²ç»ç”»å‡ºæ¥äº†.åˆ é™¤ä½å›¾
 	DeleteObject(hMemBitmap);
-	// É¾µôÄÚ´æhMemDC
+	// åˆ æ‰å†…å­˜hMemDC
 	DeleteDC(hMemDC);
 
 
@@ -337,7 +337,7 @@ boolean Gdi::init(int width, int height)
 	RegisterClass(&wc);
 
 
-	hwnd = CreateWindowA("ChessAI", "»æÖÆ´°¿Ú", /*WS_OVERLAPPEDWINDOW | WS_SYSMENU | WS_VISIBLE*/WS_POPUP, 0, 0, width, height, NULL, NULL, NULL, NULL); //AfxGetMainWnd()->m_hWnd
+	hwnd = CreateWindowA("ChessAI", "ç»˜åˆ¶çª—å£", /*WS_OVERLAPPEDWINDOW | WS_SYSMENU | WS_VISIBLE*/WS_POPUP, 0, 0, width, height, NULL, NULL, NULL, NULL); //AfxGetMainWnd()->m_hWnd
 	::SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT);
 
 
@@ -373,7 +373,7 @@ void Gdi::drawHollowHalfRect(int left, int top, int width, int height, float wei
 unsigned __stdcall GdiClass::showWindowThread(LPVOID lpParam) {
 	ShowWindow(hwnd, TRUE);
 	UpdateWindow(hwnd);
-	SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE); //ÉèÖÃ»æÖÆ´°¿Ú½ûÖ¹½ØÍ¼
+	SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE); //è®¾ç½®ç»˜åˆ¶çª—å£ç¦æ­¢æˆªå›¾
 
 	HWND gameHwnd = (HWND)lpParam;
 

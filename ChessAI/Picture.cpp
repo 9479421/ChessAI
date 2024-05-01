@@ -1,10 +1,10 @@
-#include "Picture.h"
+ï»¿#include "Picture.h"
 
 Pic::Pic()
 {
 }
 
-Pic::Pic(int width, int height) //ÉèÖÃ´°¿Ú´óĞ¡
+Pic::Pic(int width, int height) //è®¾ç½®çª—å£å¤§å°
 {
 	m_width = width;
 	m_height = height;
@@ -63,7 +63,7 @@ void Pic::show()
 	resourceCdc.Attach(m_resource.GetDC());
 
 	resourceCdc.SetStretchBltMode(HALFTONE);
-	m_image.StretchBlt(resourceCdc.m_hDC, CRect(0, 0, m_width, m_height)); //Í¼Æ¬ÉìËõÖÃÈë
+	m_image.StretchBlt(resourceCdc.m_hDC, CRect(0, 0, m_width, m_height)); //å›¾ç‰‡ä¼¸ç¼©ç½®å…¥
 
 
 
@@ -73,14 +73,14 @@ void Pic::show()
 	CPen* oldPen = resourceCdc.SelectObject(&pen);
 
 
-	resourceCdc.Rectangle(CRect(x1, y1, x2, y2)); //»æÖÆ¾ØĞÎ
+	resourceCdc.Rectangle(CRect(x1, y1, x2, y2)); //ç»˜åˆ¶çŸ©å½¢
 
 
 	pen.CreatePen(PS_SOLID, 6, RGB(0, 255, 0));
 	resourceCdc.SelectObject(&pen);
 
 	float lrMargin = abs(x2 - x1) / 8.0;
-	//»æÖÆÖĞ¼ä8¸öµã
+	//ç»˜åˆ¶ä¸­é—´8ä¸ªç‚¹
 	for (int i = 0; i < 5; i++)
 	{
 		resourceCdc.MoveTo((x1 + x2) / 2, y2 - lrMargin * i * tbRate);

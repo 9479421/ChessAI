@@ -1,4 +1,4 @@
-#include "Game.h"
+ï»¿#include "Game.h"
 
 Pot::Pot()
 {
@@ -6,7 +6,7 @@ Pot::Pot()
 
 void Pot::setName(std::string name)
 {
-	if (name.compare("") == 0)  //Ê²Ã´Ò²²»·Å
+	if (name.compare("") == 0)  //ä»€ä¹ˆä¹Ÿä¸æ”¾
 	{
 		this->id = -1;
 		this->status = 0;
@@ -29,9 +29,9 @@ void Pot::setId(int id)
 {
 	if (id < -1 || id > 13)
 	{
-		return; //·Ç·¨
+		return; //éæ³•
 	}
-	if (id == -1)  //Ê²Ã´Ò²²»·Å
+	if (id == -1)  //ä»€ä¹ˆä¹Ÿä¸æ”¾
 	{
 		this->id = -1;
 		this->status = 0;
@@ -117,7 +117,7 @@ void Game::setBoardSource(std::string boardPath, int centerX, int topcenterY, in
 void Game::setFen(std::string fen)
 {
 	indicates.clear();
-	//Çå¿Õ
+	//æ¸…ç©º
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -134,10 +134,10 @@ void Game::setFen(std::string fen)
 
 
 	if (fen.find("w") == std::string::npos) {
-		toWhoMove = false; //Ö´ºÚÆåÏÈ×ß
+		toWhoMove = false; //æ‰§é»‘æ£‹å…ˆèµ°
 	}
 	else {
-		toWhoMove = true; //ºìÆåÏÈ×ß
+		toWhoMove = true; //çº¢æ£‹å…ˆèµ°
 	}
 
 
@@ -198,7 +198,7 @@ void Game::moveChess(std::string step,std::string score)
 
 	stepIdx stepIdx;
 	int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
-	if (step.size() == 4)  //ab×ª×ø±ê
+	if (step.size() == 4)  //abè½¬åæ ‡
 	{
 		std::string s1 = step.substr(0, 1);
 		std::string s2 = step.substr(1, 1);
@@ -219,24 +219,24 @@ void Game::moveChess(std::string step,std::string score)
 		//printf("(%d.%d)==>(%d.%d)\n", row_begin, col_begin, row_end, col_end);
 		stepIdx.print();
 
-		//ÅĞ¶Ï¹æÔò
+		//åˆ¤æ–­è§„åˆ™
 
-		//¼ÇÂ¼×ßÖ®Ç°µÄfen ÒÔ¼°×ß·¨
+		//è®°å½•èµ°ä¹‹å‰çš„fen ä»¥åŠèµ°æ³•
 		std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
 		stepList.push_back(moveInfo(step, stepToQp(step, maps), calcFEN(maps, toWhoMove ? 2 : 1), score, std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPlayTime).count())));
 
 
-		//³öÆå
+		//å‡ºæ£‹
 		maps[stepIdx.endX][stepIdx.endY].setName(maps[stepIdx.beginX][stepIdx.beginY].name);
 		maps[stepIdx.beginX][stepIdx.beginY].setName("");
 
 
 
-		//¿ªÊ¼ĞÂÒ»²½µÄ¼ÆÊ±
+		//å¼€å§‹æ–°ä¸€æ­¥çš„è®¡æ—¶
 		lastPlayTime = now;
 
 
-		//°Ñ¶ÔÃæµÄ·½¿òÈ¡Ïûµô
+		//æŠŠå¯¹é¢çš„æ–¹æ¡†å–æ¶ˆæ‰
 		for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 9; j++)
 			{
@@ -257,14 +257,14 @@ void Game::moveChess(std::string step,std::string score)
 
 
 
-		if (maps[stepIdx.endX][stepIdx.endY].id <=6 ) //ËµÃ÷×ßµÄÊÇºìÆì
+		if (maps[stepIdx.endX][stepIdx.endY].id <=6 ) //è¯´æ˜èµ°çš„æ˜¯çº¢æ——
 		{
 			toWhoMove = false;
 		}
 		else {
 			toWhoMove = true;
 		}
-		//toWhoMove = !toWhoMove; //»»ÈË×ß£¬Õâ¸öÔÚµ¼º½¶¨Î»µÄÊ±ºòÓĞBUG
+		//toWhoMove = !toWhoMove; //æ¢äººèµ°ï¼Œè¿™ä¸ªåœ¨å¯¼èˆªå®šä½çš„æ—¶å€™æœ‰BUG
 	}
 }
 
@@ -281,7 +281,7 @@ void Game::addIndicate(std::string bestMoveStep,std::string ponderStep)
 		stepIdx stepIdx;
 		int row_begin = 0, col_begin = 0, row_end = 0, col_end = 0;
 
-		if (steps[i].size() == 4)  //ab×ª×ø±ê
+		if (steps[i].size() == 4)  //abè½¬åæ ‡
 		{
 			std::string s1 = steps[i].substr(0, 1);
 			std::string s2 = steps[i].substr(1, 1);
@@ -311,13 +311,13 @@ void Game::init(CDC* dc, int destX, int destY)
 	this->dc = dc;
 	this->destX = destX;
 	this->destY = destY;
-	//¿ªÊ¼¶¨ÒåÆåÅÌÃ¿¸öÂäµãµÄ×ø±ê
+	//å¼€å§‹å®šä¹‰æ£‹ç›˜æ¯ä¸ªè½ç‚¹çš„åæ ‡
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 9; j++)
 		{
 			//0,4
-			//³şºÓºº½çÉÏÃæ
+			//æ¥šæ²³æ±‰ç•Œä¸Šé¢
 			int y = 0;
 			if (i <= 4) {
 				y = topcenterY + i * gapY;
@@ -336,15 +336,15 @@ void Game::begin(boolean isRed)
 {
 	this->isRed = isRed;
 
-	lastPlayTime = std::chrono::high_resolution_clock::now(); //¿ªÊ¼¼ÆÊ±ÁË
+	lastPlayTime = std::chrono::high_resolution_clock::now(); //å¼€å§‹è®¡æ—¶äº†
 
-	//ºìÆåÏÈ×ß
+	//çº¢æ£‹å…ˆèµ°
 	this->toWhoMove = true;
-	this->stepList.clear(); //Çå¿Õ×ß¹ıµÄ²½×Ó
-	indicates.clear();//Çå¿ÕÖ¸Ê¾
+	this->stepList.clear(); //æ¸…ç©ºèµ°è¿‡çš„æ­¥å­
+	indicates.clear();//æ¸…ç©ºæŒ‡ç¤º
 
 
-	//³õÊ¼»¯Æå×Ó
+	//åˆå§‹åŒ–æ£‹å­
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -357,84 +357,84 @@ void Game::begin(boolean isRed)
 
 	if (isRed)
 	{
-		//ÉÏ°ë²¿·Ö
-		maps[0][0].setName("ºÚ³µ");
-		maps[0][1].setName("ºÚÂí");
-		maps[0][2].setName("ºÚÏó");
-		maps[0][3].setName("ºÚÊ¿");
-		maps[0][4].setName("ºÚ½«");
-		maps[0][5].setName("ºÚÊ¿");
-		maps[0][6].setName("ºÚÏó");
-		maps[0][7].setName("ºÚÂí");
-		maps[0][8].setName("ºÚ³µ");
+		//ä¸ŠåŠéƒ¨åˆ†
+		maps[0][0].setName("é»‘è½¦");
+		maps[0][1].setName("é»‘é©¬");
+		maps[0][2].setName("é»‘è±¡");
+		maps[0][3].setName("é»‘å£«");
+		maps[0][4].setName("é»‘å°†");
+		maps[0][5].setName("é»‘å£«");
+		maps[0][6].setName("é»‘è±¡");
+		maps[0][7].setName("é»‘é©¬");
+		maps[0][8].setName("é»‘è½¦");
 
-		maps[2][1].setName("ºÚÅÚ");
-		maps[2][7].setName("ºÚÅÚ");
+		maps[2][1].setName("é»‘ç‚®");
+		maps[2][7].setName("é»‘ç‚®");
 
-		maps[3][0].setName("ºÚ×ä");
-		maps[3][2].setName("ºÚ×ä");
-		maps[3][4].setName("ºÚ×ä");
-		maps[3][6].setName("ºÚ×ä");
-		maps[3][8].setName("ºÚ×ä");
-		//ÏÂ°ë²¿·Ö
-		maps[9][0].setName("ºì³µ");
-		maps[9][1].setName("ºìÂí");
-		maps[9][2].setName("ºìÏà");
-		maps[9][3].setName("ºìÊË");
-		maps[9][4].setName("ºìË§");
-		maps[9][5].setName("ºìÊË");
-		maps[9][6].setName("ºìÏà");
-		maps[9][7].setName("ºìÂí");
-		maps[9][8].setName("ºì³µ");
+		maps[3][0].setName("é»‘å’");
+		maps[3][2].setName("é»‘å’");
+		maps[3][4].setName("é»‘å’");
+		maps[3][6].setName("é»‘å’");
+		maps[3][8].setName("é»‘å’");
+		//ä¸‹åŠéƒ¨åˆ†
+		maps[9][0].setName("çº¢è½¦");
+		maps[9][1].setName("çº¢é©¬");
+		maps[9][2].setName("çº¢ç›¸");
+		maps[9][3].setName("çº¢ä»•");
+		maps[9][4].setName("çº¢å¸…");
+		maps[9][5].setName("çº¢ä»•");
+		maps[9][6].setName("çº¢ç›¸");
+		maps[9][7].setName("çº¢é©¬");
+		maps[9][8].setName("çº¢è½¦");
 
-		maps[7][1].setName("ºìÅÚ");
-		maps[7][7].setName("ºìÅÚ");
+		maps[7][1].setName("çº¢ç‚®");
+		maps[7][7].setName("çº¢ç‚®");
 
-		maps[6][0].setName("ºì±ø");
-		maps[6][2].setName("ºì±ø");
-		maps[6][4].setName("ºì±ø");
-		maps[6][6].setName("ºì±ø");
-		maps[6][8].setName("ºì±ø");
+		maps[6][0].setName("çº¢å…µ");
+		maps[6][2].setName("çº¢å…µ");
+		maps[6][4].setName("çº¢å…µ");
+		maps[6][6].setName("çº¢å…µ");
+		maps[6][8].setName("çº¢å…µ");
 	}
 	else {
-		//ÉÏ°ë²¿·Ö
-		maps[0][0].setName("ºì³µ");
-		maps[0][1].setName("ºìÂí");
-		maps[0][2].setName("ºìÏà");
-		maps[0][3].setName("ºìÊË");
-		maps[0][4].setName("ºìË§");
-		maps[0][5].setName("ºìÊË");
-		maps[0][6].setName("ºìÏà");
-		maps[0][7].setName("ºìÂí");
-		maps[0][8].setName("ºì³µ");
+		//ä¸ŠåŠéƒ¨åˆ†
+		maps[0][0].setName("çº¢è½¦");
+		maps[0][1].setName("çº¢é©¬");
+		maps[0][2].setName("çº¢ç›¸");
+		maps[0][3].setName("çº¢ä»•");
+		maps[0][4].setName("çº¢å¸…");
+		maps[0][5].setName("çº¢ä»•");
+		maps[0][6].setName("çº¢ç›¸");
+		maps[0][7].setName("çº¢é©¬");
+		maps[0][8].setName("çº¢è½¦");
 
-		maps[2][1].setName("ºìÅÚ");
-		maps[2][7].setName("ºìÅÚ");
+		maps[2][1].setName("çº¢ç‚®");
+		maps[2][7].setName("çº¢ç‚®");
 
-		maps[3][0].setName("ºì±ø");
-		maps[3][2].setName("ºì±ø");
-		maps[3][4].setName("ºì±ø");
-		maps[3][6].setName("ºì±ø");
-		maps[3][8].setName("ºì±ø");
-		//ÏÂ°ë²¿·Ö
-		maps[9][0].setName("ºÚ³µ");
-		maps[9][1].setName("ºÚÂí");
-		maps[9][2].setName("ºÚÏó");
-		maps[9][3].setName("ºÚÊ¿");
-		maps[9][4].setName("ºÚ½«");
-		maps[9][5].setName("ºÚÊ¿");
-		maps[9][6].setName("ºÚÏó");
-		maps[9][7].setName("ºÚÂí");
-		maps[9][8].setName("ºÚ³µ");
+		maps[3][0].setName("çº¢å…µ");
+		maps[3][2].setName("çº¢å…µ");
+		maps[3][4].setName("çº¢å…µ");
+		maps[3][6].setName("çº¢å…µ");
+		maps[3][8].setName("çº¢å…µ");
+		//ä¸‹åŠéƒ¨åˆ†
+		maps[9][0].setName("é»‘è½¦");
+		maps[9][1].setName("é»‘é©¬");
+		maps[9][2].setName("é»‘è±¡");
+		maps[9][3].setName("é»‘å£«");
+		maps[9][4].setName("é»‘å°†");
+		maps[9][5].setName("é»‘å£«");
+		maps[9][6].setName("é»‘è±¡");
+		maps[9][7].setName("é»‘é©¬");
+		maps[9][8].setName("é»‘è½¦");
 
-		maps[7][1].setName("ºÚÅÚ");
-		maps[7][7].setName("ºÚÅÚ");
+		maps[7][1].setName("é»‘ç‚®");
+		maps[7][7].setName("é»‘ç‚®");
 
-		maps[6][0].setName("ºÚ×ä");
-		maps[6][2].setName("ºÚ×ä");
-		maps[6][4].setName("ºÚ×ä");
-		maps[6][6].setName("ºÚ×ä");
-		maps[6][8].setName("ºÚ×ä");
+		maps[6][0].setName("é»‘å’");
+		maps[6][2].setName("é»‘å’");
+		maps[6][4].setName("é»‘å’");
+		maps[6][6].setName("é»‘å’");
+		maps[6][8].setName("é»‘å’");
 	}
 }
 
@@ -443,18 +443,18 @@ void Game::begin(boolean isRed)
 extern double calcFC(double a, double b, double c, bool add);
 void Game::show()
 {
-	//³õÊ¼»¯»º³åÇø
+	//åˆå§‹åŒ–ç¼“å†²åŒº
 	gameImage.Create(gameWidth, gameHeight, board.GetBPP());
-	//´´½¨»º³åÇø¶ÔÓ¦µÄDC
+	//åˆ›å»ºç¼“å†²åŒºå¯¹åº”çš„DC
 	CDC gameCdc;
 	gameCdc.Attach(gameImage.GetDC());
 
-	//»­ÆåÅÌ
+	//ç”»æ£‹ç›˜
 	gameCdc.SetStretchBltMode(HALFTONE);
 	board.StretchBlt(gameCdc, CRect(0, 0, gameWidth, gameHeight));
 
 
-	//³õÊ¼»¯GDI+
+	//åˆå§‹åŒ–GDI+
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -464,7 +464,7 @@ void Game::show()
 	graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
 
 
-	//»­Æå×Ó
+	//ç”»æ£‹å­
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -506,7 +506,7 @@ void Game::show()
 	}
 
 
-	//»­Ö¸Ê¾
+	//ç”»æŒ‡ç¤º
 	for (int i = 0; i < indicates.size(); i++)
 	{
 		float start_left = maps[indicates[i].beginX][indicates[i].beginY].x;
@@ -530,18 +530,18 @@ void Game::show()
 	}
 
 
-	gameImage.Draw(dc->m_hDC, CRect(destX, destY, destX + gameWidth, destY + gameHeight)); //Ô´´óĞ¡¸´ÖÆ
+	gameImage.Draw(dc->m_hDC, CRect(destX, destY, destX + gameWidth, destY + gameHeight)); //æºå¤§å°å¤åˆ¶
 
 
 	gameImage.ReleaseDC();
 	gameImage.Destroy();
 
-	gameCdc.Detach();  //ÊÕÎ²±ØĞëºôÓ¦
+	gameCdc.Detach();  //æ”¶å°¾å¿…é¡»å‘¼åº”
 
 
 	//ReleaseDC(gameCdc.m_hDC);
 
-	//¹Ø±ÕGdiplus
+	//å…³é—­Gdiplus
 	GdiplusShutdown(gdiplusToken);
 }
 
@@ -550,7 +550,7 @@ void Game::show()
 void Game::changeTeam()
 {
 	this->isRed = !this->isRed;
-	//µßµ¹maps
+	//é¢ å€’maps
 
 	Pot tmp[10][9];
 	memcpy(tmp, maps, sizeof(maps));

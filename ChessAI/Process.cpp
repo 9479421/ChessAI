@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "Process.h"
 #include<iostream>
 using namespace std;
@@ -6,12 +6,12 @@ void Process::createProcess(std::string process)
 {
 	USES_CONVERSION;
 
-	//ÉèÖÃ¹ÜµÀ°²È«ÊôĞÔ
+	//è®¾ç½®ç®¡é“å®‰å…¨å±æ€§
 	SECURITY_ATTRIBUTES sa = SECURITY_ATTRIBUTES();
 	sa.bInheritHandle = TRUE;
 	//sa.nLength = sizeof(sa);
 	//sa.lpSecurityDescriptor = NULL;
-	//´´½¨ÄäÃû¹ÜµÀ
+	//åˆ›å»ºåŒ¿åç®¡é“
 	CreatePipe(&hOutRead, &hOutWrite, &sa, 0);
 	CreatePipe(&hInRead, &hInWrite, &sa, 0);
 
@@ -110,7 +110,7 @@ void Process::execute(std::string endFlag, std::string endCmd, float maxWaitingT
 	}
 	WriteFile(hInWrite, cmd.c_str(), cmd.length(), NULL, NULL);
 
-	//¿ªÊ¼¼ÆÊ±
+	//å¼€å§‹è®¡æ—¶
 	std::chrono::steady_clock::time_point startTime = std::chrono::high_resolution_clock::now();
 	bool isEnd = false;
 
@@ -142,7 +142,7 @@ void Process::execute(std::string endFlag, std::string endCmd, float maxWaitingT
 			std::chrono::steady_clock::time_point endTime = std::chrono::high_resolution_clock::now();
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() > maxWaitingTime*1000)
 			{
-				//Ç¿ĞĞ½áÊø£¬Ö±½ÓÄÃµ½×î¼Ñ×ß·¨
+				//å¼ºè¡Œç»“æŸï¼Œç›´æ¥æ‹¿åˆ°æœ€ä½³èµ°æ³•
 				WriteFile(hInWrite, endCmd.c_str(), endCmd.size(), NULL, NULL);
 				isEnd = true;
 			}
@@ -157,9 +157,9 @@ end:
 
 void Process::exit()
 {
-	//Ïú»ÙÄÚ´æºÍ½ø³Ì
+	//é”€æ¯å†…å­˜å’Œè¿›ç¨‹
 	TerminateProcess(pi.hProcess, 1);
-	// ¹Ø±Õ½ø³ÌºÍÏß³Ì¾ä±ú
+	// å…³é—­è¿›ç¨‹å’Œçº¿ç¨‹å¥æŸ„
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 	CloseHandle(hInWrite);

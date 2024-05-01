@@ -1,19 +1,19 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "QButton.h"
 
 IMPLEMENT_DYNAMIC(QButton, CButton)
 //
 //void QButton::DrawBkImage(CRect rect, CDC* pDc, UINT ID)
 //{
-//	CDC   dcBmp;             //¶¨Òå²¢´´½¨Ò»¸öÄÚ´æÉè±¸»·¾³
-//	dcBmp.CreateCompatibleDC(pDc);             //´´½¨¼æÈİĞÔDC
+//	CDC   dcBmp;             //å®šä¹‰å¹¶åˆ›å»ºä¸€ä¸ªå†…å­˜è®¾å¤‡ç¯å¢ƒ
+//	dcBmp.CreateCompatibleDC(pDc);             //åˆ›å»ºå…¼å®¹æ€§DC
 //	CBitmap   bmpBackground;
-//	bmpBackground.LoadBitmap(ID);    //ÔØÈë×ÊÔ´ÖĞÍ¼Æ¬
-//	BITMAP   m_bitmap;                         //Í¼Æ¬±äÁ¿               
-//	bmpBackground.GetBitmap(&m_bitmap);       //½«Í¼Æ¬ÔØÈëÎ»Í¼ÖĞ
-//	//½«Î»Í¼Ñ¡ÈëÁÙÊ±ÄÚ´æÉè±¸»·¾³
+//	bmpBackground.LoadBitmap(ID);    //è½½å…¥èµ„æºä¸­å›¾ç‰‡
+//	BITMAP   m_bitmap;                         //å›¾ç‰‡å˜é‡               
+//	bmpBackground.GetBitmap(&m_bitmap);       //å°†å›¾ç‰‡è½½å…¥ä½å›¾ä¸­
+//	//å°†ä½å›¾é€‰å…¥ä¸´æ—¶å†…å­˜è®¾å¤‡ç¯å¢ƒ
 //	CBitmap* pbmpOld = dcBmp.SelectObject(&bmpBackground);
-//	//µ÷ÓÃº¯ÊıÏÔÊ¾Í¼Æ¬StretchBltÏÔÊ¾ĞÎ×´¿É±ä
+//	//è°ƒç”¨å‡½æ•°æ˜¾ç¤ºå›¾ç‰‡StretchBltæ˜¾ç¤ºå½¢çŠ¶å¯å˜
 //	pDc->SetStretchBltMode(HALFTONE);
 //	pDc->StretchBlt(rect.left, rect.top, rect.Width(), rect.Height(), &dcBmp, 0, 0, m_bitmap.bmWidth, m_bitmap.bmHeight, SRCCOPY);
 //}
@@ -24,8 +24,8 @@ QButton::QButton()
 	m_hoverColor = RGB(255, 94, 144);
 	m_clickColor = SkinColors::white;
 	m_textColor = SkinColors::white;
-	m_radis = 0; //Ô²½Ç·ù¶È
-	m_fontSize = 18;//×ÖÌå
+	m_radis = 0; //åœ†è§’å¹…åº¦
+	m_fontSize = 18;//å­—ä½“
 
 
 	m_drawColor = m_bkColor;
@@ -54,7 +54,7 @@ void QButton::DrawItem(LPDRAWITEMSTRUCT lpDrSt)
 
 		COLORREF textColor = m_textColor;
 		COLORREF borderColor = m_borderColor;
-		if (lpDrSt->itemState & ODS_DISABLED) //½ûÖ¹
+		if (lpDrSt->itemState & ODS_DISABLED) //ç¦æ­¢
 		{
 			m_drawColor = SkinColors::lightgray;
 			textColor = SkinColors::dark_gray;
@@ -64,9 +64,9 @@ void QButton::DrawItem(LPDRAWITEMSTRUCT lpDrSt)
 		CPen* pOldPen = pDC->SelectObject(&pen);
 		
 		CFont font;
-		font.CreateFontW(m_fontSize, 0, 0, 0, 300, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"Î¢ÈíÑÅºÚ");
+		font.CreateFontW(m_fontSize, 0, 0, 0, 300, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"å¾®è½¯é›…é»‘");
 		CFont* pOldFont = pDC->SelectObject(&font);
-		//Ìî³äÑÕÉ«
+		//å¡«å……é¢œè‰²
 		CBrush brush;
 		brush.CreateSolidBrush(m_drawColor);
 		CBrush *pOldBrush = pDC->SelectObject(&brush);
@@ -74,25 +74,25 @@ void QButton::DrawItem(LPDRAWITEMSTRUCT lpDrSt)
 		pDC->RoundRect(0, 0, rect.right, rect.bottom, m_radis, m_radis);
 		pDC->SelectObject(pOldPen);
 		pDC->SelectObject(pOldBrush);
-		//»æÖÆ°´Å¥ÎÄ±¾
-		//¶¨ÒåÒ»¸öCRectÓÃÓÚ»æÖÆÎÄ±¾
+		//ç»˜åˆ¶æŒ‰é’®æ–‡æœ¬
+		//å®šä¹‰ä¸€ä¸ªCRectç”¨äºç»˜åˆ¶æ–‡æœ¬
 		CRect textRect;
-		//¿½±´¾ØĞÎÇøÓò
+		//æ‹·è´çŸ©å½¢åŒºåŸŸ
 		textRect.CopyRect(&rect);
-		//»ñµÃ×Ö·û´®³ß´ç
+		//è·å¾—å­—ç¬¦ä¸²å°ºå¯¸
 		CString text;
 		GetWindowText(text);
 		CSize sz = pDC->GetTextExtent(text);
-		//µ÷ÕûÎÄ±¾Î»ÖÃ ¾ÓÖĞ
+		//è°ƒæ•´æ–‡æœ¬ä½ç½® å±…ä¸­
 		textRect.top += (textRect.Height() - sz.cy) / 2;
-		//ÉèÖÃÎÄ±¾±³¾°Í¸Ã÷
+		//è®¾ç½®æ–‡æœ¬èƒŒæ™¯é€æ˜
 		pDC->SetBkMode(TRANSPARENT);
-		//ÉèÖÃÎÄ±¾ÑÕÉ«
+		//è®¾ç½®æ–‡æœ¬é¢œè‰²
 		pDC->SetTextColor(textColor);
-		//»æÖÆÎÄ±¾ÄÚÈİ
+		//ç»˜åˆ¶æ–‡æœ¬å†…å®¹
 		pDC->DrawText(text, &textRect, DT_RIGHT | DT_CENTER | DT_BOTTOM);
 
-		if (lpDrSt->itemState & ODS_FOCUS) //¾Û½¹
+		if (lpDrSt->itemState & ODS_FOCUS) //èšç„¦
 		{
 			int iPrevBkMode = pDC->GetBkMode();
 
@@ -176,13 +176,13 @@ void QButton::OnTimer(UINT_PTR nIDEvent)
 {
 	CRect rcWindow;
 	GetWindowRect(&rcWindow);
-	CPoint ptCursor;//Êó±ê¹â±êÎ»ÖÃ
+	CPoint ptCursor;//é¼ æ ‡å…‰æ ‡ä½ç½®
 	GetCursorPos(&ptCursor);
-	if (!rcWindow.PtInRect(ptCursor) && isIn)//²»ÔÚ°´Å¥ÄÚ
+	if (!rcWindow.PtInRect(ptCursor) && isIn)//ä¸åœ¨æŒ‰é’®å†…
 	{
 		isIn = false;
 		KillTimer(1);
-		m_drawColor = m_bkColor;//»Ö¸´±³¾°É«
+		m_drawColor = m_bkColor;//æ¢å¤èƒŒæ™¯è‰²
 		InvalidateRect(NULL);
 		return;
 	}

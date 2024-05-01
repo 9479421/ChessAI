@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "Utils.h"
 
 
@@ -52,7 +52,7 @@ void Utils::XSleep(int nWaitInMsecs)
 
 HBITMAP Utils::WindowCapture(HWND hwnd)
 {
-	if (hwnd == NULL) //½ØÍ¼ÆÁÄ»
+	if (hwnd == NULL) //æˆªå›¾å±å¹•
 	{
 		hwnd = ::GetDesktopWindow();
 	}
@@ -70,9 +70,9 @@ HBITMAP Utils::WindowCapture(HWND hwnd)
 	SelectObject(memDC, memBitmap);
 	BitBlt(memDC, 0, 0, width, height, hdc, 0, 0, SRCCOPY);
 
-	//É¾³ı´´½¨µÄ¼æÈİÄÚ´æDC
+	//åˆ é™¤åˆ›å»ºçš„å…¼å®¹å†…å­˜DC
 	DeleteDC(memDC);
-	//ÊÍ·Å´°¿ÚDC
+	//é‡Šæ”¾çª—å£DC
 	ReleaseDC(hwnd, hdc);
 
 	return memBitmap;
@@ -83,7 +83,7 @@ HBITMAP Utils::WindowCapture_Front(HWND hwnd,bool autoTopMost)
 	RECT rect;
 	GetWindowRect(hwnd, &rect);
 
-	//¸¸´°¿ÚÖÃ¶¥ Îª½ØÍ¼×ö×¼±¸
+	//çˆ¶çª—å£ç½®é¡¶ ä¸ºæˆªå›¾åšå‡†å¤‡
 	if (autoTopMost)
 	{
 		::SetWindowPos((hwnd), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -101,9 +101,9 @@ HBITMAP Utils::WindowCapture_Front(HWND hwnd,bool autoTopMost)
 	SelectObject(memDC, memBitmap);
 	BitBlt(memDC, 0, 0, width, height, hdc, rect.left, rect.top, SRCCOPY);
 
-	////É¾³ı´´½¨µÄ¼æÈİÄÚ´æDC
+	////åˆ é™¤åˆ›å»ºçš„å…¼å®¹å†…å­˜DC
 	DeleteDC(memDC);
-	////ÊÍ·Å´°¿ÚDC
+	////é‡Šæ”¾çª—å£DC
 	ReleaseDC(hwnd, hdc);
 
 	return memBitmap;
@@ -111,7 +111,7 @@ HBITMAP Utils::WindowCapture_Front(HWND hwnd,bool autoTopMost)
 
 HBITMAP Utils::WindowCaptere_D3D(HWND hwnd, bool autoTopMost)
 {
-	//¸¸´°¿ÚÖÃ¶¥ Îª½ØÍ¼×ö×¼±¸
+	//çˆ¶çª—å£ç½®é¡¶ ä¸ºæˆªå›¾åšå‡†å¤‡
 	if (autoTopMost)
 	{
 		::SetWindowPos((hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -121,7 +121,7 @@ HBITMAP Utils::WindowCaptere_D3D(HWND hwnd, bool autoTopMost)
 
 	LPDIRECT3D9    g_pD3D = NULL;
 	LPDIRECT3DDEVICE9   g_pd3dDevice = NULL;
-	//´´½¨Direct3D¶ÔÏó
+	//åˆ›å»ºDirect3Då¯¹è±¡
 	g_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
 	D3DPRESENT_PARAMETERS d3dpp;
 	ZeroMemory(&d3dpp, sizeof(d3dpp));
@@ -136,7 +136,7 @@ HBITMAP Utils::WindowCaptere_D3D(HWND hwnd, bool autoTopMost)
 	// Create the surface to hold the screen image data
 	LPDIRECT3DSURFACE9 surf;
 	g_pd3dDevice->CreateOffscreenPlainSurface(mode.Width,
-		mode.Height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &surf, NULL); //×¢ÒâµÚËÄ¸ö²ÎÊı²»ÄÜÊÇD3DPOOL_DEFAULT
+		mode.Height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &surf, NULL); //æ³¨æ„ç¬¬å››ä¸ªå‚æ•°ä¸èƒ½æ˜¯D3DPOOL_DEFAULT
 	// Get the screen data
 	g_pd3dDevice->GetFrontBufferData(0, surf);
 	RECT* rect = NULL;
@@ -188,12 +188,12 @@ HBITMAP Utils::stretchBitMap(HBITMAP bitmap, int width, int height)
 	imageNew.Create(width, height, 32);
 	HDC dcNew = imageNew.GetDC();
 	SetStretchBltMode(dcNew, HALFTONE);
-	image.StretchBlt(dcNew, 0, 0, width, height);//½«imageÊä³öµ½imageNewµÄDCÉÏ
+	image.StretchBlt(dcNew, 0, 0, width, height);//å°†imageè¾“å‡ºåˆ°imageNewçš„DCä¸Š
 	image.Detach();
 	imageNew.ReleaseDC();
 
 
-	//»ñÈ¡imageNewÎ»Í¼
+	//è·å–imageNewä½å›¾
 	HBITMAP hBmp = imageNew.Detach();
 
 	//DeleteDC(dcNew);
@@ -207,14 +207,14 @@ CString Utils::selectFolder()
 	if (lpitemidlist == NULL)
 		return CString("");
 
-	//ÅäÖÃ¶Ô»°¿ò
+	//é…ç½®å¯¹è¯æ¡†
 	BROWSEINFO browseinfo;
 	ZeroMemory(&browseinfo, sizeof(browseinfo));
 	browseinfo.pidlRoot = lpitemidlist;
-	browseinfo.lpszTitle = _T("Ñ¡ÔñÄ¿Â¼µÄÂ·¾¶");
+	browseinfo.lpszTitle = _T("é€‰æ‹©ç›®å½•çš„è·¯å¾„");
 	browseinfo.ulFlags = BIF_EDITBOX | BIF_RETURNONLYFSDIRS;
 
-	//´ò¿ª¶Ô»°¿ò
+	//æ‰“å¼€å¯¹è¯æ¡†
 	LPITEMIDLIST obj = SHBrowseForFolder(&browseinfo);
 	if (obj != NULL)
 	{
@@ -238,7 +238,7 @@ CString Utils::readFile(CString path)
 		/*printf("%s", buffer);*/
 		sb += CA2W(buffer);
 	}
-	fclose(filePtr);  // ¹Ø±ÕÎÄ¼ş
+	fclose(filePtr);  // å…³é—­æ–‡ä»¶
 	return sb;
 }
 
@@ -247,10 +247,10 @@ void Utils::writeFile(CString path, CString content)
 	FILE* filePtr = fopen(CW2A(path), "wb");
 	if (filePtr == NULL)
 	{
-		MessageBoxA(NULL, "Ğ´ÈëÎÄ¼şÊ§°Ü", "ĞÅÏ¢", 0);
+		MessageBoxA(NULL, "å†™å…¥æ–‡ä»¶å¤±è´¥", "ä¿¡æ¯", 0);
 	}
 	fwrite(CW2A(content), sizeof(char), strlen(CW2A(content)), filePtr);
-	fclose(filePtr);  // ¹Ø±ÕÎÄ¼ş
+	fclose(filePtr);  // å…³é—­æ–‡ä»¶
 }
 
 std::list<File> Utils::enumFiles(CString path)
@@ -267,13 +267,13 @@ std::list<File> Utils::enumFiles(CString path)
 
 			if (!(ListFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 			{
-				//ÎÄ¼ş
+				//æ–‡ä»¶
 				//printf("%ls\n", ListFile.cFileName);
 				fileList.push_back(File(ListFile.cFileName, path));
 			}
 			else
 			{
-				//Ä¿Â¼
+				//ç›®å½•
 			}
 		} while (FindNextFile(hListFile, &ListFile));
 	}
@@ -291,7 +291,7 @@ std::list<CString> Utils::splitStr(CString str, CString splitStr)
 		if (position == -1)
 		{
 			CString tmp = str.Mid(idx);
-			if (tmp.GetLength() > 0) //½áÎ²µÄ\r\n²»Óè¼ÆÈë¿ÕÎÄ±¾
+			if (tmp.GetLength() > 0) //ç»“å°¾çš„\r\nä¸äºˆè®¡å…¥ç©ºæ–‡æœ¬
 			{
 				strList.push_back(tmp);
 			}
@@ -317,7 +317,7 @@ std::vector<std::string> Utils::splitStr(std::string str, std::string splitStr)
 		if (position == -1)
 		{
 			std::string tmp = str.substr(idx);
-			if (tmp.size() > 0) //½áÎ²µÄ\r\n²»Óè¼ÆÈë¿ÕÎÄ±¾
+			if (tmp.size() > 0) //ç»“å°¾çš„\r\nä¸äºˆè®¡å…¥ç©ºæ–‡æœ¬
 			{
 				strList.push_back(tmp);
 			}
@@ -343,10 +343,10 @@ CString Utils::getTimeStamp(bool isMilliSecond)
 	time_t timestamp = time(NULL);
 	if (isMilliSecond)
 	{
-		timestampStr.Format(L"%ld000", timestamp); //13Î»ÔİÊ±²»¾«È·£¬ÓÃµ½µÄÊ±ºòÔÙ¸Ä½ø
+		timestampStr.Format(L"%ld000", timestamp); //13ä½æš‚æ—¶ä¸ç²¾ç¡®ï¼Œç”¨åˆ°çš„æ—¶å€™å†æ”¹è¿›
 	}
 	else {
-		timestampStr.Format(L"%ld", timestamp); //10Î»Ê±¼ä´Á
+		timestampStr.Format(L"%ld", timestamp); //10ä½æ—¶é—´æˆ³
 	}
 	return timestampStr;
 }
@@ -375,15 +375,15 @@ bool Utils::HBitmap2Mat(HBITMAP& hBmp, cv::Mat& mat)
 std::string Utils::ReplaceAllText(std::string str, std::string a, std::string b)
 {
 	int oldPos = 0;
-	while (str.find(a, oldPos) != -1)//ÔÚÎ´±»Ìæ»»µÄÎÄ±¾ÖĞÑ°ÕÒÄ¿±êÎÄ±¾
+	while (str.find(a, oldPos) != -1)//åœ¨æœªè¢«æ›¿æ¢çš„æ–‡æœ¬ä¸­å¯»æ‰¾ç›®æ ‡æ–‡æœ¬
 	{
-		int start = str.find(a, oldPos);//ÕÒµ½Ä¿±êÎÄ±¾µÄÆğÊ¼ÏÂ±ê
+		int start = str.find(a, oldPos);//æ‰¾åˆ°ç›®æ ‡æ–‡æœ¬çš„èµ·å§‹ä¸‹æ ‡
 
 		str.replace(start, a.size(), b);
-		//´Óstr[start]¿ªÊ¼µ½str[a.size()]Ìæ»»Îªb
-		//str[start]µ½str[a.size()]Ò²¾ÍÊÇaËùÔÚµÃÆ¬¶Î
+		//ä»str[start]å¼€å§‹åˆ°str[a.size()]æ›¿æ¢ä¸ºb
+		//str[start]åˆ°str[a.size()]ä¹Ÿå°±æ˜¯aæ‰€åœ¨å¾—ç‰‡æ®µ
 
-		oldPos = start + b.size();//¼ÇÂ¼Î´Ìæ»»ÎÄ±¾µÄÆğÊ¼ÏÂ±ê
+		oldPos = start + b.size();//è®°å½•æœªæ›¿æ¢æ–‡æœ¬çš„èµ·å§‹ä¸‹æ ‡
 	}
 	return str;
 }
@@ -408,16 +408,16 @@ int Utils::getTextTimes(std::string str, std::string flag)
 }
 
 std::string Utils::trim(const std::string& str) {
-	// ÕÒµ½µÚÒ»¸ö²»ÊÇ¿Õ¸ñµÄ×Ö·ûµÄÎ»ÖÃ
+	// æ‰¾åˆ°ç¬¬ä¸€ä¸ªä¸æ˜¯ç©ºæ ¼çš„å­—ç¬¦çš„ä½ç½®
 	auto start = str.find_first_not_of(' ');
-	// Èç¹û×Ö·û´®È«ÊÇ¿Õ¸ñ£¬·µ»ØÒ»¸ö¿Õ×Ö·û´®
+	// å¦‚æœå­—ç¬¦ä¸²å…¨æ˜¯ç©ºæ ¼ï¼Œè¿”å›ä¸€ä¸ªç©ºå­—ç¬¦ä¸²
 	if (start == std::string::npos)
 		return "";
 
-	// ÕÒµ½×îºóÒ»¸ö²»ÊÇ¿Õ¸ñµÄ×Ö·ûµÄÎ»ÖÃ
+	// æ‰¾åˆ°æœ€åä¸€ä¸ªä¸æ˜¯ç©ºæ ¼çš„å­—ç¬¦çš„ä½ç½®
 	auto end = str.find_last_not_of(' ');
 
-	// ·µ»Ø´Ó¿ªÊ¼µ½½áÊøÎ»ÖÃµÄ×Ó×Ö·û´®
+	// è¿”å›ä»å¼€å§‹åˆ°ç»“æŸä½ç½®çš„å­å­—ç¬¦ä¸²
 	return str.substr(start, end - start + 1);
 }
 
@@ -432,7 +432,7 @@ int Utils::findFirstNotOf(const std::string& str, char ch...) {
 	for (;;)
 	{
 		nArgVal = va_arg(chList, char);
-		if (nArgVal == '\0') //½áÊø±êÖ¾
+		if (nArgVal == '\0') //ç»“æŸæ ‡å¿—
 		{
 			break;
 		}
@@ -449,7 +449,7 @@ int Utils::findFirstNotOf(const std::string& str, char ch...) {
 		bool flag = false;
 		for (int j = 0; j < chVector.size(); j++)
 		{
-			if (chVector[j] == str[i]) //ÓĞÈÎºÎÒ»¸öÏàµÈµÄ£¬¶¼²»ÄÜËã
+			if (chVector[j] == str[i]) //æœ‰ä»»ä½•ä¸€ä¸ªç›¸ç­‰çš„ï¼Œéƒ½ä¸èƒ½ç®—
 			{
 				flag = true;
 			}
@@ -520,4 +520,20 @@ bool Utils::IsProcessExists(std::string processName)
 		} while (Process32Next(hSnapshot, &pe32));
 	}
 
+}
+
+
+std::string Utils::utf8_to_ansi(std::string strUTF8) {
+	UINT nLen = MultiByteToWideChar(CP_UTF8, NULL, strUTF8.c_str(), -1, NULL, NULL);
+	WCHAR* wszBuffer = new WCHAR[nLen + 1];
+	nLen = MultiByteToWideChar(CP_UTF8, NULL, strUTF8.c_str(), -1, wszBuffer, nLen);
+	wszBuffer[nLen] = 0;
+	nLen = WideCharToMultiByte(936, NULL, wszBuffer, -1, NULL, NULL, NULL, NULL);
+	CHAR* szBuffer = new CHAR[nLen + 1];
+	nLen = WideCharToMultiByte(936, NULL, wszBuffer, -1, szBuffer, nLen, NULL, NULL);
+	szBuffer[nLen] = 0;
+	strUTF8 = szBuffer;
+	delete[]szBuffer;
+	delete[]wszBuffer;
+	return strUTF8;
 }

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "pch.h"
 #include <string>
 
@@ -45,25 +45,25 @@ public:
 private:
 	int m_width;
 	int m_height;
-	CImage m_resource; //»º´æÇø
+	CImage m_resource; //ç¼“å­˜åŒº
 
-	CImage m_image; //µ×Í¼£¬Ò²¾ÍÊÇÆåÅÌÕÕÆ¬
+	CImage m_image; //åº•å›¾ï¼Œä¹Ÿå°±æ˜¯æ£‹ç›˜ç…§ç‰‡
 
 	float rateX;
 	float rateY;
 
 
-	//»æÖÆ·½¿òµÄ²ÎÊı
+	//ç»˜åˆ¶æ–¹æ¡†çš„å‚æ•°
 	int x1;
 	int y1;
 	int x2;
 	int y2;
 
-	//±ÈÀı
+	//æ¯”ä¾‹
 	float tbRate;
 
 	
-	CDC* m_dc; //»æÖÆ½á¹ûµÄÈ¥Ïò
+	CDC* m_dc; //ç»˜åˆ¶ç»“æœçš„å»å‘
 	int m_destX;
 	int m_destY;
 

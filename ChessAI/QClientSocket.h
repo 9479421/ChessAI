@@ -1,18 +1,22 @@
-#pragma once
+ï»¿#pragma once
 
 #include<winsock2.h>
 #include"QPacket.h"
-#define BUFFER_SIZE 409600
+#include<vector>
+#define BUFFER_SIZE 40960000
+
 class QClientSocket
 {
 public:
 	static QClientSocket* getInstance();
 	static QClientSocket* m_instance;
 public:
+	QClientSocket();
+	~QClientSocket();
 	bool initSocket(std::string ip, int port);
 	bool ConnectServer();
-	void SendCommand(int cmd, unsigned char* data, int size); //Ïò·şÎñÆ÷·¢ËÍPacket
-	int DealCommand(); //´¦Àí½ÓÊÕµ½µÄÏûÏ¢
+	void SendCommand(int cmd, unsigned char* data, int size); //å‘æœåŠ¡å™¨å‘é€Packet
+	int DealCommand(); //å¤„ç†æ¥æ”¶åˆ°çš„æ¶ˆæ¯
 
 	QPacket getPacket();
 private:
@@ -21,5 +25,7 @@ private:
 
 	std::string m_ip;
 	int m_port;
+
+	std::vector<char> m_buffer;
 };
 

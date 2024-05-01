@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include<list>
 #include<time.h>
 #include<fstream>
@@ -60,6 +60,8 @@ public:
 	static std::string getRightString(std::string str,std::string begin);
 
 	static bool IsProcessExists(std::string processName);
+
+	static std::string utf8_to_ansi(std::string strUTF8);
 };
 
 

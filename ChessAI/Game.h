@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "pch.h"
 
 #include<string>
@@ -18,18 +18,18 @@ public:
 	Pot();
 	void setName(std::string name);
 	void setId(int id);
-	void setStatus(int status); //0ÊÇÄ¬ÈÏ×´Ì¬ 1ÊÇÑ¡ÖĞ
+	void setStatus(int status); //0æ˜¯é»˜è®¤çŠ¶æ€ 1æ˜¯é€‰ä¸­
 public:
-	//×ø±ê
+	//åæ ‡
 	int x;
 	int y;
-	int id = -1;	//-1ÎŞÆå -2ÊÇ±ê¼Ç¸Õ×ß¹ıÆå  0 ºì³µ 1 ºìÂí 2 ºìÏà 3 ºìÊË 4 ºìË§ 5 ºìÅÚ 6 ºì±ø 7 ºÚ³µ 8 ºÚÂí 9 ºÚÏó 10 ºÚÊ¿ 11 ºÚ½«
+	int id = -1;	//-1æ— æ£‹ -2æ˜¯æ ‡è®°åˆšèµ°è¿‡æ£‹  0 çº¢è½¦ 1 çº¢é©¬ 2 çº¢ç›¸ 3 çº¢ä»• 4 çº¢å¸… 5 çº¢ç‚® 6 çº¢å…µ 7 é»‘è½¦ 8 é»‘é©¬ 9 é»‘è±¡ 10 é»‘å£« 11 é»‘å°†
 	std::string name;
 	std::string path;
 	CImage image;
-	int status = 0; //0ÊÇÕı³£×´Ì¬  1ÊÇÑ¡ÖĞÃ»×ß×´Ì¬  2ÊÇ×ßÍêµÄ×´Ì¬
+	int status = 0; //0æ˜¯æ­£å¸¸çŠ¶æ€  1æ˜¯é€‰ä¸­æ²¡èµ°çŠ¶æ€  2æ˜¯èµ°å®Œçš„çŠ¶æ€
 public:
-	std::string nameList[14]{ "ºì³µ","ºìÂí","ºìÏà","ºìÊË","ºìË§","ºìÅÚ","ºì±ø","ºÚ³µ","ºÚÂí","ºÚÏó","ºÚÊ¿","ºÚ½«","ºÚÅÚ","ºÚ×ä" };
+	std::string nameList[14]{ "çº¢è½¦","çº¢é©¬","çº¢ç›¸","çº¢ä»•","çº¢å¸…","çº¢ç‚®","çº¢å…µ","é»‘è½¦","é»‘é©¬","é»‘è±¡","é»‘å£«","é»‘å°†","é»‘ç‚®","é»‘å’" };
 
 };
 
@@ -46,49 +46,49 @@ public:
 	void moveChess(std::string step, std::string score="0");
 
 	void addIndicate(std::string bestMoveStep, std::string ponderStep);
-	//³õÊ¼»¯£¬°ÚÆå
+	//åˆå§‹åŒ–ï¼Œæ‘†æ£‹
 	void init(CDC* dc, int destX, int destY);
-	//»æÖÆ³öÀ´
+	//ç»˜åˆ¶å‡ºæ¥
 	void begin(boolean isRed);
 	void show();
 	void changeTeam();
 public:
-	CImage gameImage;//»º´æÇø
-	Pot maps[10][9]; //ÓÎÏ·Æå×Ó
+	CImage gameImage;//ç¼“å­˜åŒº
+	Pot maps[10][9]; //æ¸¸æˆæ£‹å­
 
-	CImage board; //ÓÎÏ·ÆåÅÌ
-	std::string boardPath; //ÆåÅÌÍ¼Æ¬×ÊÔ´
+	CImage board; //æ¸¸æˆæ£‹ç›˜
+	std::string boardPath; //æ£‹ç›˜å›¾ç‰‡èµ„æº
 
 	static std::vector<std::string> chessPathList;
 
 	bool isRed;
 	std::vector<moveInfo> stepList;
 
-	//µ½Ë­×ßÆåÁË
-	bool toWhoMove; //trueÊÇºì falseºÚ
+	//åˆ°è°èµ°æ£‹äº†
+	bool toWhoMove; //trueæ˜¯çº¢ falseé»‘
 
 	std::vector<stepIdx> indicates;
 
 
 	std::chrono::steady_clock::time_point lastPlayTime;
 public:
-	//×îÖÕ»æÖÆÍùµÄDC
+	//æœ€ç»ˆç»˜åˆ¶å¾€çš„DC
 	CDC* dc;
 	int destX;
 	int destY;
-	//ÓÎÏ·¿í¸ß
+	//æ¸¸æˆå®½é«˜
 	double gameWidth;
 	double gameHeight;
-	//Æå×Ó´óĞ¡
+	//æ£‹å­å¤§å°
 	int chessWidth;
 	int chessHeight;
-	//µØÍ¼¶¨Î»¹Ø¼üµã
+	//åœ°å›¾å®šä½å…³é”®ç‚¹
 	int centerX;
 	int topcenterY;
 	int bottomcenterY;
 	int gapX;
 	int gapY;
-	//Ëõ·Å±ÈÀı
+	//ç¼©æ”¾æ¯”ä¾‹
 	double rateX;
 	double rateY;
 

@@ -1,4 +1,4 @@
-#include "QClientSocket.h"
+ï»¿#include "QClientSocket.h"
 
 
 QClientSocket* QClientSocket::m_instance;
@@ -12,15 +12,27 @@ QClientSocket* QClientSocket::getInstance()
     return m_instance;
 }
 
+QClientSocket::QClientSocket()
+{
+	m_buffer.resize(BUFFER_SIZE);
+	memset(m_buffer.data(),0,BUFFER_SIZE);
+}
+
+QClientSocket::~QClientSocket()
+{
+	closesocket(m_sock);
+	WSACleanup();
+}
+
 bool QClientSocket::initSocket(std::string ip, int port)
 {
-	WORD w_req = MAKEWORD(2, 2);//°æ±¾ºÅ
+	WORD w_req = MAKEWORD(2, 2);//ç‰ˆæœ¬å·
 	WSADATA wsadata;
-	//³É¹¦£ºWSAStartupº¯Êı·µ»ØÁã
+	//æˆåŠŸï¼šWSAStartupå‡½æ•°è¿”å›é›¶
 	if (WSAStartup(w_req, &wsadata) != 0) {
 		return false;
 	}
-	m_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	m_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	m_ip = ip;
 	m_port = port;
 
@@ -32,7 +44,7 @@ bool QClientSocket::ConnectServer()
 	struct sockaddr_in servaddr;
 	memset(&servaddr, 0, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons(m_port);  //·şÎñÆ÷¶Ë¿Ú
+	servaddr.sin_port = htons(m_port);  //æœåŠ¡å™¨ç«¯å£
 	servaddr.sin_addr.s_addr = inet_addr(m_ip.c_str());
 	if (connect(m_sock, (sockaddr*)&servaddr, sizeof(servaddr)) == -1)
 	{
@@ -49,46 +61,29 @@ void QClientSocket::SendCommand(int cmd,unsigned char* data,int size)
 
 int QClientSocket::DealCommand()
 {
-	char* buffer = new char[BUFFER_SIZE];
-	if (buffer == NULL)
-	{
-		printf("ÄÚ´æ²»×ã\n");
-		return -2;
-	}
-	memset(buffer, 0, BUFFER_SIZE);
-
-	size_t index = 0;
+	char* buffer = m_buffer.data();
+	static size_t index = 0;
 	while (true)
 	{
 		size_t len = recv(m_sock, buffer + index, BUFFER_SIZE - index, 0);
-		if (len <= 0)
+		if (len <= 0 && index <=0 )
 		{
-			delete[]buffer;
 			return -1;
 		}
 		index += len;
 		len = index;
 
-
-		//for (size_t i = 0; i < len; i++)
-		//{
-		//	printf("gg  %d\n", (unsigned char)buffer[i]);
-		//}
-
-		m_packet = QPacket((unsigned char*)buffer, len); //½â°ü
-		if (len > 0) //½â°ü³É¹¦
+		m_packet = QPacket((unsigned char*)buffer, len); //è§£åŒ…
+		if (len > 0) //è§£åŒ…æˆåŠŸ
 		{
 			memmove(buffer, buffer + len, index - len);
 			index -= len;
-
-			delete[] buffer;
 			return m_packet.getCmd();
 		}
 	}
-
-	delete[]buffer;
 	return -1;
 }
+
 
 QPacket QClientSocket::getPacket()
 {

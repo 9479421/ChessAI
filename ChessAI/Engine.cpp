@@ -1,4 +1,4 @@
-#include "Engine.h"
+ï»¿#include "Engine.h"
 
 #include"stepIdx.h"
 
@@ -52,7 +52,7 @@ stepIdx Engine::getStepIdx(std::string step, std::string fen)
 	boolean isRed;
 	if (fen.find("w") != std::string::npos)
 	{
-		//ºì
+		//çº¢
 		isRed = true;
 	}
 	else {
@@ -109,11 +109,11 @@ std::pair<std::string, std::string> Engine::calcStep(std::string fen)
 		}
 
 		printf("result:%s\n", result.c_str());
-		int idx1 = result.find("bestmove"); //±¨´í
+		int idx1 = result.find("bestmove"); //æŠ¥é”™
 		int idx2 = result.find("ponder");
 		if (idx1 != std::string::npos && idx2 == std::string::npos)
 		{
-			//×îºóÒ»²½¾øÉ±
+			//æœ€åä¸€æ­¥ç»æ€
 			runStep = result.substr(idx1 + 9, 4);
 		}
 		else {
@@ -156,7 +156,7 @@ void Engine::uci()
 
 std::pair<std::string, std::string> Engine::calcStep(std::string fen, float time, int depth, std::string& ret)
 {
-	ret = ""; //ÏÈÇå¿Õ
+	ret = ""; //å…ˆæ¸…ç©º
 
 	process.addCmdLine("position fen " + fen);
 	process.addCmdLine("go depth " + std::to_string(depth));
@@ -174,11 +174,11 @@ std::pair<std::string, std::string> Engine::calcStep(std::string fen, float time
 		printf("result:%s\n", ret.c_str());
 
 
-		int idx1 = ret.find("bestmove"); //±¨´í
+		int idx1 = ret.find("bestmove"); //æŠ¥é”™
 		int idx2 = ret.find("ponder");
 		if (idx1 != std::string::npos && idx2 == std::string::npos)
 		{
-			//×îºóÒ»²½¾øÉ± 
+			//æœ€åä¸€æ­¥ç»æ€ 
 			return std::make_pair(ret.substr(idx1 + 9, 4), "");
 		}
 		else {

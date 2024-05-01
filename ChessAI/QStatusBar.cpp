@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "QStatusBar.h"
 
 BEGIN_MESSAGE_MAP(QStatusBar, CStatusBar)

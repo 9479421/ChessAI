@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "SkinColors.h"
 
 COLORREF SkinColors::white = RGB(255, 255, 255);

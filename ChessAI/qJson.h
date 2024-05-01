@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include<unordered_map>
 #include<map>
@@ -12,7 +12,7 @@ template<typename T1, typename T2>
 class obj
 {
 public:
-	int type; // 0 str     1 digital   2  jsonobject  3 jsonarray  4 bool    -1¿¼ÂÇ¸ã³ÉNullºóÃæÔÙËµ
+	int type; // 0 str     1 digital   2  jsonobject  3 jsonarray  4 bool    -1è€ƒè™‘ææˆNullåé¢å†è¯´
 	std::string string;
 	double digital;
 	T1 jsonObject;
