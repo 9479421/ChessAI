@@ -845,8 +845,16 @@ BOOL CChessAIDlg::OnInitDialog()
 	//读取引擎目录配置，没有的话写入新的
 	char programPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
-	std::string programPathStr = programPath;
 
+
+	/*WCHAR szExecPath[MAX_PATH];
+	GetModuleFileName(NULL, szExecPath, MAX_PATH);
+	PathRemoveFileSpec(szExecPath);
+	std::string execPath = CW2A(szExecPath);
+	std::string settingPath = execPath + "\\setting.json";*/
+
+
+	std::string programPathStr = programPath;
 
 	std::string enginePath = programPathStr + "\\engine.json";
 	std::string openbookPath = programPathStr + "\\openbook.json";
@@ -877,6 +885,14 @@ BOOL CChessAIDlg::OnInitDialog()
 		json.setBool("showPrecision", false);
 		json.setBool("showName", false);
 
+		//默认棋盘参数
+		json.setInt("centerX", 260);
+		json.setInt("topcenterY", 31);
+		json.setInt("bottomcenterY", 546);
+		json.setInt("marginX", 58);
+		json.setInt("marginY", 58);
+		json.setInt("chessWidth", 57);
+		json.setInt("chessHeight", 57);
 		Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 	}
 	f.close();
@@ -899,6 +915,16 @@ BOOL CChessAIDlg::OnInitDialog()
 	connectDlg.m_showArrow.SetCheck(json.getBool("showArrow"));
 	connectDlg.m_showPrecision.SetCheck(json.getBool("showPrecision"));
 	connectDlg.m_showName.SetCheck(json.getBool("showName"));
+
+	//棋盘信息 存入全局
+	Config::centerX = json.getInt("centerX");
+	Config::topcenterY = json.getInt("topcenterY");
+	Config::bottomcenterY = json.getInt("bottomcenterY");
+	Config::marginX = json.getInt("marginX");
+	Config::marginY = json.getInt("marginY");
+	Config::chessWidth = json.getInt("chessWidth");
+	Config::chessHeight = json.getInt("chessHeight");
+
 
 	//engine
 	f.open(enginePath.c_str());
@@ -954,9 +980,24 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 	//游戏
-	game.setChessSource("./pic/红车.png", "./pic/红马.png", "./pic/红相.png", "./pic/红仕.png", "./pic/红帅.png", "./pic/红炮.png", "./pic/红兵.png",
-		"./pic/黑车.png", "./pic/黑马.png", "./pic/黑象.png", "./pic/黑士.png", "./pic/黑将.png", "./pic/黑炮.png", "./pic/黑卒.png", '\0');
-	game.setBoardSource("./pic/棋盘.png", 260, 31, 546, 58, 58, 57, 57);
+	//根据配置取当前使用的皮肤路径
+	game.setChessSource("./skin/红车.png",
+		"./skin/红马.png",
+		"./skin/红相.png",
+		"./skin/红仕.png",
+		"./skin/红帅.png",
+		"./skin/红炮.png",
+		"./skin/红兵.png",
+		"./skin/黑车.png",
+		"./skin/黑马.png",
+		"./skin/黑象.png",
+		"./skin/黑士.png",
+		"./skin/黑将.png",
+		"./skin/黑炮.png",
+		"./skin/黑卒.png",
+		'\0');
+	//这里就要读参数了，每个棋盘的参数不一样，要配置
+	game.setBoardSource("./skin/棋盘.png", Config::centerX, Config::topcenterY, Config::bottomcenterY, Config::marginX, Config::marginY, Config::chessWidth, Config::chessHeight);
 	game.init(GetDC(), 26, 70);//计算出棋盘每个点的坐标
 	game.begin(true); //摆棋
 
@@ -979,15 +1020,6 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 	float thinkTime = atof(CW2A(thinkTimeStr));
 	int thinkDepth = atoi(CW2A(thinkDepthStr));
-
-
-	//std::string modelPath = "best1.onnx";
-	//if (yolo.readModel(net, modelPath, true)) {
-	//	std::cout << "read net ok!" << std::endl;
-	//}
-	//else {
-	//	std::cout << "read onnx model failed!";
-	//}
 
 
 	std::vector<std::string>objPosVec;
@@ -2003,6 +2035,15 @@ void CChessAIDlg::OnClose()
 	json.setBool("showArrow", connectDlg.m_showArrow.GetCheck());
 	json.setBool("showPrecision", connectDlg.m_showPrecision.GetCheck());
 	json.setBool("showName", connectDlg.m_showName.GetCheck());
+
+	json.setInt("centerX", Config::centerX);
+	json.setInt("topcenterY", Config::topcenterY);
+	json.setInt("bottomcenterY", Config::bottomcenterY);
+	json.setInt("marginX", Config::marginX);
+	json.setInt("marginY", Config::marginY);
+	json.setInt("chessWidth", Config::chessWidth);
+	json.setInt("chessHeight", Config::chessHeight);
+
 	Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 
 
@@ -2641,15 +2682,92 @@ void CChessAIDlg::OnManageopenbook()
 
 #include "QHttp.h"
 #include "QEncrypt.h"
+#include "unzip.h"
+
+struct boardRes
+{
+	std::string mark;
+	int centerX;
+	int topcenterY;
+	int bottomcenterY;
+	int marginX;
+	int marginY;
+	int chessWidth;
+	int chessHeight;
+};
+
+std::vector<boardRes> boardList;
+HWND boardNameHwndArr[3];
+HWND boardPicHwndArr[3];
+HWND boardCurPageHwnd;
+#define IDC_BUTTON_SETBOARD 3500
+#define IDC_BUTTON_PREVBOARD 3600
+#define IDC_BUTTON_NEXTBOARD 3601
+int curPage_board = 1;
 
 
-std::vector<std::string> markList;
+std::vector<std::string> pieceList;
+#define IDC_BUTTON_SETPIECE 3700
 
-#define IDC_BUTTON_ADD 3500
+bool readBoard() {
+
+	//写入数据
+	QClientSocket* qClientSocket = QClientSocket::getInstance();
+	qClientSocket->initSocket(Config::g_ip, Config::g_port);
+	qClientSocket->ConnectServer();
+
+	qJsonObject json;
+	json.setInt("curPage", curPage_board);
+	json.setInt("pageSize", 3);
+	qClientSocket->SendCommand(10, (unsigned char*)json.toString().c_str(), json.toString().size());
+	qClientSocket->DealCommand();
+	qJsonArray jsonArray = qJson::parseJsonArray(qClientSocket->getPacket().getStrData().c_str());
+	if (jsonArray.size() == 0)
+	{
+		MessageBoxA(NULL, "翻到头了！","提示",0);
+		return false;
+	}
+
+	SetWindowTextA(boardCurPageHwnd,("当前页数：" + std::to_string(curPage_board)).c_str());
+	boardList.clear();
+	for (size_t i = 0; i < jsonArray.size(); i++)
+	{
+		qJsonObject json = jsonArray.getJsonObject(i);
+
+		SetWindowTextA(boardNameHwndArr[i], Utils::utf8_to_ansi(json.getString("name")).c_str());
+
+		boardList.push_back({ json.getString("mark") , json.getInt("centerX") , json.getInt("topcenterY") ,  json.getInt("bottomcenterY") ,  json.getInt("marginX") ,  json.getInt("marginY"),  json.getInt("chessWidth") ,  json.getInt("chessHeight") }); //用来处理事件
+
+		//获取图片
+		std::string imgBase64 = json.getString("coverImg");
+		std::string imgData = QEncrypt::Base64Decoding(imgBase64);
+		BYTE* pic = (BYTE*)imgData.c_str();
+		int picLength = imgData.size();
+
+		IStream* stream = SHCreateMemStream(pic, picLength);
+		Gdiplus::Bitmap* pBitmap = Gdiplus::Bitmap::FromStream(stream);
+		//缩放图片
+		Gdiplus::Bitmap* pBitmapNew = new Gdiplus::Bitmap(300, 300);
+		Gdiplus::Graphics graphics(pBitmapNew);
+		graphics.DrawImage(pBitmap, Rect(0, 0, 300, 300));
+		//转HBITMAP
+		HBITMAP picHBitmap;
+		pBitmapNew->GetHBITMAP(NULL, &picHBitmap);
+		//显示
+		SendMessage(boardPicHwndArr[i], STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)picHBitmap);
+		//释放
+		stream->Release();
+		delete pBitmap;
+		delete pBitmapNew;
+		DeleteObject(picHBitmap);
+	}
+	return true;
+}
 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 {
+
 	switch (msgID)
 	{
 	case WM_LBUTTONDOWN:
@@ -2661,52 +2779,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_CREATE:
 	{
-		QClientSocket* qClientSocket = QClientSocket::getInstance();
-		qClientSocket->initSocket(Config::g_ip, Config::g_port);
-		qClientSocket->ConnectServer();
-		qClientSocket->SendCommand(10, NULL, 0);
-		qClientSocket->DealCommand();
-		qJsonArray jsonArray = qJson::parseJsonArray(qClientSocket->getPacket().getStrData().c_str());
-		for (size_t i = 0; i < jsonArray.size(); i++)
+		CreateWindowExA(0, "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 10, 10, 1030, 450, hWnd, (HMENU)0, GetModuleHandle(NULL), 0);
+
+		CreateWindowExA(0, "BUTTON", "上一页", WS_VISIBLE | WS_CHILD, 300, 420, 100, 30, hWnd, (HMENU)IDC_BUTTON_PREVBOARD, GetModuleHandle(NULL), 0);
+		CreateWindowExA(0, "BUTTON", "下一页", WS_VISIBLE | WS_CHILD, 640, 420, 100, 30, hWnd, (HMENU)IDC_BUTTON_NEXTBOARD, GetModuleHandle(NULL), 0);
+		
+		boardCurPageHwnd = CreateWindowExA(0, "STATIC", "当前页数：", WS_VISIBLE | WS_CHILD, 470, 420, 100, 30, hWnd, (HMENU)0, GetModuleHandle(NULL), 0);
+
+		for (size_t i = 0; i < 3; i++)
 		{
-			int rowIdx = i % 3;
-			int colIdx = (i / 3);
-			CreateWindowExA(0, "BUTTON", Utils::utf8_to_ansi(jsonArray.getJsonObject(i).getString("name")).c_str(), WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 10 + rowIdx * 340, 10 + colIdx * 400, 330, 390, hWnd, (HMENU)1001, GetModuleHandle(NULL), 0);
-
-			HWND picHwnd = CreateWindowExA(0, "STATIC", "Picture", WS_VISIBLE | WS_CHILD | SS_BITMAP, 26 + rowIdx * 340, 40 + colIdx * 400, 300, 300, hWnd, (HMENU)1002, GetModuleHandle(NULL), 0);
-			//获取图片
-			std::string imgBase64 = jsonArray.getJsonObject(i).getString("coverImg");
-			std::string imgData = QEncrypt::Base64Decoding(imgBase64);
-			BYTE* pic = (BYTE*)imgData.c_str();
-			int picLength = imgData.size();
-
-			IStream* stream = SHCreateMemStream(pic, picLength);
-			Gdiplus::Bitmap* pBitmap = Gdiplus::Bitmap::FromStream(stream);
-			//缩放图片
-			Gdiplus::Bitmap* pBitmapNew = new Gdiplus::Bitmap(300,300);
-			Gdiplus::Graphics graphics(pBitmapNew);
-			graphics.DrawImage(pBitmap, Rect(0,0,300,300));
-			//转HBITMAP
-			HBITMAP picHBitmap;
-			pBitmapNew->GetHBITMAP(NULL, &picHBitmap);
-			//显示
-			SendMessage(picHwnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)picHBitmap);
-			//释放
-			stream->Release();
-			delete pBitmap;
-			delete pBitmapNew;
-			DeleteObject(picHBitmap);
-
-
+			
+			boardNameHwndArr[i] = CreateWindowExA(0, "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 20 + i * 340, 20, 330, 390, hWnd, (HMENU)0, GetModuleHandle(NULL), 0);
+			boardPicHwndArr[i] = CreateWindowExA(0, "STATIC", "Picture", WS_VISIBLE | WS_CHILD | SS_BITMAP, 36 + i * 340, 50, 300, 300, hWnd, (HMENU)0, GetModuleHandle(NULL), 0);
+			
 			CreateWindow(L"button",
 				L"设 置",
 				WS_CHILD | WS_VISIBLE,
-				100 + rowIdx* 340, 350 + colIdx * 400, 140, 40,
-				hWnd, (HMENU) (IDC_BUTTON_ADD + i), 
+				110 + i* 340, 360, 140, 40,
+				hWnd, (HMENU) (IDC_BUTTON_SETBOARD + i),
 				GetModuleHandle(NULL), NULL);
 
-			markList.push_back(jsonArray.getJsonObject(i).getString("mark")); //用来处理事件
 		}
+
+		readBoard();
 		break;
 	}
 	case WM_DESTROY://销毁窗口
@@ -2720,47 +2815,106 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		WORD wCode = HIWORD(wParam);
 
 		printf("wID:%d \n", wControlID);
-		if (wControlID>= IDC_BUTTON_ADD && wControlID <= IDC_BUTTON_ADD+markList.size() && wCode == BN_CLICKED)
+		if (wControlID == IDC_BUTTON_PREVBOARD && wCode == BN_CLICKED)
 		{
-			int idx = wControlID - IDC_BUTTON_ADD;
-			::MessageBoxW(hWnd, CA2W(markList[idx].c_str()), L"呵呵呵", MB_OK);
+			if (curPage_board == 1)
+			{
+				MessageBoxA(NULL, "已经是第一页了！", "提示", 0);
+			}
+			else {
+				curPage_board--;
+				if (!readBoard())
+				{
+					curPage_board++;
+				}
+			}
 			
+		}
+		if (wControlID == IDC_BUTTON_NEXTBOARD && wCode == BN_CLICKED)
+		{
+			curPage_board++;
+			if (!readBoard())
+			{
+				curPage_board--;
+			}
+		}
+		if (wControlID>= IDC_BUTTON_SETBOARD && wControlID <= IDC_BUTTON_SETBOARD+ boardList.size() && wCode == BN_CLICKED)
+		{
+			int idx = wControlID - IDC_BUTTON_SETBOARD;
+
 			QClientSocket* qClientSocket = QClientSocket::getInstance();
 			qClientSocket->initSocket(Config::g_ip, Config::g_port);
 			qClientSocket->ConnectServer();
 
 			qJsonObject json;
-			json.setString("mark", markList[idx]);
+			json.setString("mark", boardList[idx].mark);
 			std::string str = json.toString();
 
-			FILE* pFile = fopen("1.zip", "wb+");
+			FILE* pFile = fopen((boardList[idx].mark+".zip").c_str(), "wb+");
 
-			qClientSocket->SendCommand(11, (BYTE*)str.c_str(), str.size()); //下载mark对应的文件
-			qClientSocket->DealCommand(); //第一次先拿文件长度
-			long long nlength = *(long long*)qClientSocket->getPacket().getStrData().c_str();
-			if (nlength == 0)
+			bool downloadSuccess = true;
+			do
 			{
-				MessageBoxW(hWnd, L"获取文件长度失败", L"提示", MB_OK);
-				goto end;
-			}
-			long long nCount = 0;
-			while (nCount < nlength)
-			{
-				int ret = qClientSocket->DealCommand();
-				if (ret < 0)
+				qClientSocket->SendCommand(11, (BYTE*)str.c_str(), str.size()); //下载mark对应的文件
+				qClientSocket->DealCommand(); //第一次先拿文件长度
+				long long nlength = *(long long*)qClientSocket->getPacket().getStrData().c_str();
+				if (nlength == 0)
 				{
-					MessageBoxW(hWnd, L"传输文件过程遇到异常！", L"提示", MB_OK);
-					goto end;
+					MessageBoxW(hWnd, L"获取文件长度失败", L"提示", MB_OK);
+					downloadSuccess = false;
+					break;
 				}
-				fwrite(qClientSocket->getPacket().getStrData().c_str(), 1, qClientSocket->getPacket().getStrData().size(), pFile);
-				nCount += qClientSocket->getPacket().getStrData().size();
-			}
-
-			//执行到这里了，说明成功了
-			MessageBoxW(hWnd, L"下载皮肤成功！", L"提示", MB_OK);
-		end:
+				long long nCount = 0;
+				while (nCount < nlength)
+				{
+					int ret = qClientSocket->DealCommand();
+					if (ret < 0)
+					{
+						MessageBoxW(hWnd, L"传输文件过程遇到异常！", L"提示", MB_OK);
+						downloadSuccess = false;
+						break;
+					}
+					fwrite(qClientSocket->getPacket().getStrData().c_str(), 1, qClientSocket->getPacket().getStrData().size(), pFile);
+					nCount += qClientSocket->getPacket().getStrData().size();
+				}
+			} while (false);
+			//不管成功与否，都关闭文件流
 			fclose(pFile);
+
+			//成功了，解压
+			if (downloadSuccess)
+			{
+				std::wstring gzipPath = L"./skin/";
+
+				HZIP hz = OpenZip(CA2W((boardList[idx].mark + ".zip").c_str()), 0);
+				ZIPENTRY ze; GetZipItem(hz, -1, &ze); int numitems = ze.index;
+				for (int i = 0; i < numitems; i++)
+				{
+					GetZipItem(hz, i, &ze);
+					UnzipItem(hz, i, (gzipPath + ze.name).c_str()); //名字要加一下目录
+				}
+				CloseZip(hz);
+
+				//配置棋盘信息
+				Config::centerX = boardList[idx].centerX;
+				Config::topcenterY = boardList[idx].topcenterY;
+				Config::bottomcenterY = boardList[idx].bottomcenterY;
+				Config::marginX = boardList[idx].marginX;
+				Config::marginY = boardList[idx].marginY;
+				Config::chessWidth = boardList[idx].chessWidth;
+				Config::chessHeight = boardList[idx].chessHeight;
+				game.setBoardSource("./skin/棋盘.png", Config::centerX, Config::topcenterY, Config::bottomcenterY, Config::marginX, Config::marginY, Config::chessWidth, Config::chessHeight);
+				game.init(game.dc,game.destX,game.destY);//重新计算棋盘格位置
+				game.show();
+
+				//删除压缩包
+				DeleteFileA((boardList[idx].mark + ".zip").c_str());
+
+				MessageBoxW(hWnd, L"更换皮肤成功！", L"提示", MB_OK);
+			}
+	
 		}
+
 		break;
 	}
 	case WM_KEYDOWN:
@@ -2779,32 +2933,179 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_PAINT:
 	{
-
-		////画几条线
-		//PAINTSTRUCT ps;
-		//HDC hdc;   // DC(可画图的内存对象) 的句柄
-		//HPEN hpen; // 画笔
-		//// 通过窗口句柄获取该窗口的 DC
-		//hdc = BeginPaint(hWnd, &ps);
-		//// 创建画笔
-		//hpen = CreatePen(PS_SOLID, 10, RGB(255, 0, 0));
-		//// DC 选择画笔
-		//SelectObject(hdc, hpen);
-		//// (画笔)从初始点移动到 50,50
-		//MoveToEx(hdc, 50, 50, NULL);
-		//// (画笔)从初始点画线到 100,100
-		//LineTo(hdc, 150, 100);
-
-		//EndPaint(hWnd, &ps);
-
+		break;
+	}
+	case WM_VSCROLL:
+	{
+		MessageBoxA(0, "321", "", 0);
 		break;
 	}
 	default:
 		break;
 	}
-	return DefWindowProc(hWnd, msgID, wParam, lParam);;
+	return DefWindowProc(hWnd, msgID, wParam, lParam);
 }
 
+
+#include <algorithm>
+
+int scrollSpace = 100;
+
+LRESULT CALLBACK WndProc1(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
+{
+
+	static int iVscrollPos; //滚动条滑块位置，默认值0~100之间
+	switch (msgID)
+	{
+	case WM_CREATE:
+		SetScrollPos(hWnd, SB_VERT, iVscrollPos, TRUE);//TRUE重绘
+
+		
+		break;
+	case WM_COMMAND: //WM_COMMAND是子窗口向父窗口发送的通知消息
+	{
+		//控件ID
+		WORD wControlID = LOWORD(wParam);
+		//消息码
+		WORD wCode = HIWORD(wParam);
+		if (wControlID >= IDC_BUTTON_SETPIECE && wControlID <= IDC_BUTTON_SETPIECE + pieceList.size() && wCode == BN_CLICKED)
+		{
+			int idx = wControlID - IDC_BUTTON_SETPIECE;
+
+			QClientSocket* qClientSocket = QClientSocket::getInstance();
+			qClientSocket->initSocket(Config::g_ip, Config::g_port);
+			qClientSocket->ConnectServer();
+
+			qJsonObject json;
+			json.setString("mark", pieceList[idx]);
+			std::string str = json.toString();
+
+			FILE* pFile = fopen((pieceList[idx] + ".zip").c_str(), "wb+");
+
+			bool downloadSuccess = true;
+			do
+			{
+				qClientSocket->SendCommand(13, (BYTE*)str.c_str(), str.size()); //下载mark对应的文件
+				qClientSocket->DealCommand(); //第一次先拿文件长度
+				long long nlength = *(long long*)qClientSocket->getPacket().getStrData().c_str();
+				if (nlength == 0)
+				{
+					MessageBoxW(hWnd, L"获取文件长度失败", L"提示", MB_OK);
+					downloadSuccess = false;
+					break;
+				}
+				long long nCount = 0;
+				while (nCount < nlength)
+				{
+					int ret = qClientSocket->DealCommand();
+					if (ret < 0)
+					{
+						MessageBoxW(hWnd, L"传输文件过程遇到异常！", L"提示", MB_OK);
+						downloadSuccess = false;
+						break;
+					}
+					fwrite(qClientSocket->getPacket().getStrData().c_str(), 1, qClientSocket->getPacket().getStrData().size(), pFile);
+					nCount += qClientSocket->getPacket().getStrData().size();
+				}
+			} while (false);
+			//不管成功与否，都关闭文件流
+			fclose(pFile);
+
+			//成功了，解压
+			if (downloadSuccess)
+			{
+				std::wstring gzipPath = L"./skin/";
+
+				HZIP hz = OpenZip(CA2W((pieceList[idx] + ".zip").c_str()), 0);
+				ZIPENTRY ze; GetZipItem(hz, -1, &ze); int numitems = ze.index;
+				for (int i = 0; i < numitems; i++)
+				{
+					GetZipItem(hz, i, &ze);
+					UnzipItem(hz, i, (gzipPath + ze.name).c_str()); //名字要加一下目录
+				}
+				CloseZip(hz);
+
+
+				game.begin(true);
+				game.show();
+
+				//删除压缩包
+				DeleteFileA((pieceList[idx] + ".zip").c_str());
+
+				MessageBoxW(hWnd, L"更换皮肤成功！", L"提示", MB_OK);
+
+			}
+
+		}
+		break;
+	}
+	case WM_SIZE:
+		break;
+	case WM_VSCROLL:
+
+		switch (LOWORD(wParam))//wParam低16位是滚动条值
+
+		{
+		case SB_LINEUP: //向上滚动一行
+			iVscrollPos -= 30;
+
+		
+			break;
+
+		case SB_LINEDOWN: //向下滚动一行
+			iVscrollPos += 30;
+
+
+			break;
+
+		case SB_PAGEUP: //向上滚动一页
+
+			iVscrollPos -= 100;//客户区高/行距=一页的行数
+
+			break;
+
+		case SB_PAGEDOWN: //向下滚动页
+
+			iVscrollPos += 100;
+
+			break;
+
+		case SB_THUMBPOSITION: //拖动滚动条
+
+			iVscrollPos = HIWORD(wParam);//wParam高16位则指定滚动框的当前位
+
+			break;
+
+		default:
+
+			break;
+
+		}
+
+		//更新滑块位置，滑块位置在0～NUMLINES - 1之间
+
+		iVscrollPos = std::max(0, std::min(iVscrollPos, scrollSpace));
+
+		//如果与当前滚动条滑块的位置不相等，重新设置滑块位置并重绘
+
+		if (iVscrollPos != GetScrollPos(hWnd, SB_VERT))
+
+		{
+
+			ScrollWindow(hWnd, 0,  GetScrollPos(hWnd, SB_VERT) - iVscrollPos , NULL, NULL);
+
+
+			SetScrollPos(hWnd, SB_VERT, iVscrollPos, TRUE);//重新设置滑块位置
+
+
+			InvalidateRect(hWnd, NULL, TRUE);//并擦除背景
+			UpdateWindow(hWnd);//立即更新
+
+		}
+
+	}
+	return DefWindowProc(hWnd, msgID, wParam, lParam);
+}
 void CChessAIDlg::OnChangeskin()
 {
 	// TODO: 在此添加命令处理程序代码
@@ -2822,9 +3123,101 @@ void CChessAIDlg::OnChangeskin()
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	RegisterClass(&wc); //将以上所有赋值全部写入操作系统中
 	//在内存创建窗口
-	HWND skinConfHwnd = CreateWindowW(L"SkinConf", L"更换皮肤", WS_OVERLAPPEDWINDOW, 100, 100, 1050, 980, NULL, NULL
+	HWND skinConfHwnd = CreateWindowW(L"SkinConf", L"更换皮肤", WS_OVERLAPPEDWINDOW, 100, 100, 1070, 920, NULL, NULL
 		, NULL
 		, NULL);
+	
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wc.hCursor = NULL;
+	wc.hIcon = NULL;
+	wc.hInstance = NULL;
+	wc.lpfnWndProc = WndProc1;
+	wc.lpszClassName = L"PieceConf";
+	wc.lpszMenuName = NULL;
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	RegisterClass(&wc); //将以上所有赋值全部写入操作系统中
+
+
+	//外部框起来
+	CreateWindow(L"BUTTON",
+		L"棋子配置",
+		WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
+		10, 460, 1030, 400,
+		skinConfHwnd, (HMENU)500,
+		GetModuleHandle(NULL), NULL);
+
+	//棋子配置窗口，可上下滑动
+	HWND pieceHwnd = CreateWindowW(L"PieceConf", L"", WS_CHILD|WS_VISIBLE|WS_VSCROLL, 20,480, 1000, 370, skinConfHwnd, NULL
+		, NULL
+		, NULL);
+
+	//写入数据
+	QClientSocket* qClientSocket = QClientSocket::getInstance();
+	qClientSocket->initSocket(Config::g_ip, Config::g_port);
+	qClientSocket->ConnectServer();
+	qClientSocket->SendCommand(12, NULL, 0);
+	qClientSocket->DealCommand();
+	qJsonArray jsonArray = qJson::parseJsonArray(qClientSocket->getPacket().getStrData().c_str());
+
+	pieceList.clear();
+	for (size_t i = 0; i < jsonArray.size(); i++)
+	{
+		
+
+		qJsonObject json = jsonArray.getJsonObject(i);
+		CreateWindowExA(0, "BUTTON",Utils::utf8_to_ansi( json.getString("name")).c_str(), WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 20, 20 + i * 110, 920, 100, pieceHwnd, (HMENU)0, GetModuleHandle(NULL), 0);
+
+		//设置滚动空间
+		scrollSpace = 20 + i * 110 + 100 - 370  + 100;
+
+		HWND picHwnd = CreateWindowExA(0, "STATIC", "Picture", WS_VISIBLE | WS_CHILD | SS_BITMAP, 36 , 40 + i * 110, 600, 150, pieceHwnd, (HMENU)0, GetModuleHandle(NULL), 0);
+
+		CreateWindow(L"button",
+			L"设 置",
+			WS_CHILD | WS_VISIBLE,
+			790, 50 + i * 110, 130, 40,
+			pieceHwnd, (HMENU)(IDC_BUTTON_SETPIECE + i),
+			GetModuleHandle(NULL), NULL);
+
+		pieceList.push_back(json.getString("mark")); //用来处理事件
+
+		//获取图片
+		std::string imgBase64 = json.getString("coverImg");
+		std::string imgData = QEncrypt::Base64Decoding(imgBase64);
+		BYTE* pic = (BYTE*)imgData.c_str();
+		int picLength = imgData.size();
+
+		IStream* stream = SHCreateMemStream(pic, picLength);
+		Gdiplus::Bitmap* pBitmap = Gdiplus::Bitmap::FromStream(stream);
+		//缩放图片
+		Gdiplus::Bitmap* pBitmapNew = new Gdiplus::Bitmap(742, 65);
+		Gdiplus::Graphics graphics(pBitmapNew);
+		graphics.DrawImage(pBitmap, Rect(0, 0, 742, 65));
+		//转HBITMAP
+		HBITMAP picHBitmap;
+		pBitmapNew->GetHBITMAP(NULL, &picHBitmap);
+		//显示
+		::SendMessage(picHwnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)picHBitmap);
+		//释放
+		stream->Release();
+		delete pBitmap;
+		delete pBitmapNew;
+		DeleteObject(picHBitmap);
+	}
+
+	//设置滑动范围以及滑块大小
+	::SetScrollRange(pieceHwnd, SB_VERT, 0, scrollSpace, FALSE);
+	SCROLLINFO si = { 0 };
+	si.cbSize = sizeof(si);
+	si.fMask = SIF_PAGE | SIF_RANGE;
+	si.nMin = 0;
+	si.nMax = scrollSpace; // 假设你想让滑块非常小，设置nMax为你想要的高度
+	si.nPage = 100; // 滑块的高度
+	::SetScrollInfo(pieceHwnd, SB_VERT, &si, SIF_ALL);
+
+
 
 	//关闭最大化按钮
 	LONG style = GetWindowLong(skinConfHwnd, GWL_STYLE);

@@ -226,6 +226,7 @@
     <ClInclude Include="SkinColors.h" />
     <ClInclude Include="stepIdx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="unzip.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="yolov7.h" />
   </ItemGroup>
@@ -262,6 +263,7 @@
     <ClCompile Include="QRoundPicture.cpp" />
     <ClCompile Include="QStatusBar.cpp" />
     <ClCompile Include="SkinColors.cpp" />
+    <ClCompile Include="unzip.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="yolov7.cpp" />
   </ItemGroup>
