@@ -2,20 +2,6 @@
 
 #include"stepIdx.h"
 
-std::string Engine_yunku::calcStep(std::string fen)
-
-	{
-		http http;
-		http.open("http://www.chessdb.cn/chessdb.php?action=queryall&showall=1&board=" + Utils::ReplaceAllText(fen, " ", "%20"));
-		std::string body = http.get();
-
-		printf("body: %s\n", body.c_str());
-
-		int idx = body.find("move:") + 5;
-		std::string runStep = body.substr(idx, 4);
-
-		return runStep;
-	}
 
 Engine::Engine()
 {

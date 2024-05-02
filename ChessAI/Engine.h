@@ -30,9 +30,3 @@ public:
 	std::pair<std::string, std::string> calcStep(std::string fen, float time, int depth, std::string& ret);
 	
 };
-
-class Engine_yunku : public Engine
-{
-public :
-	std::string calcStep(std::string fen);
-};

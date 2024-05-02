@@ -93,7 +93,6 @@
 #define IDC_STATIC_BOTTOM               1077
 #define IDC_SLIDER_RATE                 1081
 #define IDC_BUTTON_RECOGNIZEPIC         1083
-#define IDC_RADIO1                      1084
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773

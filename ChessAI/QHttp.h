@@ -3,6 +3,7 @@
 #include<string>
 
 #include<vector>
+#include<map>
 #include <winhttp.h>
 #pragma comment(lib, "winhttp.lib")
 
@@ -18,14 +19,17 @@ public:
 	int getResponseSize();
 	std::string getResponseText();
 
-
+	void addHeader(std::string key, std::string value);
 private:
-	HINTERNET m_session;
 	HINTERNET m_connect;
+	HINTERNET m_session;
 
 	std::string m_domain;
 	std::string m_path;
 
+	std::map<std::string, std::string> m_headersMap;
+
+	bool isHttps;
 public:
 	std::vector<BYTE> bytesVec;
 	std::string bytesStr;

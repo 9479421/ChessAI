@@ -677,18 +677,17 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 }
 
 
+#include"OpenBook.h"
 
-
-// CChessAIDlg 消息处理程序
-//extern std::vector<EngineConfig>engineConfigList;
 
 BOOL CChessAIDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
 
-	// 将“关于...”菜单项添加到系统菜单中。
 
+	// 将“关于...”菜单项添加到系统菜单中。
+	
 	// IDM_ABOUTBOX 必须在系统命令范围内。
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
@@ -726,6 +725,9 @@ BOOL CChessAIDlg::OnInitDialog()
 	freopen("CONOUT$", "w", stdout);//开启中文控制台输出支持  
 
 
+
+	OpenBook openbook;
+	openbook.calcStep("1rbakabnr/9/1cn4c1/p3p1p1p/2p6/9/P1P1P1P1P/2N1C2C1/9/1RBAKABNR w");
 
 
 
@@ -1004,6 +1006,10 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	m_rate.SetPos(50);
 	pic.init(GetDC(), 457, 450);
+
+
+
+
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }

@@ -28,7 +28,14 @@ void OpenBookDlg::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(OpenBookDlg, CDialogEx)
+	ON_BN_CLICKED(IDC_BUTTON1, &OpenBookDlg::OnBnClickedButton1)
 END_MESSAGE_MAP()
 
 
 // OpenBookDlg 消息处理程序
+
+void OpenBookDlg::OnBnClickedButton1()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	
+}

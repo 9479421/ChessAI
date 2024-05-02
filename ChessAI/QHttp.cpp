@@ -15,10 +15,12 @@ bool QHttp::open(std::string url)
     if (url.find("http://")==0 )
     {
         url = url.substr(7);
+        isHttps = false;
     }
     if ( url.find("https://") == 0)
     {
         url = url.substr(8);
+        isHttps = true;
     }
     int idx = url.find_first_of('/');
     if (idx == std::string::npos) //没找到，默认path是/
@@ -43,9 +45,28 @@ bool QHttp::get()
 {
     bytesStr.clear();
 
-    HINTERNET hRequest = WinHttpOpenRequest(m_connect, L"GET", CA2W(m_path.c_str()), NULL, WINHTTP_NO_REFERER, NULL, WINHTTP_FLAG_SECURE);
+    HINTERNET hRequest = WinHttpOpenRequest(m_connect, L"GET", CA2W(m_path.c_str()), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, isHttps? WINHTTP_FLAG_SECURE : 0 );
     if (hRequest)
     {
+        //置入协议头
+        std::string headers;
+        for (std::map<std::string,std::string>::iterator it = m_headersMap.begin(); it!= m_headersMap.end() ; ++it)
+        {  
+            if ( std::next(it) == m_headersMap.end())
+            {
+                headers += it->first + ":" + it->second;
+            }
+            else {
+                headers += it->first + ":" + it->second + "\r\n";
+            }
+        }
+
+
+        if (!headers.empty())
+        {
+            WinHttpAddRequestHeaders(hRequest, CA2W(headers.c_str()), headers.size(), WINHTTP_ADDREQ_FLAG_ADD);
+        }
+
         if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0))
         {
             if (WinHttpReceiveResponse(hRequest, 0))
@@ -89,5 +110,10 @@ int QHttp::getResponseSize()
 
 std::string QHttp::getResponseText()
 {
-    return std::string();
+    return bytesStr.data();
+}
+
+void QHttp::addHeader(std::string key, std::string value)
+{
+    m_headersMap.insert(std::make_pair(key,value));
 }

@@ -138,6 +138,12 @@
     <ClInclude Include="unzip.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="OpenBook.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="QSqlite.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp">
@@ -228,6 +234,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="unzip.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenBook.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="QSqlite.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
