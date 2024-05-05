@@ -3,11 +3,11 @@
 #include<time.h>
 #include<fstream>
 #include<atlstr.h>
-
-#include <d3d9.h>
-#include <d3dx9.h>
-#pragma comment (lib,"d3d9.lib")
-#pragma comment (lib,"d3dx9.lib")
+//
+//#include <d3d9.h>
+//#include <d3dx9.h>
+//#pragma comment (lib,"d3d9.lib")
+//#pragma comment (lib,"d3dx9.lib")
 
 #include<opencv2/opencv.hpp>
 #include<tlhelp32.h>
@@ -34,7 +34,7 @@ public:
 	static void XSleep(int nWaitInMsecs);
 	static HBITMAP WindowCapture(HWND hwnd = NULL);
 	static HBITMAP WindowCapture_Front(HWND hwnd, bool autoTopMost);
-	static HBITMAP WindowCaptere_D3D(HWND hwnd, bool autoTopMost);
+	//static HBITMAP WindowCaptere_D3D(HWND hwnd, bool autoTopMost);
 	static void saveBitMap(CString path, HBITMAP bitmap);
 	static HBITMAP stretchBitMap(HBITMAP bitmap,int width,int height);
 	static CString selectFolder();

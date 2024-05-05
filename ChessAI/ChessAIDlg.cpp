@@ -87,7 +87,6 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_LIST_NAVIGATION, m_navigation);
 	DDX_Control(pDX, IDC_COMBO_ENGINELIST, m_engineList);
 
-	DDX_Control(pDX, IDC_EDIT_ENGINEINFO, m_engineInfo);
 
 	DDX_Control(pDX, IDC_BUTTON_BACK, m_back);
 	DDX_Control(pDX, IDC_BUTTON_NEXT, m_next);
@@ -101,6 +100,7 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SLIDER_RATE, m_rate);
 	DDX_Control(pDX, IDC_BUTTON_RECOGNIZEPIC, m_recognizePic);
 	DDX_Control(pDX, IDC_TAB_SHOWINFO, m_showInfo);
+	DDX_Control(pDX, IDC_BUTTON_SHOWCONNECT, m_showconnect);
 }
 
 BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
@@ -119,6 +119,7 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 
 
 	ON_MESSAGE(10086, &CChessAIDlg::Connect) //连线函数
+
 
 
 	ON_COMMAND(ID_INPUTFEN, &CChessAIDlg::OnInputfen)
@@ -141,6 +142,7 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_COMMAND(ID_MANAGEOPENBOOK, &CChessAIDlg::OnManageopenbook)
 	ON_COMMAND(ID_CHANGESKIN, &CChessAIDlg::OnChangeskin)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB_SHOWINFO, &CChessAIDlg::OnTcnSelchangeTabShowinfo)
+	ON_BN_CLICKED(IDC_BUTTON_SHOWCONNECT, &CChessAIDlg::OnBnClickedButtonShowconnect)
 END_MESSAGE_MAP()
 
 
@@ -188,7 +190,13 @@ void CChessAIDlg::InitComponent() {
 		//初始化Yolo
 		dlg->Log("初始化Yolo识别库中");
 		std::string modelPath = "best1.onnx";
-		if (yolo.readModel(net, modelPath, true)) {
+
+
+		int devices = cv::cuda::getCudaEnabledDeviceCount();
+		printf("cuda支持设备数：%d\n", devices);
+
+
+		if (yolo.readModel(net, modelPath, devices>0 ? true: false)) {
 			std::cout << "read net ok!" << std::endl;
 			dlg->Log("初始化Yolo识别库成功");
 		}
@@ -751,20 +759,16 @@ BOOL CChessAIDlg::OnInitDialog()
 	CListCtrl* openbookList = ((CListCtrl*)m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
 	openbookList->InsertColumn(0, L"", LVCFMT_CENTER, 1, 0);
 	openbookList->InsertColumn(1, L"招法", LVCFMT_CENTER, 100, 0);
-	openbookList->InsertColumn(2, L"分数", LVCFMT_CENTER, 50, 0);
+	openbookList->InsertColumn(2, L"分数", LVCFMT_CENTER, 80, 0);
 	openbookList->InsertColumn(3, L"胜", LVCFMT_CENTER, 50, 0);
 	openbookList->InsertColumn(4, L"和", LVCFMT_CENTER, 50, 0);
 	openbookList->InsertColumn(5, L"败", LVCFMT_CENTER, 50, 0);
 	openbookList->InsertColumn(6, L"有效", LVCFMT_CENTER, 50, 0);
-	openbookList->InsertColumn(7, L"注释", LVCFMT_CENTER, 50, 0);
+	openbookList->InsertColumn(7, L"注释", LVCFMT_CENTER, 100, 0);
 
 
 	//OpenBook openbook;
 	//openbook.calcStep("1rbakabnr/9/1cn4c1/p3p1p1p/2p6/9/P1P1P1P1P/2N1C2C1/9/1RBAKABNR w");
-
-
-
-	printf("cuda支持设备数：%d\n", cv::cuda::getCudaEnabledDeviceCount());
 
 
 
@@ -849,6 +853,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	//q.SubclassWindow(GetDlgItem(IDC_BUTTON_CONNECT)->m_hWnd);  //子类化
 
+
 	m_choosewindow.SetStyle(QButton::Win10);
 	m_boardpic.SetStyle(QButton::Win10);
 
@@ -862,9 +867,6 @@ BOOL CChessAIDlg::OnInitDialog()
 	m_navigation.InsertColumn(5, L"FEN", LVCFMT_LEFT, 480, 0);
 	m_navigation.SetExtendedStyle(m_navigation.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
 
-	//读取引擎目录配置，没有的话写入新的
-	char programPath[MAX_PATH];
-	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
 
 
 	/*WCHAR szExecPath[MAX_PATH];
@@ -873,14 +875,13 @@ BOOL CChessAIDlg::OnInitDialog()
 	std::string execPath = CW2A(szExecPath);
 	std::string settingPath = execPath + "\\setting.json";*/
 
+	//读取引擎目录配置，没有的话写入新的
+	//char programPath[MAX_PATH];
+	//SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
+	//std::string programPathStr = programPath;
+	//std::string settingPath = programPathStr + "\\setting.json";
 
-	std::string programPathStr = programPath;
-
-	std::string enginePath = programPathStr + "\\engine.json";
-
-	std::string settingPath = programPathStr + "\\setting.json";
-
-
+	std::string settingPath = "./setting.json";
 	//setting
 	std::ifstream f;
 	f.open(settingPath.c_str());
@@ -915,10 +916,20 @@ BOOL CChessAIDlg::OnInitDialog()
 		json.setInt("chessHeight", 57);
 
 		//默认开局库参数
-		json.setString("openBookPath", "./openbook/11.obk");
+		json.setString("openBookPath", ""); //./openbook/11.obk
 		json.setBool("openBookStatus", false);
-		json.setBool("yunkuStatus", false);
-		json.setInt("steps", 9999);
+		json.setBool("yunkuStatus", true);
+		json.setInt("steps", 5);
+
+		//引擎配置
+		qJsonArray jsonArray_engine;
+		qJsonObject json_engine;
+		json_engine.setString("name", "pikaFish");
+		json_engine.setString("author", "皮卡鱼");
+		json_engine.setString("path", ".\\engine\\pikafish\\pikafish-avx2.exe");
+		json_engine.setString("threadNum", "16");
+		jsonArray_engine.addJsonObject(json_engine);
+		json.setJsonArray("engineList", jsonArray_engine);
 
 		Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 	}
@@ -957,37 +968,20 @@ BOOL CChessAIDlg::OnInitDialog()
 	Config::yunkuStatus = json.getBool("yunkuStatus");
 	Config::steps = json.getInt("steps");
 
-
 	openbook.open(Config::openBookPath);
-
-
-	//engine
-	f.open(enginePath.c_str());
-	if (!f.good())
+	//引擎配置
+	qJsonArray jsonArray_engineList = json.getJsonArray("engineList");
+	for (int i = 0; i < jsonArray_engineList.size(); i++)
 	{
-		//如果没有该文件，默认写入的内容
-		qJsonArray jsonArray;
-		qJsonObject json;
-		json.setString("name", "pikaFish");
-		json.setString("author", "皮卡鱼");
-		json.setString("path", "./engine/pikafish-avx2.exe");
-		json.setString("threadNum", "16");
-		jsonArray.addJsonObject(json);
-
-		Utils::writeFile(CString(enginePath.c_str()), CString(jsonArray.toString().c_str()));
-	}
-	f.close();
-
-	//读入文件
-	qJsonArray jsonArray = qJson::parseJsonArray(std::string(CW2A(Utils::readFile(CString(enginePath.c_str())))));
-	for (int i = 0; i < jsonArray.size(); i++)
-	{
-		std::string name = jsonArray.getJsonObject(i).getString("name");
-		std::string author = jsonArray.getJsonObject(i).getString("author");
-		std::string path = jsonArray.getJsonObject(i).getString("path");
-		std::string threadNum = jsonArray.getJsonObject(i).getString("threadNum");
+		std::string name = jsonArray_engineList.getJsonObject(i).getString("name");
+		std::string author = jsonArray_engineList.getJsonObject(i).getString("author");
+		std::string path = jsonArray_engineList.getJsonObject(i).getString("path");
+		std::string threadNum = jsonArray_engineList.getJsonObject(i).getString("threadNum");
 		Config::engineConfigList.push_back(EngineConfig(name, author, path, threadNum));
 	}
+
+
+	//写入UI
 	for (size_t i = 0; i < Config::engineConfigList.size(); i++)
 	{
 		int count = m_engineList.GetCount();
@@ -1002,7 +996,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	//方案
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
-	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
+	//connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
 	connectDlg.m_schemeList.SetCurSel(0);
 	//if (IsProcessExists("QQChess2021.exe"))
 	//{
@@ -1056,8 +1050,13 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 	int thinkDepth = atoi(CW2A(thinkDepthStr));
 
 
-	std::vector<std::string>objPosVec;
+	std::vector<std::string>redPosVecObj,blackPosVecObj;
+
 	int validateTime = 0;
+	bool oppositeChangeFlag = false;
+
+
+	int runSteps = 0;  //每次判断棋局重置后，都将runstep置为0
 
 	while (true) {
 
@@ -1074,7 +1073,6 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		Utils::saveBitMap(L"1.png", bitmap);
 		cv::Mat img = cv::imread("1.png");
 
-
 		//显示缩略图
 		CImage image;
 		image.Attach(bitmap);
@@ -1082,7 +1080,6 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		pic.show();
 
 		DeleteObject(bitmap);
-		//DeleteObject(bitmap_small);
 
 		int width = img.size().width;
 		int height = img.size().height;
@@ -1202,57 +1199,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			}
 		}
 
-		if (isRed)
-		{
-			if (std::equal(objPosVec.begin(), objPosVec.end(), blackPosVec.begin(), blackPosVec.end()))
-			{
-				//没变动
-				validateTime++;
-				dlg->Log("没有变动" + std::to_string(validateTime));
-				if (validateTime == 4) //可以识别了，但是只能识别一次，一次后就等待变动
-				{
 
-				}
-				else {
-					//既然没变动，那就过一会再检测一次，暂时还不能识别，直接continue
-					Sleep(200);
-					continue;
-				}
-			}
-			else {
-				dlg->Log("对方棋产生了变动");
-
-				//产生了变动
-				objPosVec = blackPosVec;
-				validateTime = 0;
-				continue;
-			}
-		}
-		else {
-			if (std::equal(objPosVec.begin(), objPosVec.end(), redPosVec.begin(), redPosVec.end()))
-			{
-				//没变动
-				validateTime++;
-				dlg->Log("没有变动" + std::to_string(validateTime));
-				if (validateTime == 4) //可以识别了，但是只能识别一次，一次后就等待变动
-				{
-
-				}
-				else {
-					//既然没变动，那就过一会再检测一次，暂时还不能识别，直接continue
-					Sleep(200);
-					continue;
-				}
-			}
-			else {
-				dlg->Log("对方棋产生了变动");
-
-				//产生了变动
-				objPosVec = redPosVec;
-				validateTime = 0;
-				continue;
-			}
-		}
 
 		std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
 		for (int i = 0; i < 10; i++)
@@ -1273,30 +1220,67 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		std::string fen = calcFEN(maps, 0);
 		printf("fen:%s\n", fen.c_str());
 
+		if (fen.find("rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR")!=-1)  //检测到开局的局面，就直接咔嚓
+		{
+			runSteps = 0;
+		}
 
 
 		game.setFen(fen); //直接显示到窗口棋盘里了
 
 
+
+		CListCtrl* yunkuList = ((CListCtrl*)dlg->m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
+		CListCtrl* openbookList = ((CListCtrl*)dlg->m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
+		yunkuList->DeleteAllItems();
+		openbookList->DeleteAllItems();
+
+
+
 		std::string* ret = new std::string();
-
 		std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-			//这里要加一个云库/本地库读取
-
-
-			std::pair<std::string, std::string>stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
-
+			std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
 			return stepPair;
 			}, fen, ret, thinkTime, thinkDepth);
 
+		std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
+			if (Config::yunkuStatus)
+			{
+				std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
+				return stepsVec;
+			}
+			else {
+
+				return std::vector<yunkuResult>(); //返回空结果
+			}
+			}, fen);
+
+		std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
+			if (Config::openBookStatus)
+			{
+				std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
+				return stepsVec;
+			}
+			else {
+				return std::vector<openbookResult>(); //返回空结果
+			}
+			}, fen);
 
 		bool isOk = false;
 		while (true) {
 			std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
-			if (status == std::future_status::ready)
+
+			std::future_status yunkuStatus = yunkuFuture.wait_for(std::chrono::milliseconds(100));
+			std::future_status openbookStatus = openbookFuture.wait_for(std::chrono::milliseconds(100));
+
+			if (status == std::future_status::ready
+				&& yunkuStatus == std::future_status::ready
+				&& openbookStatus == std::future_status::ready)
 			{
 				isOk = true;
 			}
+
+			//读取引擎信息
 			std::string info;
 			std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
 			for (int i = 0; i < strList.size(); i++)
@@ -1314,7 +1298,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 					info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 				}
 			}
-			dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+			((CEdit*)dlg->m_info_engine.GetDlgItem(IDC_EDIT_ENGINEINFO))->SetWindowTextW(CA2W(info.c_str()));
 
 			if (isOk)
 			{
@@ -1322,12 +1307,50 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 			}
 		}
 
+		std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
+
+		for (size_t i = 0; i < stepsVec_yunku.size(); i++)
+		{
+			int row = yunkuList->GetItemCount();
+			yunkuList->InsertItem(row, L"");
+			yunkuList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_yunku[i].move, game.maps).c_str()));
+			yunkuList->SetItemText(row, 2, CA2W(stepsVec_yunku[i].score.c_str()));
+			yunkuList->SetItemText(row, 3, CA2W(stepsVec_yunku[i].winrate.c_str()));
+		}
+		std::vector<openbookResult> stepsVec_openbook = openbookFuture.get();
+		for (size_t i = 0; i < stepsVec_openbook.size(); i++)
+		{
+			int row = openbookList->GetItemCount();
+			openbookList->InsertItem(row, L"");
+
+			openbookList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_openbook[i].move, game.maps).c_str()));
+			openbookList->SetItemText(row, 2, CA2W(stepsVec_openbook[i].vscore.c_str()));
+			openbookList->SetItemText(row, 3, CA2W(stepsVec_openbook[i].vwin.c_str()));
+			openbookList->SetItemText(row, 4, CA2W(stepsVec_openbook[i].vdraw.c_str()));
+			openbookList->SetItemText(row, 5, CA2W(stepsVec_openbook[i].vlost.c_str()));
+			openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
+			openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
+		}
 		std::pair<std::string, std::string> stepPair = calcFuture.get();
-		delete ret;
 
-		game.addIndicate(stepPair.first, stepPair.second);
 
-		stepIdx stepIdx = Engine::getStepIdx(stepPair.first, fen);//获得最佳走法的坐标系
+		//指示正确走法
+		std::string step, ponder = "";
+		if (stepsVec_openbook.size() > 0 && Config::steps > runSteps/2) {  //脱谱步数判断
+			step = stepsVec_openbook[0].move;
+		}
+		else if (stepsVec_yunku.size() > 0 && Config::steps > runSteps/2)
+		{
+			step = stepsVec_yunku[0].move;
+		}
+		else {
+			step = stepPair.first;
+			ponder = stepPair.second;
+		}
+		game.addIndicate(step, ponder); //添加指示
+
+
+		stepIdx stepIdx = Engine::getStepIdx(step, fen); //获得最佳走法的坐标系
 
 
 
@@ -1389,36 +1412,86 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		}
 
 
+
+
 		//自动走判断
 		if (connectDlg.m_autoPlay.GetCheck())
 		{
-			CRect rect;
-			GetWindowRect(gameHwnd, rect);
-			int x = rect.left + maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2;
-			int y = rect.top + maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2;
 
-			SetCursorPos(x, y);
+			bool blackChanged = !(blackPosVecObj == blackPosVec);
+			bool redChanged = !(redPosVecObj == redPosVec);
+
+			if (blackChanged || redChanged) //有一方产生改变就直接读  要判断是对方才会自动走
+			{
+				runSteps++;
+				dlg->Log("棋局产生了变动");
+				if (blackChanged)
+				{
+					blackPosVecObj = blackPosVec;
+				}
+				if (redChanged)
+				{
+					redPosVecObj = redPosVec;
+				}
+				validateTime = 0;
+				if ((isRed && blackChanged) || (!isRed && redChanged))
+				{
+					oppositeChangeFlag = true;
+				}
+				else {
+					oppositeChangeFlag = false;
+				}
+				continue;
+			}
+			else {
+				//没变动
+				validateTime++;
+				dlg->Log("没有变动" + std::to_string(validateTime));
+				if (validateTime == 4)
+				{
+					//变动后持续4次200ms没有变，说明可以了
+				}
+				else {
+					//既然没变动，那就过一会再检测一次，暂时还不能识别，直接continue
+					Sleep(200);
+					continue;
+				}
+			}
 
 
-			mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
-			mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
-			/*		SendMessage((gameHwnd), WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
-					SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));*/
+
+			if (oppositeChangeFlag) //oppositeChangeFlag
+			{
+
+				CRect rect;
+				GetWindowRect(gameHwnd, rect);
+				int x = rect.left + maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2;
+				int y = rect.top + maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2;
+
+				SetCursorPos(x, y);
 
 
-			Sleep(500);
-			x = rect.left + maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2;
-			y = rect.top + maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2;
+				mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
+				mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+				/*		SendMessage((gameHwnd), WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
+						SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));*/
 
-			SetCursorPos(x, y);
 
-			mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
-			mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+				Sleep(500);
+				x = rect.left + maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2;
+				y = rect.top + maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2;
 
-			//SendMessage(gameHwnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
-			//SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));
+				SetCursorPos(x, y);
 
-			Sleep(1000);
+				mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
+				mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+
+				//SendMessage(gameHwnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
+				//SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));
+
+				Sleep(1000);
+			}
+
 		}
 
 		Sleep(10);
@@ -1455,7 +1528,6 @@ void CChessAIDlg::OnPaint()
 	{
 		CDialogEx::OnPaint();
 	}
-
 
 	game.show();
 }
@@ -1678,8 +1750,6 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 							float thinkTime = atof(CW2A(thinkTimeStr));
 							int thinkDepth = atoi(CW2A(thinkDepthStr));
 
-							
-
 
 							std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
 							printf("fen:%s\n", fen.c_str());
@@ -1699,13 +1769,26 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 									}, fen, ret, thinkTime, thinkDepth);
 
 								std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
-									std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
-									return stepsVec;
+									if (Config::yunkuStatus)
+									{
+										std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
+										return stepsVec;
+									}
+									else {
+										
+										return std::vector<yunkuResult>(); //返回空结果
+									}
 									}, fen);
 
 								std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
-									std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
-									return stepsVec;
+									if (Config::openBookStatus)
+									{
+										std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
+										return stepsVec;
+									}
+									else {
+										return std::vector<openbookResult>(); //返回空结果
+									}
 									}, fen);
 
 								bool isOk = false;
@@ -1756,8 +1839,9 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 										break;
 									}
 								}
-
+								
 								std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
+
 								for (size_t i = 0; i < stepsVec_yunku.size(); i++)
 								{
 									int row = yunkuList->GetItemCount();
@@ -1780,14 +1864,24 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 									openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
 									openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
 								}
-
 								std::pair<std::string, std::string> stepPair = calcFuture.get();
 
-								std::string step = stepPair.first;
-								std::string ponder = stepPair.second;
-								printf("%s %s\n", step.c_str(), ponder.c_str());
 
+								//指示正确走法
+								std::string step, ponder = "";
+								if (stepsVec_openbook.size() > 0  && Config::steps > game.stepList.size()/2) {
+									step = stepsVec_openbook[0].move;
+								}
+								else if (stepsVec_yunku.size() > 0 && Config::steps > game.stepList.size()/2)
+								{
+									step = stepsVec_yunku[0].move;
+								}
+								else {
+									step = stepPair.first;
+									ponder = stepPair.second;
+								}
 								game.addIndicate(step, ponder); //添加指示
+
 
 								if (dlg->m_pkmode.GetCheck() && game.toWhoMove != game.isRed)
 								{
@@ -1817,21 +1911,57 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 									printf("fen:%s\n", fen.c_str());
 									std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
 
+										CListCtrl* yunkuList = ((CListCtrl*)dlg->m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
+										CListCtrl* openbookList = ((CListCtrl*)dlg->m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
+										yunkuList->DeleteAllItems();
+										openbookList->DeleteAllItems();
+
+
+
 										std::string* ret = new std::string();
 										std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
 											std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
-
 											return stepPair;
 											}, fen, ret, thinkTime, thinkDepth);
 
+										std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
+											if (Config::yunkuStatus)
+											{
+												std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
+												return stepsVec;
+											}
+											else {
+
+												return std::vector<yunkuResult>(); //返回空结果
+											}
+											}, fen);
+
+										std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
+											if (Config::openBookStatus)
+											{
+												std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
+												return stepsVec;
+											}
+											else {
+												return std::vector<openbookResult>(); //返回空结果
+											}
+											}, fen);
 
 										bool isOk = false;
 										while (true) {
 											std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
-											if (status == std::future_status::ready)
+
+											std::future_status yunkuStatus = yunkuFuture.wait_for(std::chrono::milliseconds(100));
+											std::future_status openbookStatus = openbookFuture.wait_for(std::chrono::milliseconds(100));
+
+											if (status == std::future_status::ready
+												&& yunkuStatus == std::future_status::ready
+												&& openbookStatus == std::future_status::ready)
 											{
 												isOk = true;
 											}
+
+											//读取引擎信息
 											std::string info;
 											std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
 											for (int i = 0; i < strList.size(); i++)
@@ -1852,11 +1982,13 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 														bestStep = std::make_pair(stepList[0], score);
 													}
 
+
 													std::string stepListStr = stepListToQp(pv, game.maps);
 													info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 												}
 											}
-											dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+											((CEdit*)dlg->m_info_engine.GetDlgItem(IDC_EDIT_ENGINEINFO))->SetWindowTextW(CA2W(info.c_str()));
 
 											if (isOk)
 											{
@@ -1864,11 +1996,46 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 											}
 										}
 
+										std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
+
+										for (size_t i = 0; i < stepsVec_yunku.size(); i++)
+										{
+											int row = yunkuList->GetItemCount();
+											yunkuList->InsertItem(row, L"");
+											yunkuList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_yunku[i].move, game.maps).c_str()));
+											yunkuList->SetItemText(row, 2, CA2W(stepsVec_yunku[i].score.c_str()));
+											yunkuList->SetItemText(row, 3, CA2W(stepsVec_yunku[i].winrate.c_str()));
+										}
+										std::vector<openbookResult> stepsVec_openbook = openbookFuture.get();
+										for (size_t i = 0; i < stepsVec_openbook.size(); i++)
+										{
+											int row = openbookList->GetItemCount();
+											openbookList->InsertItem(row, L"");
+
+											openbookList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_openbook[i].move, game.maps).c_str()));
+											openbookList->SetItemText(row, 2, CA2W(stepsVec_openbook[i].vscore.c_str()));
+											openbookList->SetItemText(row, 3, CA2W(stepsVec_openbook[i].vwin.c_str()));
+											openbookList->SetItemText(row, 4, CA2W(stepsVec_openbook[i].vdraw.c_str()));
+											openbookList->SetItemText(row, 5, CA2W(stepsVec_openbook[i].vlost.c_str()));
+											openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
+											openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
+										}
 										std::pair<std::string, std::string> stepPair = calcFuture.get();
 
-										std::string step = stepPair.first;
-										std::string ponder = stepPair.second;
-										printf("%s %s\n", step.c_str(), ponder.c_str());
+
+										//指示正确走法
+										std::string step, ponder = "";
+										if (stepsVec_openbook.size() > 0 && Config::steps > game.stepList.size()/2) {
+											step = stepsVec_openbook[0].move;
+										}
+										else if (stepsVec_yunku.size() > 0 && Config::steps > game.stepList.size() / 2)
+										{
+											step = stepsVec_yunku[0].move;
+										}
+										else {
+											step = stepPair.first;
+											ponder = stepPair.second;
+										}
 
 										game.addIndicate(step, ponder); //添加指示
 
@@ -2069,17 +2236,14 @@ void CChessAIDlg::OnDestroy()
 }
 
 
-void CChessAIDlg::OnClose()
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	TerminateThread(drawThreadHandle, 0);
-
-
+void CChessAIDlg::saveConfig() {
 	//保存配置
-	char programPath[MAX_PATH];
+	/*char programPath[MAX_PATH];
 	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
 	std::string programPathStr = programPath;
-	std::string settingPath = programPathStr + "\\setting.json";
+	std::string settingPath = programPathStr + "\\setting.json";*/
+
+	std::string settingPath = "./setting.json";
 
 	qJsonObject json;
 
@@ -2117,8 +2281,30 @@ void CChessAIDlg::OnClose()
 	json.setBool("openBookStatus", Config::openBookStatus);
 	json.setBool("yunkuStatus", Config::yunkuStatus);
 	json.setInt("steps", Config::steps);
+
+
+	qJsonArray jsonArray_engineList;
+	for (size_t i = 0; i < Config::engineConfigList.size(); i++)
+	{
+		qJsonObject json;
+		json.setString("author", Config::engineConfigList[i].author);
+		json.setString("name", Config::engineConfigList[i].name);
+		json.setString("path", Config::engineConfigList[i].path);
+		json.setString("threadNum", Config::engineConfigList[i].threadNum);
+		jsonArray_engineList.addJsonObject(json);
+	}
+	json.setJsonArray("engineList", jsonArray_engineList);
+
 	Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 
+}
+
+void CChessAIDlg::OnClose()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	TerminateThread(drawThreadHandle, 0);
+
+	saveConfig();
 
 	ExitProcess(0);
 
@@ -2292,26 +2478,77 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 	float thinkTime = atof(CW2A(thinkTimeStr));
 	int thinkDepth = atoi(CW2A(thinkDepthStr));
 
+
+	//走棋前先判断当前导航的位置
+	POSITION pos = m_navigation.GetFirstSelectedItemPosition();
+	int idx = m_navigation.GetNextSelectedItem(pos);
+	int count = m_navigation.GetItemCount();
+	if (idx != -1 && idx < count - 1)
+	{
+		//说明要进行一部分回退
+		for (int i = 0; i < count - 1 - idx; i++)
+		{
+			m_navigation.DeleteItem(count - 1 - i);
+			game.stepList.erase(game.stepList.begin() + count - 1 - i);
+		}
+	}
+
 	//直接异步执行 然后异步把ret不断写入编辑框
 	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
 	printf("fen:%s\n", fen.c_str());
 	std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
 
-		std::string* ret = new std::string();
 
+		CListCtrl* yunkuList = ((CListCtrl*)dlg->m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
+		CListCtrl* openbookList = ((CListCtrl*)dlg->m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
+		yunkuList->DeleteAllItems();
+		openbookList->DeleteAllItems();
+
+
+		std::string* ret = new std::string();
 		std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-			std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+			std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
 			return stepPair;
 			}, fen, ret, thinkTime, thinkDepth);
 
+		std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
+			if (Config::yunkuStatus)
+			{
+				std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
+				return stepsVec;
+			}
+			else {
+
+				return std::vector<yunkuResult>(); //返回空结果
+			}
+			}, fen);
+
+		std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
+			if (Config::openBookStatus)
+			{
+				std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
+				return stepsVec;
+			}
+			else {
+				return std::vector<openbookResult>(); //返回空结果
+			}
+			}, fen);
 
 		bool isOk = false;
 		while (true) {
 			std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
-			if (status == std::future_status::ready)
+
+			std::future_status yunkuStatus = yunkuFuture.wait_for(std::chrono::milliseconds(100));
+			std::future_status openbookStatus = openbookFuture.wait_for(std::chrono::milliseconds(100));
+
+			if (status == std::future_status::ready
+				&& yunkuStatus == std::future_status::ready
+				&& openbookStatus == std::future_status::ready)
 			{
 				isOk = true;
 			}
+
+			//读取引擎信息
 			std::string info;
 			std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
 			for (int i = 0; i < strList.size(); i++)
@@ -2332,11 +2569,13 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 						bestStep = std::make_pair(stepList[0], score);
 					}
 
+
 					std::string stepListStr = stepListToQp(pv, game.maps);
 					info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 				}
 			}
-			dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+			((CEdit*)dlg->m_info_engine.GetDlgItem(IDC_EDIT_ENGINEINFO))->SetWindowTextW(CA2W(info.c_str()));
 
 			if (isOk)
 			{
@@ -2344,30 +2583,52 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 			}
 		}
 
-		std::pair<std::string, std::string> stepPair = calcFuture.get();
-		delete ret;
+		std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
 
-
-
-		//走棋前先判断当前导航的位置
-		POSITION pos = dlg->m_navigation.GetFirstSelectedItemPosition();
-		int idx = dlg->m_navigation.GetNextSelectedItem(pos);
-		int count = dlg->m_navigation.GetItemCount();
-		if (idx != -1 && idx < count - 1)
+		for (size_t i = 0; i < stepsVec_yunku.size(); i++)
 		{
-			//说明要进行一部分回退
-			for (int i = 0; i < count - 1 - idx; i++)
-			{
-				dlg->m_navigation.DeleteItem(count - 1 - i);
-				game.stepList.erase(game.stepList.begin() + count - 1 - i);
-			}
+			int row = yunkuList->GetItemCount();
+			yunkuList->InsertItem(row, L"");
+			yunkuList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_yunku[i].move, game.maps).c_str()));
+			yunkuList->SetItemText(row, 2, CA2W(stepsVec_yunku[i].score.c_str()));
+			yunkuList->SetItemText(row, 3, CA2W(stepsVec_yunku[i].winrate.c_str()));
+		}
+		std::vector<openbookResult> stepsVec_openbook = openbookFuture.get();
+		for (size_t i = 0; i < stepsVec_openbook.size(); i++)
+		{
+			int row = openbookList->GetItemCount();
+			openbookList->InsertItem(row, L"");
+
+			openbookList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_openbook[i].move, game.maps).c_str()));
+			openbookList->SetItemText(row, 2, CA2W(stepsVec_openbook[i].vscore.c_str()));
+			openbookList->SetItemText(row, 3, CA2W(stepsVec_openbook[i].vwin.c_str()));
+			openbookList->SetItemText(row, 4, CA2W(stepsVec_openbook[i].vdraw.c_str()));
+			openbookList->SetItemText(row, 5, CA2W(stepsVec_openbook[i].vlost.c_str()));
+			openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
+			openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
+		}
+		std::pair<std::string, std::string> stepPair = calcFuture.get();
+
+
+		//指示正确走法
+		std::string step, ponder = "";
+		if (stepsVec_openbook.size() > 0 && Config::steps > game.stepList.size()/2) {
+			step = stepsVec_openbook[0].move;
+		}
+		else if (stepsVec_yunku.size() > 0 && Config::steps > game.stepList.size()/2)
+		{
+			step = stepsVec_yunku[0].move;
+		}
+		else {
+			step = stepPair.first;
+			ponder = stepPair.second;
 		}
 
+		game.addIndicate(step, ponder);//添加指示
 
+		game.moveChess(step, bestStep.second);
+		
 
-
-		game.moveChess(stepPair.first, bestStep.second);
-		game.addIndicate(stepPair.first, stepPair.second);
 
 		int row = dlg->m_navigation.GetItemCount();
 		dlg->m_navigation.InsertItem(row, L"");
@@ -2391,21 +2652,57 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 		printf("fen:%s\n", fen.c_str());
 		std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
 
-			std::string* ret = new std::string();
 
+			CListCtrl* yunkuList = ((CListCtrl*)dlg->m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
+			CListCtrl* openbookList = ((CListCtrl*)dlg->m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
+			yunkuList->DeleteAllItems();
+			openbookList->DeleteAllItems();
+
+
+			std::string* ret = new std::string();
 			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-				std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+				std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
 				return stepPair;
 				}, fen, ret, thinkTime, thinkDepth);
 
+			std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
+				if (Config::yunkuStatus)
+				{
+					std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
+					return stepsVec;
+				}
+				else {
+
+					return std::vector<yunkuResult>(); //返回空结果
+				}
+				}, fen);
+
+			std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
+				if (Config::openBookStatus)
+				{
+					std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
+					return stepsVec;
+				}
+				else {
+					return std::vector<openbookResult>(); //返回空结果
+				}
+				}, fen);
 
 			bool isOk = false;
 			while (true) {
 				std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
-				if (status == std::future_status::ready)
+
+				std::future_status yunkuStatus = yunkuFuture.wait_for(std::chrono::milliseconds(100));
+				std::future_status openbookStatus = openbookFuture.wait_for(std::chrono::milliseconds(100));
+
+				if (status == std::future_status::ready
+					&& yunkuStatus == std::future_status::ready
+					&& openbookStatus == std::future_status::ready)
 				{
 					isOk = true;
 				}
+
+				//读取引擎信息
 				std::string info;
 				std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
 				for (int i = 0; i < strList.size(); i++)
@@ -2426,11 +2723,13 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 							bestStep = std::make_pair(stepList[0], score);
 						}
 
+
 						std::string stepListStr = stepListToQp(pv, game.maps);
 						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 					}
 				}
-				dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
+
+				((CEdit*)dlg->m_info_engine.GetDlgItem(IDC_EDIT_ENGINEINFO))->SetWindowTextW(CA2W(info.c_str()));
 
 				if (isOk)
 				{
@@ -2438,11 +2737,48 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 				}
 			}
 
+			std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
+
+			for (size_t i = 0; i < stepsVec_yunku.size(); i++)
+			{
+				int row = yunkuList->GetItemCount();
+				yunkuList->InsertItem(row, L"");
+				yunkuList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_yunku[i].move, game.maps).c_str()));
+				yunkuList->SetItemText(row, 2, CA2W(stepsVec_yunku[i].score.c_str()));
+				yunkuList->SetItemText(row, 3, CA2W(stepsVec_yunku[i].winrate.c_str()));
+			}
+			std::vector<openbookResult> stepsVec_openbook = openbookFuture.get();
+			for (size_t i = 0; i < stepsVec_openbook.size(); i++)
+			{
+				int row = openbookList->GetItemCount();
+				openbookList->InsertItem(row, L"");
+
+				openbookList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_openbook[i].move, game.maps).c_str()));
+				openbookList->SetItemText(row, 2, CA2W(stepsVec_openbook[i].vscore.c_str()));
+				openbookList->SetItemText(row, 3, CA2W(stepsVec_openbook[i].vwin.c_str()));
+				openbookList->SetItemText(row, 4, CA2W(stepsVec_openbook[i].vdraw.c_str()));
+				openbookList->SetItemText(row, 5, CA2W(stepsVec_openbook[i].vlost.c_str()));
+				openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
+				openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
+			}
 			std::pair<std::string, std::string> stepPair = calcFuture.get();
-			delete ret;
 
 
-			game.addIndicate(stepPair.first, stepPair.second);
+			//指示正确走法
+			std::string step, ponder = "";
+			if (stepsVec_openbook.size() > 0 && Config::steps > game.stepList.size()/2) {
+				step = stepsVec_openbook[0].move;
+			}
+			else if (stepsVec_yunku.size() > 0 && Config::steps > game.stepList.size()/2)
+			{
+				step = stepsVec_yunku[0].move;
+			}
+			else {
+				step = stepPair.first;
+				ponder = stepPair.second;
+			}
+
+			game.addIndicate(step, ponder);//添加指示
 
 
 			dlg->m_exec.EnableWindow(TRUE);
@@ -2842,6 +3178,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_CLOSE:
 		//MessageBoxW(NULL, L"不准关", L"提示", MB_OK);
+
 		DestroyWindow(hWnd);
 		break;
 	case WM_CREATE:
@@ -3330,4 +3667,10 @@ void CChessAIDlg::OnTcnSelchangeTabShowinfo(NMHDR* pNMHDR, LRESULT* pResult)
 	default:
 		break;
 	}
+}
+
+
+void CChessAIDlg::OnBnClickedButtonShowconnect()
+{
+	connectDlg.ShowWindow(true);
 }

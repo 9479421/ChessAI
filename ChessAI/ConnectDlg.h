@@ -60,4 +60,6 @@ public:
 	CStatic m_bottom;
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnBnClickedCheckAutonext();
+	QButton m_hideconnect;
+	afx_msg void OnBnClickedButtonHideconnect();
 };

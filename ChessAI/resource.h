@@ -31,6 +31,7 @@
 #define IDC_BUTTON6                     1007
 #define IDC_BUTTON_BOARDPIC             1007
 #define IDC_BUTTON7                     1008
+#define IDC_BUTTON_SHOWCONNECT          1008
 #define IDC_RADIO_WGCSHOT               1015
 #define IDC_BUTTON3                     1035
 #define IDC_BUTTON4                     1036
@@ -101,10 +102,10 @@
 #define IDC_SLIDER_RATE                 1081
 #define IDC_BUTTON_RECOGNIZEPIC         1083
 #define IDC_TAB_SHOWINFO                1085
-#define IDC_LIST1                       1086
 #define IDC_LIST_OPENBOOKINFO           1086
 #define IDC_BUTTON_SELECTFILE           1087
 #define IDC_LIST_YUNKUINFO              1088
+#define IDC_BUTTON_HIDECONNECT          1089
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -141,7 +142,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        191
 #define _APS_NEXT_COMMAND_VALUE         32800
-#define _APS_NEXT_CONTROL_VALUE         1089
+#define _APS_NEXT_CONTROL_VALUE         1090
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

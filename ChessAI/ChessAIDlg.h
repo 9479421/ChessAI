@@ -60,9 +60,9 @@ public:
 	HBRUSH hbr;
 	afx_msg void OnCopyfen();
 	
-	CEdit m_engineInfo;
 	
 	afx_msg void OnDestroy();
+	void saveConfig();
 	afx_msg void OnClose();
 	//QButton m_connect;
 
@@ -116,4 +116,6 @@ public:
 	CDialog m_info_openbook;
 	CDialog m_info_yunku;
 	afx_msg void OnTcnSelchangeTabShowinfo(NMHDR* pNMHDR, LRESULT* pResult);
+	QButton m_showconnect;
+	afx_msg void OnBnClickedButtonShowconnect();
 };

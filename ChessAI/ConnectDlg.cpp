@@ -42,6 +42,7 @@ void ConnectDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHECK_SHOWNAME, m_showName);
 	DDX_Control(pDX, IDC_COMBO_SCHEMELIST, m_schemeList);
 	DDX_Control(pDX, IDC_STATIC_BOTTOM, m_bottom);
+	DDX_Control(pDX, IDC_BUTTON_HIDECONNECT, m_hideconnect);
 }
 
 
@@ -52,6 +53,7 @@ BEGIN_MESSAGE_MAP(ConnectDlg, CDialogEx)
 	ON_WM_DESTROY()
 	ON_BN_CLICKED(IDC_CHECK_FRONT, &ConnectDlg::OnBnClickedCheckFront)
 	ON_BN_CLICKED(IDC_CHECK_AUTONEXT, &ConnectDlg::OnBnClickedCheckAutonext)
+	ON_BN_CLICKED(IDC_BUTTON_HIDECONNECT, &ConnectDlg::OnBnClickedButtonHideconnect)
 END_MESSAGE_MAP()
 
 
@@ -233,5 +235,11 @@ void ConnectDlg::OnBnClickedCheckFront()
 void ConnectDlg::OnBnClickedCheckAutonext()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	MessageBoxA(NULL, "该功能还在开发阶段", "提示", 0);
+	MessageBoxA(m_hWnd, "该功能还在开发阶段", "提示", 0);
+}
+
+
+void ConnectDlg::OnBnClickedButtonHideconnect()
+{
+	ShowWindow(false);
 }

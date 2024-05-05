@@ -99,22 +99,6 @@ void EngineDlg::OnNMRClickListEngine(NMHDR* pNMHDR, LRESULT* pResult)
 }
 
 void EngineDlg::reReadEngineConfigList() {
-	//写入文件
-	char programPath[MAX_PATH];
-	SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
-	strcat(programPath, "\\engine.json");
-
-	qJsonArray* jsonArray = new qJsonArray();
-	for (int i = 0; i < Config::engineConfigList.size(); i++)
-	{
-		qJsonObject json;
-		json.setString("name", Config::engineConfigList[i].name);
-		json.setString("author", Config::engineConfigList[i].author);
-		json.setString("path", Config::engineConfigList[i].path);
-		json.setString("threadNum", Config::engineConfigList[i].threadNum);
-		jsonArray->addJsonObject(json);
-	}
-	Utils::writeFile(CString(programPath), CString(jsonArray->toString().c_str()));
 	//重新读取
 	m_engineList.DeleteAllItems();
 	for (size_t i = 0; i < Config::engineConfigList.size(); i++)

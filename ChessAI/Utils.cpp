@@ -108,66 +108,66 @@ HBITMAP Utils::WindowCapture_Front(HWND hwnd,bool autoTopMost)
 
 	return memBitmap;
 }
-
-HBITMAP Utils::WindowCaptere_D3D(HWND hwnd, bool autoTopMost)
-{
-	//父窗口置顶 为截图做准备
-	if (autoTopMost)
-	{
-		::SetWindowPos((hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-		::SetWindowPos(::GetParent(hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-
-	}
-
-	LPDIRECT3D9    g_pD3D = NULL;
-	LPDIRECT3DDEVICE9   g_pd3dDevice = NULL;
-	//创建Direct3D对象
-	g_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
-	D3DPRESENT_PARAMETERS d3dpp;
-	ZeroMemory(&d3dpp, sizeof(d3dpp));
-	d3dpp.Windowed = TRUE;
-	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-	g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd,
-		D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &g_pd3dDevice);
-	// Get adapter display mode
-	D3DDISPLAYMODE mode;
-	g_pd3dDevice->GetDisplayMode(0, &mode);
-	// Create the surface to hold the screen image data
-	LPDIRECT3DSURFACE9 surf;
-	g_pd3dDevice->CreateOffscreenPlainSurface(mode.Width,
-		mode.Height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &surf, NULL); //注意第四个参数不能是D3DPOOL_DEFAULT
-	// Get the screen data
-	g_pd3dDevice->GetFrontBufferData(0, surf);
-	RECT* rect = NULL;
-	WINDOWINFO windowInfo;
-	windowInfo.cbSize = sizeof(WINDOWINFO);
-	if (hwnd) // capture window
-	{
-		::GetWindowInfo(hwnd, &windowInfo);
-		rect = &windowInfo.rcWindow;
-	}
-	LPD3DXBUFFER buffer;
-	D3DXSaveSurfaceToFileInMemory(&buffer, D3DXIFF_BMP, surf, NULL, rect);
-	DWORD imSize = buffer->GetBufferSize();
-	void* imgBuffer = buffer->GetBufferPointer();
-
-
-	WCHAR tmpPath[MAX_PATH];
-	GetTempPath(MAX_PATH, tmpPath);
-	wcscat(tmpPath, L"yigebi.bmp");
-
-	std::fstream out;
-	out.open(tmpPath, std::ios_base::binary | std::ios_base::out);
-	out.write((char*)imgBuffer, imSize);
-	out.clear();
-	out.close();
-
-	surf->Release();
-
-	HBITMAP hBitmap = (HBITMAP)LoadImage(NULL, tmpPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-	return hBitmap;
-}
+//
+//HBITMAP Utils::WindowCaptere_D3D(HWND hwnd, bool autoTopMost)
+//{
+//	//父窗口置顶 为截图做准备
+//	if (autoTopMost)
+//	{
+//		::SetWindowPos((hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+//		::SetWindowPos(::GetParent(hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+//
+//	}
+//
+//	LPDIRECT3D9    g_pD3D = NULL;
+//	LPDIRECT3DDEVICE9   g_pd3dDevice = NULL;
+//	//创建Direct3D对象
+//	g_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+//	D3DPRESENT_PARAMETERS d3dpp;
+//	ZeroMemory(&d3dpp, sizeof(d3dpp));
+//	d3dpp.Windowed = TRUE;
+//	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+//	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+//	g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd,
+//		D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &g_pd3dDevice);
+//	// Get adapter display mode
+//	D3DDISPLAYMODE mode;
+//	g_pd3dDevice->GetDisplayMode(0, &mode);
+//	// Create the surface to hold the screen image data
+//	LPDIRECT3DSURFACE9 surf;
+//	g_pd3dDevice->CreateOffscreenPlainSurface(mode.Width,
+//		mode.Height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &surf, NULL); //注意第四个参数不能是D3DPOOL_DEFAULT
+//	// Get the screen data
+//	g_pd3dDevice->GetFrontBufferData(0, surf);
+//	RECT* rect = NULL;
+//	WINDOWINFO windowInfo;
+//	windowInfo.cbSize = sizeof(WINDOWINFO);
+//	if (hwnd) // capture window
+//	{
+//		::GetWindowInfo(hwnd, &windowInfo);
+//		rect = &windowInfo.rcWindow;
+//	}
+//	LPD3DXBUFFER buffer;
+//	D3DXSaveSurfaceToFileInMemory(&buffer, D3DXIFF_BMP, surf, NULL, rect);
+//	DWORD imSize = buffer->GetBufferSize();
+//	void* imgBuffer = buffer->GetBufferPointer();
+//
+//
+//	WCHAR tmpPath[MAX_PATH];
+//	GetTempPath(MAX_PATH, tmpPath);
+//	wcscat(tmpPath, L"yigebi.bmp");
+//
+//	std::fstream out;
+//	out.open(tmpPath, std::ios_base::binary | std::ios_base::out);
+//	out.write((char*)imgBuffer, imSize);
+//	out.clear();
+//	out.close();
+//
+//	surf->Release();
+//
+//	HBITMAP hBitmap = (HBITMAP)LoadImage(NULL, tmpPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+//	return hBitmap;
+//}
 
 void Utils::saveBitMap(CString path, HBITMAP bitmap)
 {

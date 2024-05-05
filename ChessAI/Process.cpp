@@ -33,10 +33,14 @@ void Process::createProcess(std::string process)
 	int idx = process.find_last_of("\\");
 	currentDir = process.substr(0, idx);
 
-
-
-	//process += " \r\n isready \r\n go";
+	
 	CreateProcessA(NULL, const_cast<char*>(process.c_str()), NULL, NULL, TRUE, CREATE_NEW_PROCESS_GROUP, NULL, currentDir.c_str(), &si, &pi);
+	/*
+	currentDir = "F:\\XRChess\\ChessAI\\ChessAI\\";
+	char cWinDir[MAX_PATH];
+	GetCurrentDirectoryA(MAX_PATH, cWinDir);
+	CreateProcessA(NULL, ".\\engine\\pikafish-avx2.exe", NULL, NULL, TRUE, CREATE_NEW_PROCESS_GROUP, NULL, currentDir.c_str(), &si, &pi);*/
+
 
 	// not needed
 	CloseHandle(hOutWrite);

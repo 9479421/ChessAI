@@ -4,3 +4,4 @@ ChessAI/*.dll
 ChessAI/*.onnx
 x64/
 ChessAI/openbook
+ChessAI/engine

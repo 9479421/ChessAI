@@ -516,7 +516,14 @@ void Game::show()
 
 
 		CPen pen;
-		pen.CreatePen(PS_SOLID, 2, RGB(30, 30, 30));
+		if (i%2 == 0) //偶数
+		{
+			pen.CreatePen(PS_SOLID, 2, RGB(118, 0, 118));
+		}
+		else {
+			pen.CreatePen(PS_SOLID, 2, RGB(118, 118, 0));
+		}
+		
 		CPen* oldPen = gameCdc.SelectObject(&pen);
 
 

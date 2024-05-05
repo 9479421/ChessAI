@@ -73,4 +73,6 @@ public:
 	OpenBook(); //³õÊ¼»¯Âë±í
 private:
     QSqlite qSql;
+
+	bool sqlStatus;
 };

@@ -6,6 +6,9 @@
 
 std::vector<yunkuResult> Yunku::calcSteps(std::string fen)
 {
+
+
+
     std::vector<yunkuResult> retVec;
 
 	QHttp http;
@@ -58,6 +61,11 @@ if (key >> 63 != 0)
 std::vector<openbookResult> OpenBook::calcSteps(std::string fen)
 {
     std::vector<openbookResult>retVec;
+
+    if (!sqlStatus) //没加载成功直接返回空数据
+    {
+        return retVec;
+    }
 
 
     int64_t key = GetZobristFromFen(fen);
@@ -116,32 +124,14 @@ std::vector<openbookResult> OpenBook::calcSteps(std::string fen)
         retVec.push_back(openbookResult(move, vscore, vwin, vdraw, vlost, vvalid, vmemo));
     }
 
-
-
-    //printf("查询本地库数量：%d\n", resultAll.size());
-    //for (size_t i = 0; i < resultAll.size(); i++)
-    //{
-    //    std::string vmove = resultAll[i]["vmove"];
-    //    std::string move = ConvertVmoveToCoord(atoi(vmove.c_str()),);
-    //    printf("move: %s\n", move.c_str());
-    //    std::string vscore = resultAll[i]["vscore"];
-    //    std::string vwin = resultAll[i]["vwin"];
-    //    std::string vdraw = resultAll[i]["vdraw"];
-    //    std::string vlost = resultAll[i]["vlost"];
-    //    std::string vvalid = resultAll[i]["vvalid"];
-    //    std::string vmemo = Utils::utf8_to_ansi(resultAll[i]["vmemo"]);
-
-
-    //    retVec.push_back(openbookResult(move, vscore, vwin, vdraw, vlost, vvalid, vmemo));
-    //}
-
     return retVec;
 }
 
 
 bool OpenBook::open(std::string path)
 {
-    return qSql.open(path);
+    sqlStatus = qSql.open(path);
+    return sqlStatus;
 }
 
 std::string OpenBook::ConvertVmoveToCoord(int vmove, bool swapLeftRight)

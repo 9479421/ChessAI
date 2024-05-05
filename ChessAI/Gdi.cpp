@@ -46,20 +46,20 @@ void GdiClass::render() {
 	HBRUSH oldBrush = (HBRUSH)SelectObject(hMemDC, brush);
 
 
-	//绘制空心矩形
-	for (int i = 0; i < hollowRects.size(); i++)
-	{
-		float left = (float)hollowRects[i].left;
-		float top = (float)hollowRects[i].top;
-		float width = (float)hollowRects[i].width;
-		float height = (float)hollowRects[i].height;
-		float weight = hollowRects[i].weight;
-		D3DCOLOR color = hollowRects[i].color;
+	////绘制空心矩形
+	//for (int i = 0; i < hollowRects.size(); i++)
+	//{
+	//	float left = (float)hollowRects[i].left;
+	//	float top = (float)hollowRects[i].top;
+	//	float width = (float)hollowRects[i].width;
+	//	float height = (float)hollowRects[i].height;
+	//	float weight = hollowRects[i].weight;
+	//	D3DCOLOR color = hollowRects[i].color;
 
-		D3DXVECTOR2 Vertex[5] = { {left,top},{left + width,top},{left + width,top + height},{left,top + height},{left,top} };
-		/*	g_line->SetWidth(weight);
-			g_line->Draw(Vertex, 5, color);*/
-	}
+	//	D3DXVECTOR2 Vertex[5] = { {left,top},{left + width,top},{left + width,top + height},{left,top + height},{left,top} };
+	//	/*	g_line->SetWidth(weight);
+	//		g_line->Draw(Vertex, 5, color);*/
+	//}
 	//绘制空心矩形美化版
 	for (int i = 0; i < hollowHalfRects.size(); i++)
 	{
