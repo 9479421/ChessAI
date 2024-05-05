@@ -22,5 +22,14 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnBnClickedButton1();
+	CEdit m_openbook;
+	afx_msg void OnBnClickedButtonSelectfile();
+	afx_msg void OnBnClickedCheckUseyunku();
+	CButton m_useyunku;
+	CButton m_useopenbook;
+	afx_msg void OnBnClickedCheckUseopenbook();
+	virtual BOOL OnInitDialog();
+	CComboBox m_steps;
+	afx_msg void OnCbnSelchangeComboSteps();
+	afx_msg void OnCbnEditchangeComboSteps();
 };

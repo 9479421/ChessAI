@@ -13,3 +13,9 @@ int Config::marginX;
 int Config::marginY;
 int Config::chessWidth;
 int Config::chessHeight;
+
+bool Config::yunkuStatus;
+bool Config::openBookStatus;
+std::string Config::openBookPath;
+int Config::steps;
+

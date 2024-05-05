@@ -1,6 +1,10 @@
 ﻿#include "QSqlite.h"
 #include<iostream>
 
+QSqlite::QSqlite()
+{
+}
+
 QSqlite::QSqlite(std::string dbName)
 {
 	int rc = sqlite3_open(dbName.c_str(), &db);
@@ -18,6 +22,19 @@ QSqlite::~QSqlite()
 	{
 		sqlite3_close(db);
 	}
+}
+
+bool QSqlite::open(std::string dbName)
+{
+	int rc = sqlite3_open(dbName.c_str(), &db);
+	if (rc != SQLITE_OK)
+	{
+		std::cerr << "Cannot open datebase: " << sqlite3_errmsg(db) << std::endl;
+		sqlite3_close(db);
+		db = nullptr;
+		return false;
+	}
+	return true;
 }
 
 bool QSqlite::execute(const std::string& sql, int argNums, ...)

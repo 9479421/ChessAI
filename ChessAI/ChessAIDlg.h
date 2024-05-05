@@ -15,6 +15,7 @@
 #include <string>
 #include "OpenBookDlg.h"
 
+#include"QTab.h"
 // CChessAIDlg 对话框
 class CChessAIDlg : public CDialogEx
 {
@@ -54,7 +55,6 @@ public:
 	CListCtrl m_navigation;
 	CComboBox m_engineList;
 	//CComboBox m_schemeList;
-	afx_msg void OnBnClickedButton5();
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 
 	HBRUSH hbr;
@@ -109,4 +109,11 @@ public:
 
 	OpenBookDlg openBookDlg;
 	afx_msg void OnChangeskin();
+	QTab m_showInfo;
+	int cursel;
+
+	CDialog m_info_engine;
+	CDialog m_info_openbook;
+	CDialog m_info_yunku;
+	afx_msg void OnTcnSelchangeTabShowinfo(NMHDR* pNMHDR, LRESULT* pResult);
 };

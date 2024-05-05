@@ -22,6 +22,9 @@
 #define IDD_DIALOG_INPUTFEN             179
 #define IDD_DIALOG_EDITENGINE           181
 #define IDD_DIALOG_OPENBOOK             183
+#define IDD_DIALOG_INFO_ENGINE          185
+#define IDD_DIALOG_INFO_YUNKU           186
+#define IDD_DIALOG_INFO_OPENBOOK        189
 #define IDC_TAB                         1002
 #define IDC_BUTTON_CONNECT              1005
 #define IDC_BUTTON5                     1006
@@ -35,6 +38,7 @@
 #define IDC_CHECK1                      1038
 #define IDC_CHECK_SHOWRECT              1038
 #define IDC_CHECK_PKMODE                1038
+#define IDC_CHECK_USEYUNKU              1038
 #define IDC_CHECK2                      1039
 #define IDC_CHECK_SHOWARROW             1039
 #define IDC_CHECK3                      1040
@@ -45,13 +49,16 @@
 #define IDC_CHECK_SHOWNAME              1041
 #define IDC_CHECK5                      1042
 #define IDC_CHECK_FRONT                 1042
+#define IDC_CHECK_USEOPENBOOK           1042
 #define IDC_EDIT1                       1043
 #define IDC_EDIT_ENGINEINFO             1043
 #define IDC_EDIT_UPDATEINFO             1043
+#define IDC_EDIT_OPENBOOK               1043
 #define IDC_CHECK6                      1044
 #define IDC_CHECK_AUTOPLAY              1044
 #define IDC_COMBO1                      1045
 #define IDC_COMBO_SCHEMELIST            1045
+#define IDC_COMBO_STEPS                 1045
 #define IDC_CHECK7                      1046
 #define IDC_CHECK_AUTONEXT              1046
 #define IDC_MFCCOLORBUTTON1             1049
@@ -93,6 +100,11 @@
 #define IDC_STATIC_BOTTOM               1077
 #define IDC_SLIDER_RATE                 1081
 #define IDC_BUTTON_RECOGNIZEPIC         1083
+#define IDC_TAB_SHOWINFO                1085
+#define IDC_LIST1                       1086
+#define IDC_LIST_OPENBOOKINFO           1086
+#define IDC_BUTTON_SELECTFILE           1087
+#define IDC_LIST_YUNKUINFO              1088
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -127,9 +139,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        185
+#define _APS_NEXT_RESOURCE_VALUE        191
 #define _APS_NEXT_COMMAND_VALUE         32800
-#define _APS_NEXT_CONTROL_VALUE         1085
+#define _APS_NEXT_CONTROL_VALUE         1089
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

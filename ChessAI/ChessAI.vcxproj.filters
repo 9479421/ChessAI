@@ -144,6 +144,9 @@
     <ClInclude Include="QSqlite.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="QTab.h">
+      <Filter>头文件\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp">
@@ -241,6 +244,9 @@
     </ClCompile>
     <ClCompile Include="QSqlite.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="QTab.cpp">
+      <Filter>源文件\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

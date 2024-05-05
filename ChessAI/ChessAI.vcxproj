@@ -224,6 +224,7 @@
     <ClInclude Include="QRoundPicture.h" />
     <ClInclude Include="QSqlite.h" />
     <ClInclude Include="QStatusBar.h" />
+    <ClInclude Include="QTab.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SkinColors.h" />
     <ClInclude Include="stepIdx.h" />
@@ -266,6 +267,7 @@
     <ClCompile Include="QRoundPicture.cpp" />
     <ClCompile Include="QSqlite.cpp" />
     <ClCompile Include="QStatusBar.cpp" />
+    <ClCompile Include="QTab.cpp" />
     <ClCompile Include="SkinColors.cpp" />
     <ClCompile Include="unzip.cpp" />
     <ClCompile Include="Utils.cpp" />

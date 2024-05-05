@@ -42,6 +42,9 @@
 #include"QClientSocket.h"
 
 
+#include"OpenBook.h"
+
+
 ConnectDlg connectDlg;
 
 
@@ -64,6 +67,7 @@ DWORD drawThreadId;
 bool isConnecting = false;
 
 Engine engine;
+OpenBook openbook;	
 
 // CChessAIDlg 对话框
 CChessAIDlg::CChessAIDlg(CWnd* pParent /*=nullptr*/)
@@ -96,6 +100,7 @@ void CChessAIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHECK_PKMODE, m_pkmode);
 	DDX_Control(pDX, IDC_SLIDER_RATE, m_rate);
 	DDX_Control(pDX, IDC_BUTTON_RECOGNIZEPIC, m_recognizePic);
+	DDX_Control(pDX, IDC_TAB_SHOWINFO, m_showInfo);
 }
 
 BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
@@ -107,7 +112,6 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_WM_NCCALCSIZE()
 	ON_WM_NCHITTEST()
 	ON_BN_CLICKED(IDC_BUTTON_MANAGEENGINE, &CChessAIDlg::OnBnClickedButtonManageengine)
-	ON_BN_CLICKED(IDC_BUTTON5, &CChessAIDlg::OnBnClickedButton5)
 	ON_WM_LBUTTONUP()
 	ON_COMMAND(ID_COPYFEN, &CChessAIDlg::OnCopyfen)
 	ON_WM_DESTROY()
@@ -136,6 +140,7 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_RECOGNIZEPIC, &CChessAIDlg::OnBnClickedButtonRecognizepic)
 	ON_COMMAND(ID_MANAGEOPENBOOK, &CChessAIDlg::OnManageopenbook)
 	ON_COMMAND(ID_CHANGESKIN, &CChessAIDlg::OnChangeskin)
+	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB_SHOWINFO, &CChessAIDlg::OnTcnSelchangeTabShowinfo)
 END_MESSAGE_MAP()
 
 
@@ -155,7 +160,7 @@ void CChessAIDlg::InitComponent() {
 		qClientSocket->SendCommand(1, NULL, 0); //获取版本号和更新公告
 		int mCmd = qClientSocket->DealCommand();
 		qJsonObject json = qJson::parseJsonObject(qClientSocket->getPacket().getStrData());
-		if (json.getString("version").compare(Config::version)!=0)
+		if (json.getString("version").compare(Config::version) != 0)
 		{
 			MessageBoxA(dlg->m_hWnd, "当前版本已更新，请下载最新版", "提示", 0);
 			ShellExecute(NULL, NULL, CA2W(json.getString("uploadUrl").c_str()), NULL, NULL, SW_SHOWNORMAL);
@@ -165,7 +170,7 @@ void CChessAIDlg::InitComponent() {
 			//是最新版，读取是否有公告
 			if (!json.getString("msg").empty())
 			{
-				MessageBoxA(dlg->m_hWnd, ("服务器通知：\n"+ Utils::utf8_to_ansi(json.getString("msg"))).c_str(), "提示", 0);
+				MessageBoxA(dlg->m_hWnd, ("服务器通知：\n" + Utils::utf8_to_ansi(json.getString("msg"))).c_str(), "提示", 0);
 			}
 		}
 
@@ -192,8 +197,6 @@ void CChessAIDlg::InitComponent() {
 			dlg->Log("初始化Yolo识别库失败！部分功能将失效");
 			MessageBoxA(dlg->m_hWnd, "初始化Yolo识别库失败！部分功能将失效", "警告", 0);
 		}
-
-
 		}, this);
 	thread.detach();
 }
@@ -677,9 +680,6 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 }
 
 
-#include"OpenBook.h"
-
-
 BOOL CChessAIDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -687,7 +687,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 	// 将“关于...”菜单项添加到系统菜单中。
-	
+
 	// IDM_ABOUTBOX 必须在系统命令范围内。
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
@@ -725,9 +725,42 @@ BOOL CChessAIDlg::OnInitDialog()
 	freopen("CONOUT$", "w", stdout);//开启中文控制台输出支持  
 
 
+	m_showInfo.InsertItem(0, L"引擎");
+	m_showInfo.InsertItem(1, L"云库");
+	m_showInfo.InsertItem(2, L"本地库");
+	m_showInfo.SetCurSel(0);
 
-	OpenBook openbook;
-	openbook.calcStep("1rbakabnr/9/1cn4c1/p3p1p1p/2p6/9/P1P1P1P1P/2N1C2C1/9/1RBAKABNR w");
+	//m_showInfo.GetToolTips()->SetTipBkColor(RGB(0, 0, 0));
+
+	m_info_engine.Create(IDD_DIALOG_INFO_ENGINE);
+	m_info_engine.SetParent(&m_showInfo);
+	m_info_engine.ShowWindow(TRUE);
+
+	m_info_yunku.Create(IDD_DIALOG_INFO_YUNKU);
+	m_info_yunku.SetParent(&m_showInfo);
+	m_info_yunku.ShowWindow(FALSE);
+	CListCtrl* yunkuList = ((CListCtrl*)m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
+	yunkuList->InsertColumn(0,L"",LVCFMT_CENTER,1, 0);
+	yunkuList->InsertColumn(1,L"招法",LVCFMT_CENTER,120, 0);
+	yunkuList->InsertColumn(2,L"分数", LVCFMT_CENTER,120, 0);
+	yunkuList->InsertColumn(3,L"胜率", LVCFMT_CENTER,120, 0);
+
+	m_info_openbook.Create(IDD_DIALOG_INFO_OPENBOOK);
+	m_info_openbook.SetParent(&m_showInfo);
+	m_info_openbook.ShowWindow(FALSE);
+	CListCtrl* openbookList = ((CListCtrl*)m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
+	openbookList->InsertColumn(0, L"", LVCFMT_CENTER, 1, 0);
+	openbookList->InsertColumn(1, L"招法", LVCFMT_CENTER, 100, 0);
+	openbookList->InsertColumn(2, L"分数", LVCFMT_CENTER, 50, 0);
+	openbookList->InsertColumn(3, L"胜", LVCFMT_CENTER, 50, 0);
+	openbookList->InsertColumn(4, L"和", LVCFMT_CENTER, 50, 0);
+	openbookList->InsertColumn(5, L"败", LVCFMT_CENTER, 50, 0);
+	openbookList->InsertColumn(6, L"有效", LVCFMT_CENTER, 50, 0);
+	openbookList->InsertColumn(7, L"注释", LVCFMT_CENTER, 50, 0);
+
+
+	//OpenBook openbook;
+	//openbook.calcStep("1rbakabnr/9/1cn4c1/p3p1p1p/2p6/9/P1P1P1P1P/2N1C2C1/9/1RBAKABNR w");
 
 
 
@@ -776,21 +809,6 @@ BOOL CChessAIDlg::OnInitDialog()
 	SetMenuInfo(menu.m_hMenu, &mi);
 	mMenuBrush.Detach();
 	//menu.Detach();//防止窗口创建后menu2被释放，再按选项
-
-
-	//////设置状态栏
-	//m_Statusbar.Create(this);                  //创造状态栏
-	//UINT id[] = { 1000, 1001 };//一个id 是1000  一个是1001创建两个状态栏
-	//m_Statusbar.SetIndicators(id, 2);//这个2好像是你id数组的大小也就是下面有几个状态栏，这里是两个
-	//m_Statusbar.SetPaneInfo(0, 1000, SBPS_NORMAL, 100);//这里是设置状态栏 第一个参数0代表第一个状态栏 1的话是第二个，第二个参数是状态栏id，第三个是风格，第四个是宽度
-	//m_Statusbar.SetPaneInfo(1, 1001, SBPS_STRETCH, 10);//同上这个风格是自动增加的，最后一个参数写不写没什么意思
-	////下面代码是取得本窗口矩形区域...把状态栏放在底部
-	//RECT clientRect;
-	//GetClientRect(&clientRect);
-	//m_Statusbar.MoveWindow(0, clientRect.bottom - 30, clientRect.right, 30, TRUE);//这里设置了状态栏高度
-	////m_Statusbar.SetPaneText(0,  CA2W(("当前版本：V" + validateVersion()).c_str()), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
-	//m_Statusbar.SetPaneText(1, _T("这里是窗口初始化自带状态文本"), TRUE);//第一个0代表第一个状态栏1代表第二个依次... 第二个是要设置的文本，第三个不清粗
-
 
 
 	//计算深度和时间
@@ -859,7 +877,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	std::string programPathStr = programPath;
 
 	std::string enginePath = programPathStr + "\\engine.json";
-	std::string openbookPath = programPathStr + "\\openbook.json";
+
 	std::string settingPath = programPathStr + "\\setting.json";
 
 
@@ -895,6 +913,13 @@ BOOL CChessAIDlg::OnInitDialog()
 		json.setInt("marginY", 58);
 		json.setInt("chessWidth", 57);
 		json.setInt("chessHeight", 57);
+
+		//默认开局库参数
+		json.setString("openBookPath", "./openbook/11.obk");
+		json.setBool("openBookStatus", false);
+		json.setBool("yunkuStatus", false);
+		json.setInt("steps", 9999);
+
 		Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 	}
 	f.close();
@@ -926,6 +951,14 @@ BOOL CChessAIDlg::OnInitDialog()
 	Config::marginY = json.getInt("marginY");
 	Config::chessWidth = json.getInt("chessWidth");
 	Config::chessHeight = json.getInt("chessHeight");
+	//开局库配置
+	Config::openBookPath = json.getString("openBookPath");
+	Config::openBookStatus = json.getBool("openBookStatus");
+	Config::yunkuStatus = json.getBool("yunkuStatus");
+	Config::steps = json.getInt("steps");
+
+
+	openbook.open(Config::openBookPath);
 
 
 	//engine
@@ -973,11 +1006,9 @@ BOOL CChessAIDlg::OnInitDialog()
 	connectDlg.m_schemeList.SetCurSel(0);
 	//if (IsProcessExists("QQChess2021.exe"))
 	//{
-
 	//}
 	//if (IsProcessExists("QQChess2021.exe"))
 	//{
-
 	//}
 
 
@@ -1006,9 +1037,6 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	m_rate.SetPos(50);
 	pic.init(GetDC(), 457, 450);
-
-
-
 
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -1041,7 +1069,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		//问题出在这里 gameHwnd失效了
 		HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd, false);
-		
+
 
 		Utils::saveBitMap(L"1.png", bitmap);
 		cv::Mat img = cv::imread("1.png");
@@ -1252,49 +1280,49 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		std::string* ret = new std::string();
 
-		std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
-			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-				std::pair<std::string, std::string>stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
-
-				return stepPair;
-				}, fen, ret, thinkTime, thinkDepth);
+		std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+			//这里要加一个云库/本地库读取
 
 
-			bool isOk = false;
-			while (true) {
-				std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
-				if (status == std::future_status::ready)
+			std::pair<std::string, std::string>stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+
+			return stepPair;
+			}, fen, ret, thinkTime, thinkDepth);
+
+
+		bool isOk = false;
+		while (true) {
+			std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
+			if (status == std::future_status::ready)
+			{
+				isOk = true;
+			}
+			std::string info;
+			std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+			for (int i = 0; i < strList.size(); i++)
+			{
+				if (strList[i].find("pv") != std::string::npos)
 				{
-					isOk = true;
-				}
-				std::string info;
-				std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
-				for (int i = 0; i < strList.size(); i++)
-				{
-					if (strList[i].find("pv") != std::string::npos)
-					{
-						std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
-						std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
-						std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
-						std::string time = Utils::getCenterString(strList[i], "time ", " ");
+					std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+					std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+					std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+					std::string time = Utils::getCenterString(strList[i], "time ", " ");
 
-						std::string pv = Utils::getRightString(strList[i], " pv ");
+					std::string pv = Utils::getRightString(strList[i], " pv ");
 
-						std::string stepListStr = stepListToQp(pv, game.maps);
-						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
-					}
-				}
-				dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
-
-				if (isOk)
-				{
-					break;
+					std::string stepListStr = stepListToQp(pv, game.maps);
+					info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 				}
 			}
-			return calcFuture.get();
-			}, dlg, fen, thinkTime, thinkDepth, ret);
+			dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-		std::pair<std::string, std::string> stepPair = readFuture.get();
+			if (isOk)
+			{
+				break;
+			}
+		}
+
+		std::pair<std::string, std::string> stepPair = calcFuture.get();
 		delete ret;
 
 		game.addIndicate(stepPair.first, stepPair.second);
@@ -1454,6 +1482,7 @@ HBRUSH CChessAIDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		return (HBRUSH)B;
 	}
 
+
 	return hbr;
 }
 
@@ -1486,14 +1515,6 @@ void CChessAIDlg::OnBnClickedButtonManageengine()
 
 	loadEngine();
 	// TODO: 在此添加控件通知处理程序代码
-}
-
-
-void CChessAIDlg::OnBnClickedButton5()
-{
-	// TODO: 在此添加控件通知处理程序代码
-
-
 }
 
 
@@ -1606,9 +1627,9 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 							//走棋前先判断当前导航的位置
 							POSITION pos = m_navigation.GetFirstSelectedItemPosition();
-							int idx = m_navigation.GetNextSelectedItem(pos); 
+							int idx = m_navigation.GetNextSelectedItem(pos);
 							int count = m_navigation.GetItemCount();
-							if (idx!=-1  && idx < count -1)
+							if (idx != -1 && idx < count - 1)
 							{
 								//说明要进行一部分回退
 								for (int i = 0; i < count - 1 - idx; i++)
@@ -1617,7 +1638,7 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 									game.stepList.erase(game.stepList.begin() + count - 1 - i);
 								}
 							}
-							
+
 
 
 							//走棋
@@ -1656,65 +1677,111 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 							m_thinkDepth.GetWindowTextW(thinkDepthStr);
 							float thinkTime = atof(CW2A(thinkTimeStr));
 							int thinkDepth = atoi(CW2A(thinkDepthStr));
+
 							
 
 
 							std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
 							printf("fen:%s\n", fen.c_str());
 							std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
+								
+								CListCtrl* yunkuList = ((CListCtrl*)dlg->m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
+								CListCtrl* openbookList = ((CListCtrl*)dlg->m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
+								yunkuList->DeleteAllItems();
+								openbookList->DeleteAllItems();	
+
+
 
 								std::string* ret = new std::string();
-								std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
-									std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-										std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+								std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {			
+									std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+									return stepPair;
+									}, fen, ret, thinkTime, thinkDepth);
 
-										return stepPair;
-										}, fen, ret, thinkTime, thinkDepth);
+								std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
+									std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
+									return stepsVec;
+									}, fen);
 
+								std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
+									std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
+									return stepsVec;
+									}, fen);
 
-									bool isOk = false;
-									while (true) {
-										std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
-										if (status == std::future_status::ready)
+								bool isOk = false;
+								while (true) {
+									std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
+
+									std::future_status yunkuStatus = yunkuFuture.wait_for(std::chrono::milliseconds(100));
+									std::future_status openbookStatus = openbookFuture.wait_for(std::chrono::milliseconds(100));
+
+									if (status == std::future_status::ready 
+										&& yunkuStatus == std::future_status::ready
+										&& openbookStatus == std::future_status::ready)
+									{
+										isOk = true;
+									}
+
+									//读取引擎信息
+									std::string info;
+									std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+									for (int i = 0; i < strList.size(); i++)
+									{
+										if (strList[i].find("pv") != std::string::npos)
 										{
-											isOk = true;
-										}
-										std::string info;
-										std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
-										for (int i = 0; i < strList.size(); i++)
-										{
-											if (strList[i].find("pv") != std::string::npos)
+											std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+											std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+											std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+											std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+											std::string pv = Utils::getRightString(strList[i], " pv ");
+
+											//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+											std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+											if (stepList.size() > 0)
 											{
-												std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
-												std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
-												std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
-												std::string time = Utils::getCenterString(strList[i], "time ", " ");
-
-												std::string pv = Utils::getRightString(strList[i], " pv ");
-
-												//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
-												std::vector<std::string> stepList = Utils::splitStr(pv, " ");
-												if (stepList.size() > 0)
-												{
-													bestStep = std::make_pair(stepList[0], score);
-												}
-												
-
-												std::string stepListStr = stepListToQp(pv, game.maps);
-												info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+												bestStep = std::make_pair(stepList[0], score);
 											}
-										}
-										dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-										if (isOk)
-										{
-											break;
+
+											std::string stepListStr = stepListToQp(pv, game.maps);
+											info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 										}
 									}
-									return calcFuture.get();
-									}, dlg, fen, thinkTime, thinkDepth, ret);
 
-								std::pair<std::string, std::string> stepPair = readFuture.get();
+									((CEdit*)dlg->m_info_engine.GetDlgItem(IDC_EDIT_ENGINEINFO))->SetWindowTextW(CA2W(info.c_str()));
+
+									if (isOk)
+									{
+										break;
+									}
+								}
+
+								std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
+								for (size_t i = 0; i < stepsVec_yunku.size(); i++)
+								{
+									int row = yunkuList->GetItemCount();
+									yunkuList->InsertItem(row,L"");
+									yunkuList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_yunku[i].move, game.maps).c_str()));
+									yunkuList->SetItemText(row, 2, CA2W(stepsVec_yunku[i].score.c_str()));
+									yunkuList->SetItemText(row, 3, CA2W(stepsVec_yunku[i].winrate.c_str()));
+								}
+								std::vector<openbookResult> stepsVec_openbook = openbookFuture.get();
+								for (size_t i = 0; i < stepsVec_openbook.size(); i++)
+								{
+									int row = openbookList->GetItemCount();
+									openbookList->InsertItem(row, L"");
+									
+									openbookList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_openbook[i].move, game.maps).c_str()));
+									openbookList->SetItemText(row, 2, CA2W(stepsVec_openbook[i].vscore.c_str()));
+									openbookList->SetItemText(row, 3, CA2W(stepsVec_openbook[i].vwin.c_str()));
+									openbookList->SetItemText(row, 4, CA2W(stepsVec_openbook[i].vdraw.c_str()));
+									openbookList->SetItemText(row, 5, CA2W(stepsVec_openbook[i].vlost.c_str()));
+									openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
+									openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
+								}
+
+								std::pair<std::string, std::string> stepPair = calcFuture.get();
 
 								std::string step = stepPair.first;
 								std::string ponder = stepPair.second;
@@ -1724,7 +1791,7 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 								if (dlg->m_pkmode.GetCheck() && game.toWhoMove != game.isRed)
 								{
-									game.moveChess(step,bestStep.second);
+									game.moveChess(step, bestStep.second);
 
 									//电脑走完到我走了，所以在执行一次
 									//=============================================================================================
@@ -1751,56 +1818,53 @@ void CChessAIDlg::OnLButtonUp(UINT nFlags, CPoint point)
 									std::thread thread([](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth) {
 
 										std::string* ret = new std::string();
-										std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
-											std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-												std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+										std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+											std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
 
-												return stepPair;
-												}, fen, ret, thinkTime, thinkDepth);
+											return stepPair;
+											}, fen, ret, thinkTime, thinkDepth);
 
 
-											bool isOk = false;
-											while (true) {
-												std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
-												if (status == std::future_status::ready)
+										bool isOk = false;
+										while (true) {
+											std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
+											if (status == std::future_status::ready)
+											{
+												isOk = true;
+											}
+											std::string info;
+											std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+											for (int i = 0; i < strList.size(); i++)
+											{
+												if (strList[i].find("pv") != std::string::npos)
 												{
-													isOk = true;
-												}
-												std::string info;
-												std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
-												for (int i = 0; i < strList.size(); i++)
-												{
-													if (strList[i].find("pv") != std::string::npos)
+													std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+													std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+													std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+													std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+													std::string pv = Utils::getRightString(strList[i], " pv ");
+
+													//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+													std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+													if (stepList.size() > 0)
 													{
-														std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
-														std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
-														std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
-														std::string time = Utils::getCenterString(strList[i], "time ", " ");
-
-														std::string pv = Utils::getRightString(strList[i], " pv ");
-
-														//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
-														std::vector<std::string> stepList = Utils::splitStr(pv, " ");
-														if (stepList.size() > 0)
-														{
-															bestStep = std::make_pair(stepList[0], score);
-														}
-
-														std::string stepListStr = stepListToQp(pv, game.maps);
-														info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+														bestStep = std::make_pair(stepList[0], score);
 													}
-												}
-												dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-												if (isOk)
-												{
-													break;
+													std::string stepListStr = stepListToQp(pv, game.maps);
+													info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 												}
 											}
-											return calcFuture.get();
-											}, dlg, fen, thinkTime, thinkDepth, ret);
+											dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-										std::pair<std::string, std::string> stepPair = readFuture.get();
+											if (isOk)
+											{
+												break;
+											}
+										}
+
+										std::pair<std::string, std::string> stepPair = calcFuture.get();
 
 										std::string step = stepPair.first;
 										std::string ponder = stepPair.second;
@@ -1855,7 +1919,7 @@ void CChessAIDlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 
-	if (abs( pic.getDestX()+pic.getX1() - point.x) < 10 && abs(pic.getDestY() + pic.getY1() - point.y) < 10)
+	if (abs(pic.getDestX() + pic.getX1() - point.x) < 10 && abs(pic.getDestY() + pic.getY1() - point.y) < 10)
 	{
 		//左上角
 		picFlag = 1;
@@ -1972,8 +2036,8 @@ void CChessAIDlg::OnMouseMove(UINT nFlags, CPoint point)
 
 void CChessAIDlg::OnCopyfen()
 {
-	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2) ;
-	
+	std::string fen = calcFEN(game.maps, game.toWhoMove ? 1 : 2);
+
 	//复制到剪切板
 	if (::OpenClipboard(m_hWnd))
 	{
@@ -1987,9 +2051,9 @@ void CChessAIDlg::OnCopyfen()
 		::SetClipboardData(CF_TEXT, hData);
 		::CloseClipboard();
 	}
-	
+
 	MessageBoxA(m_hWnd, ("当前局面FEN:\n" + fen + "\n复制成功！").c_str(), "复制局面", 0);
-	
+
 
 
 	// TODO: 在此添加命令处理程序代码
@@ -2049,7 +2113,10 @@ void CChessAIDlg::OnClose()
 	json.setInt("marginY", Config::marginY);
 	json.setInt("chessWidth", Config::chessWidth);
 	json.setInt("chessHeight", Config::chessHeight);
-
+	json.setString("openBookPath", Config::openBookPath);
+	json.setBool("openBookStatus", Config::openBookStatus);
+	json.setBool("yunkuStatus", Config::yunkuStatus);
+	json.setInt("steps", Config::steps);
 	Utils::writeFile(CString(settingPath.c_str()), CString(json.toString().c_str()));
 
 
@@ -2147,7 +2214,7 @@ void CChessAIDlg::OnBnClickedButtonChoosewindow()
 	else {
 		printf("WindowFromPoint -> hwnd=%p\n", cwnd->m_hWnd);
 
-		HBITMAP bitmap = Utils::WindowCapture_Front(cwnd->m_hWnd,false);
+		HBITMAP bitmap = Utils::WindowCapture_Front(cwnd->m_hWnd, false);
 
 		CImage image;
 		image.Attach(bitmap);
@@ -2216,7 +2283,7 @@ void CChessAIDlg::OnBnClickedMfcbuttonBegin()
 void CChessAIDlg::OnBnClickedMfcbuttonExec()
 {
 	m_exec.EnableWindow(FALSE);
-	
+
 
 	CString thinkTimeStr;
 	m_thinkTime.GetWindowTextW(thinkTimeStr);
@@ -2232,55 +2299,52 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 
 		std::string* ret = new std::string();
 
-		std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
-			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-				std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
-				return stepPair;
-				}, fen, ret, thinkTime, thinkDepth);
+		std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+			std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+			return stepPair;
+			}, fen, ret, thinkTime, thinkDepth);
 
 
-			bool isOk = false;
-			while (true) {
-				std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
-				if (status == std::future_status::ready)
+		bool isOk = false;
+		while (true) {
+			std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
+			if (status == std::future_status::ready)
+			{
+				isOk = true;
+			}
+			std::string info;
+			std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+			for (int i = 0; i < strList.size(); i++)
+			{
+				if (strList[i].find("pv") != std::string::npos)
 				{
-					isOk = true;
-				}
-				std::string info;
-				std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
-				for (int i = 0; i < strList.size(); i++)
-				{
-					if (strList[i].find("pv") != std::string::npos)
+					std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+					std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+					std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+					std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+					std::string pv = Utils::getRightString(strList[i], " pv ");
+
+					//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+					std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+					if (stepList.size() > 0)
 					{
-						std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
-						std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
-						std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
-						std::string time = Utils::getCenterString(strList[i], "time ", " ");
-
-						std::string pv = Utils::getRightString(strList[i], " pv ");
-
-						//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
-						std::vector<std::string> stepList = Utils::splitStr(pv, " ");
-						if (stepList.size() > 0)
-						{
-							bestStep = std::make_pair(stepList[0], score);
-						}
-
-						std::string stepListStr = stepListToQp(pv, game.maps);
-						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+						bestStep = std::make_pair(stepList[0], score);
 					}
-				}
-				dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-				if (isOk)
-				{
-					break;
+					std::string stepListStr = stepListToQp(pv, game.maps);
+					info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 				}
 			}
-			return calcFuture.get();
-			}, dlg, fen, thinkTime, thinkDepth, ret);
+			dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-		std::pair<std::string, std::string> stepPair = readFuture.get();
+			if (isOk)
+			{
+				break;
+			}
+		}
+
+		std::pair<std::string, std::string> stepPair = calcFuture.get();
 		delete ret;
 
 
@@ -2329,55 +2393,52 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 
 			std::string* ret = new std::string();
 
-			std::future<std::pair<std::string, std::string>> readFuture = std::async(std::launch::async, [](CChessAIDlg* dlg, std::string fen, float thinkTime, int thinkDepth, std::string* ret) {
-				std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-					std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
-					return stepPair;
-					}, fen, ret, thinkTime, thinkDepth);
+			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+				std::pair<std::string, std::string> stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+				return stepPair;
+				}, fen, ret, thinkTime, thinkDepth);
 
 
-				bool isOk = false;
-				while (true) {
-					std::future_status status = calcFuture.wait_for(std::chrono::seconds(1));
-					if (status == std::future_status::ready)
+			bool isOk = false;
+			while (true) {
+				std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
+				if (status == std::future_status::ready)
+				{
+					isOk = true;
+				}
+				std::string info;
+				std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+				for (int i = 0; i < strList.size(); i++)
+				{
+					if (strList[i].find("pv") != std::string::npos)
 					{
-						isOk = true;
-					}
-					std::string info;
-					std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
-					for (int i = 0; i < strList.size(); i++)
-					{
-						if (strList[i].find("pv") != std::string::npos)
+						std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+						std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+						std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+						std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+						std::string pv = Utils::getRightString(strList[i], " pv ");
+
+						//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
+						std::vector<std::string> stepList = Utils::splitStr(pv, " ");
+						if (stepList.size() > 0)
 						{
-							std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
-							std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
-							std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
-							std::string time = Utils::getCenterString(strList[i], "time ", " ");
-
-							std::string pv = Utils::getRightString(strList[i], " pv ");
-
-							//这里把最佳走法和最佳分数记录下来，如果下一次step一样，就记录下来并且加分
-							std::vector<std::string> stepList = Utils::splitStr(pv, " ");
-							if (stepList.size() > 0)
-							{
-								bestStep = std::make_pair(stepList[0], score);
-							}
-
-							std::string stepListStr = stepListToQp(pv, game.maps);
-							info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+							bestStep = std::make_pair(stepList[0], score);
 						}
-					}
-					dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-					if (isOk)
-					{
-						break;
+						std::string stepListStr = stepListToQp(pv, game.maps);
+						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
 					}
 				}
-				return calcFuture.get();
-				}, dlg, fen, thinkTime, thinkDepth, ret);
+				dlg->m_engineInfo.SetWindowTextW(CA2W(info.c_str()));
 
-			std::pair<std::string, std::string> stepPair = readFuture.get();
+				if (isOk)
+				{
+					break;
+				}
+			}
+
+			std::pair<std::string, std::string> stepPair = calcFuture.get();
 			delete ret;
 
 
@@ -2399,7 +2460,7 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 
 
 
-	
+
 
 }
 
@@ -2428,13 +2489,13 @@ void CChessAIDlg::OnBnClickedButtonBoardpic()
 	for (int i = 0; i < result.size(); i++)
 	{
 		if (result[i].id == 14) {
-			pic.setX1(result[i].box.x * (1/pic.getRateX()));
+			pic.setX1(result[i].box.x * (1 / pic.getRateX()));
 			pic.setY1(result[i].box.y * (1 / pic.getRateY()));
-			pic.setX2( (result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
-			pic.setY2( (result[i].box.y + result[i].box.height )* (1 / pic.getRateY()));
+			pic.setX2((result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
+			pic.setY2((result[i].box.y + result[i].box.height) * (1 / pic.getRateY()));
 
-			 
-			
+
+
 			float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
 			pic.setTbRate(tbRate);
 		}
@@ -2471,7 +2532,7 @@ void CChessAIDlg::OnNMClickListNavigation(NMHDR* pNMHDR, LRESULT* pResult)
 		//MessageBox("请至少选择一项");
 		return;
 	}
-	
+
 	int nId = (int)m_navigation.GetNextSelectedItem(pos);
 
 	std::string fen = CW2A(m_navigation.GetItemText(nId, 5));
@@ -2571,7 +2632,7 @@ void CChessAIDlg::OnNMCustomdrawSliderRate(NMHDR* pNMHDR, LRESULT* pResult)
 	int pos = m_rate.GetPos();
 	if (pos <= 50)
 	{
-		pic.setTbRate( (100-pos) / 50.0);
+		pic.setTbRate((100 - pos) / 50.0);
 	}
 	else {
 		pic.setTbRate((150 - pos) * 0.01);
@@ -2582,7 +2643,7 @@ void CChessAIDlg::OnNMCustomdrawSliderRate(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CChessAIDlg::OnBnClickedButtonRecognizepic()
 {
-	
+
 
 	pic.getImage().Save(L"0.png");
 	cv::Mat img = cv::imread("0.png");
@@ -2730,11 +2791,11 @@ bool readBoard() {
 	qJsonArray jsonArray = qJson::parseJsonArray(qClientSocket->getPacket().getStrData().c_str());
 	if (jsonArray.size() == 0)
 	{
-		MessageBoxA(NULL, "翻到头了！","提示",0);
+		MessageBoxA(NULL, "翻到头了！", "提示", 0);
 		return false;
 	}
 
-	SetWindowTextA(boardCurPageHwnd,("当前页数：" + std::to_string(curPage_board)).c_str());
+	SetWindowTextA(boardCurPageHwnd, ("当前页数：" + std::to_string(curPage_board)).c_str());
 	boardList.clear();
 	for (size_t i = 0; i < jsonArray.size(); i++)
 	{
@@ -2789,20 +2850,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 
 		CreateWindowExA(0, "BUTTON", "上一页", WS_VISIBLE | WS_CHILD, 300, 420, 100, 30, hWnd, (HMENU)IDC_BUTTON_PREVBOARD, GetModuleHandle(NULL), 0);
 		CreateWindowExA(0, "BUTTON", "下一页", WS_VISIBLE | WS_CHILD, 640, 420, 100, 30, hWnd, (HMENU)IDC_BUTTON_NEXTBOARD, GetModuleHandle(NULL), 0);
-		
+
 		boardCurPageHwnd = CreateWindowExA(0, "STATIC", "当前页数：", WS_VISIBLE | WS_CHILD, 470, 420, 100, 30, hWnd, (HMENU)0, GetModuleHandle(NULL), 0);
 
 		for (size_t i = 0; i < 3; i++)
 		{
-			
+
 			boardNameHwndArr[i] = CreateWindowExA(0, "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 20 + i * 340, 20, 330, 390, hWnd, (HMENU)0, GetModuleHandle(NULL), 0);
 			boardPicHwndArr[i] = CreateWindowExA(0, "STATIC", "Picture", WS_VISIBLE | WS_CHILD | SS_BITMAP, 36 + i * 340, 50, 300, 300, hWnd, (HMENU)0, GetModuleHandle(NULL), 0);
-			
+
 			CreateWindow(L"button",
 				L"设 置",
 				WS_CHILD | WS_VISIBLE,
-				110 + i* 340, 360, 140, 40,
-				hWnd, (HMENU) (IDC_BUTTON_SETBOARD + i),
+				110 + i * 340, 360, 140, 40,
+				hWnd, (HMENU)(IDC_BUTTON_SETBOARD + i),
 				GetModuleHandle(NULL), NULL);
 
 		}
@@ -2834,7 +2895,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 					curPage_board++;
 				}
 			}
-			
+
 		}
 		if (wControlID == IDC_BUTTON_NEXTBOARD && wCode == BN_CLICKED)
 		{
@@ -2844,7 +2905,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 				curPage_board--;
 			}
 		}
-		if (wControlID>= IDC_BUTTON_SETBOARD && wControlID <= IDC_BUTTON_SETBOARD+ boardList.size() && wCode == BN_CLICKED)
+		if (wControlID >= IDC_BUTTON_SETBOARD && wControlID <= IDC_BUTTON_SETBOARD + boardList.size() && wCode == BN_CLICKED)
 		{
 			int idx = wControlID - IDC_BUTTON_SETBOARD;
 
@@ -2856,7 +2917,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 			json.setString("mark", boardList[idx].mark);
 			std::string str = json.toString();
 
-			FILE* pFile = fopen((boardList[idx].mark+".zip").c_str(), "wb+");
+			FILE* pFile = fopen((boardList[idx].mark + ".zip").c_str(), "wb+");
 
 			bool downloadSuccess = true;
 			do
@@ -2910,7 +2971,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 				Config::chessWidth = boardList[idx].chessWidth;
 				Config::chessHeight = boardList[idx].chessHeight;
 				game.setBoardSource("./skin/棋盘.png", Config::centerX, Config::topcenterY, Config::bottomcenterY, Config::marginX, Config::marginY, Config::chessWidth, Config::chessHeight);
-				game.init(game.dc,game.destX,game.destY);//重新计算棋盘格位置
+				game.init(game.dc, game.destX, game.destY);//重新计算棋盘格位置
 				game.show();
 
 				//删除压缩包
@@ -2918,7 +2979,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 
 				MessageBoxW(hWnd, L"更换皮肤成功！", L"提示", MB_OK);
 			}
-	
+
 		}
 
 		break;
@@ -2932,7 +2993,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		}
 		else if (wParam == VK_RETURN)
 		{
-			
+
 		}
 		UpdateWindow(hWnd);
 		break;
@@ -2966,7 +3027,7 @@ LRESULT CALLBACK WndProc1(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		SetScrollPos(hWnd, SB_VERT, iVscrollPos, TRUE);//TRUE重绘
 
-		
+
 		break;
 	case WM_COMMAND: //WM_COMMAND是子窗口向父窗口发送的通知消息
 	{
@@ -3055,7 +3116,7 @@ LRESULT CALLBACK WndProc1(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		case SB_LINEUP: //向上滚动一行
 			iVscrollPos -= 30;
 
-		
+
 			break;
 
 		case SB_LINEDOWN: //向下滚动一行
@@ -3098,7 +3159,7 @@ LRESULT CALLBACK WndProc1(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 
 		{
 
-			ScrollWindow(hWnd, 0,  GetScrollPos(hWnd, SB_VERT) - iVscrollPos , NULL, NULL);
+			ScrollWindow(hWnd, 0, GetScrollPos(hWnd, SB_VERT) - iVscrollPos, NULL, NULL);
 
 
 			SetScrollPos(hWnd, SB_VERT, iVscrollPos, TRUE);//重新设置滑块位置
@@ -3132,7 +3193,7 @@ void CChessAIDlg::OnChangeskin()
 	HWND skinConfHwnd = CreateWindowW(L"SkinConf", L"更换皮肤", WS_OVERLAPPEDWINDOW, 100, 100, 1070, 920, NULL, NULL
 		, NULL
 		, NULL);
-	
+
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
@@ -3155,7 +3216,7 @@ void CChessAIDlg::OnChangeskin()
 		GetModuleHandle(NULL), NULL);
 
 	//棋子配置窗口，可上下滑动
-	HWND pieceHwnd = CreateWindowW(L"PieceConf", L"", WS_CHILD|WS_VISIBLE|WS_VSCROLL, 20,480, 1000, 370, skinConfHwnd, NULL
+	HWND pieceHwnd = CreateWindowW(L"PieceConf", L"", WS_CHILD | WS_VISIBLE | WS_VSCROLL, 20, 480, 1000, 370, skinConfHwnd, NULL
 		, NULL
 		, NULL);
 
@@ -3170,15 +3231,15 @@ void CChessAIDlg::OnChangeskin()
 	pieceList.clear();
 	for (size_t i = 0; i < jsonArray.size(); i++)
 	{
-		
+
 
 		qJsonObject json = jsonArray.getJsonObject(i);
-		CreateWindowExA(0, "BUTTON",Utils::utf8_to_ansi( json.getString("name")).c_str(), WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 20, 20 + i * 110, 920, 100, pieceHwnd, (HMENU)0, GetModuleHandle(NULL), 0);
+		CreateWindowExA(0, "BUTTON", Utils::utf8_to_ansi(json.getString("name")).c_str(), WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 20, 20 + i * 110, 920, 100, pieceHwnd, (HMENU)0, GetModuleHandle(NULL), 0);
 
 		//设置滚动空间
-		scrollSpace = 20 + i * 110 + 100 - 370  + 100;
+		scrollSpace = 20 + i * 110 + 100 - 370 + 100;
 
-		HWND picHwnd = CreateWindowExA(0, "STATIC", "Picture", WS_VISIBLE | WS_CHILD | SS_BITMAP, 36 , 40 + i * 110, 600, 150, pieceHwnd, (HMENU)0, GetModuleHandle(NULL), 0);
+		HWND picHwnd = CreateWindowExA(0, "STATIC", "Picture", WS_VISIBLE | WS_CHILD | SS_BITMAP, 36, 40 + i * 110, 600, 150, pieceHwnd, (HMENU)0, GetModuleHandle(NULL), 0);
 
 		CreateWindow(L"button",
 			L"设 置",
@@ -3240,4 +3301,33 @@ void CChessAIDlg::OnChangeskin()
 		DispatchMessage(&nMsg);//派发消息：将消息交给窗口处理函数来处理。
 	}
 
+}
+
+
+void CChessAIDlg::OnTcnSelchangeTabShowinfo(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	// TODO: 在此添加控件通知处理程序代码
+	*pResult = 0;
+
+	cursel = m_showInfo.GetCurSel();
+	switch (cursel)
+	{
+	case 0:
+		m_info_engine.ShowWindow(TRUE);
+		m_info_yunku.ShowWindow(FALSE);
+		m_info_openbook.ShowWindow(FALSE);
+		break;
+	case 1:
+		m_info_engine.ShowWindow(FALSE);
+		m_info_yunku.ShowWindow(TRUE);
+		m_info_openbook.ShowWindow(FALSE);
+		break;
+	case 2:
+		m_info_engine.ShowWindow(FALSE);
+		m_info_yunku.ShowWindow(FALSE);
+		m_info_openbook.ShowWindow(TRUE);
+		break;
+	default:
+		break;
+	}
 }
