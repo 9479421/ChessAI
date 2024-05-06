@@ -257,12 +257,6 @@
     <Image Include="C:\Users\Administrator\Desktop\1.bmp">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.png">
-      <Filter>资源文件</Filter>
-    </Image>
-    <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.bmp">
-      <Filter>资源文件</Filter>
-    </Image>
     <Image Include="res\begin.ico">
       <Filter>资源文件</Filter>
     </Image>
@@ -270,6 +264,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="res\exec.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.bmp">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

@@ -3725,17 +3725,101 @@ void CChessAIDlg::OnSavedata()
 		json.setString("time", game.stepList[i].getTime());
 		json.setBool("isRedRun", game.stepList[i].getIsRedRun());
 		jsonArray.addJsonObject(json);
-
 	}
 
+		// 创建文件选择对话框
+		CFileDialog fileDlg(FALSE, _T("txt"), _T("*.txt"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+			_T("Text Files (*.txt)|*.txt|"), NULL);
+
+		if (fileDlg.DoModal() == IDOK)
+		{
+			CString strFilePath = fileDlg.GetPathName(); // 获取选择的文件路径
+			CString strText = CA2W(jsonArray.toString().c_str()); // 要保存的文本
+
+			// 打开文件进行写入
+			CStdioFile file;
+			if (file.Open(strFilePath, CFile::modeCreate | CFile::modeWrite))
+			{
+				file.WriteString(strText); // 写入文本
+				file.Close(); // 关闭文件
+				AfxMessageBox(_T("保存成功")); // 显示成功消息
+			}
+			else
+			{
+				AfxMessageBox(_T("无法保存文件")); // 显示错误消息
+			}
+		}
+	
 }
 
 
 void CChessAIDlg::OnOpendata()
 {
+	// 创建文件选择对话框
+	CFileDialog fileDlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		_T("Text Files (*.txt)|*.txt|"), NULL);
+	
+	CString strText;
+	if (fileDlg.DoModal() == IDOK)
+	{
+		CString strFilePath = fileDlg.GetPathName(); // 获取选择的文件路径
+		
+		// 打开文件进行写入
+		CStdioFile file;
+		if (file.Open(strFilePath, CFile::modeRead))
+		{
+			file.ReadString(strText); // 写入文本
+			file.Close(); // 关闭文件
 
-	//if (i == game.stepList.size() - 1)
-	//{
-	//	game.setFen()
-	//}
+			
+			qJsonArray jsonArray = qJson::parseJsonArray(std::string(CW2A(strText)));
+			for (size_t i = 0; i < jsonArray.size(); i++)
+			{
+				if (i == 0 )
+				{
+					game.begin(jsonArray.getJsonObject(i).getBool("isRedRun"));
+					m_navigation.DeleteAllItems();
+				}
+				//插入game和list
+				game.stepList.push_back( moveInfo(
+					jsonArray.getJsonObject(i).getString("step"),
+					jsonArray.getJsonObject(i).getString("qpStep"),
+					jsonArray.getJsonObject(i).getString("fen"),
+					jsonArray.getJsonObject(i).getString("score"),
+					jsonArray.getJsonObject(i).getString("time"),
+					jsonArray.getJsonObject(i).getBool("isRedRun") ));
+
+
+				int row = m_navigation.GetItemCount();
+				m_navigation.InsertItem(row, L"");
+				if (jsonArray.getJsonObject(i).getBool("isRedRun")) //红棋记录回合数
+				{
+					m_navigation.SetItemText(row, 0, CA2W(std::to_string(game.stepList.size() / 2 + 1).c_str()));
+				}
+				m_navigation.SetItemText(row, 4, CA2W(game.stepList[game.stepList.size() - 1].getStep().c_str()));
+				m_navigation.SetItemText(row, 5, CA2W(game.stepList[game.stepList.size() - 1].getFen().c_str()));
+				m_navigation.SetItemText(row, 1, CA2W(game.stepList[game.stepList.size() - 1].getQpStep().c_str()));
+				m_navigation.SetItemText(row, 2, CA2W(game.stepList[game.stepList.size() - 1].getScore().c_str()));
+				m_navigation.SetItemText(row, 3, CA2W(game.stepList[game.stepList.size() - 1].getTime().c_str()));
+
+
+				m_navigation.SetItemState(row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED);
+				m_navigation.EnsureVisible(row, FALSE);
+
+
+				if (i == jsonArray.size() - 1)
+				{
+					game.setFen(jsonArray.getJsonObject(i).getString("fen"));
+					game.moveChess(jsonArray.getJsonObject(i).getString("step"));
+				}
+			}
+
+		}
+		else
+		{
+			AfxMessageBox(_T("无法读取文件")); // 显示错误消息
+		}
+	}
+
+
 }
