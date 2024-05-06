@@ -52,6 +52,8 @@ namespace GdiClass{
 		void drawHollowHalfRect(int left, int top, int width, int height, float weight, COLORREF color);
 		boolean showWindow(HWND hwnd);
 		void clear();
+		void clearWithoutIndicate();
+		void clearIndicate();
 
 		void drawLine(int start_left, int start_top, int end_left, int end_top, float weight, COLORREF color);
 		void drawWord(int left, int top, int width, int height, float weight, COLORREF color, std::string text);

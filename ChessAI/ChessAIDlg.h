@@ -118,4 +118,6 @@ public:
 	afx_msg void OnTcnSelchangeTabShowinfo(NMHDR* pNMHDR, LRESULT* pResult);
 	QButton m_showconnect;
 	afx_msg void OnBnClickedButtonShowconnect();
+	afx_msg void OnSavedata();
+	afx_msg void OnOpendata();
 };

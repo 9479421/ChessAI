@@ -206,7 +206,6 @@
     <ClInclude Include="Gdi.h" />
     <ClInclude Include="http.h" />
     <ClInclude Include="InputFenDlg.h" />
-    <ClInclude Include="moveInfo.h" />
     <ClInclude Include="OpenBook.h" />
     <ClInclude Include="OpenBookDlg.h" />
     <ClInclude Include="pch.h" />

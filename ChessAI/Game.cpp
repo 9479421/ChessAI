@@ -114,9 +114,13 @@ void Game::setBoardSource(std::string boardPath, int centerX, int topcenterY, in
 	this->chessHeight = chessHeight * rateY;
 }
 
-void Game::setFen(std::string fen)
+void Game::setFen(std::string fen,bool clearIndicate)
 {
-	indicates.clear();
+	if (clearIndicate)
+	{
+		indicates.clear();
+	}
+	
 	//清空
 	for (int i = 0; i < 10; i++)
 	{
@@ -223,7 +227,7 @@ void Game::moveChess(std::string step,std::string score)
 
 		//记录走之前的fen 以及走法
 		std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
-		stepList.push_back(moveInfo(step, stepToQp(step, maps), calcFEN(maps, toWhoMove ? 2 : 1), score, std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPlayTime).count())));
+		stepList.push_back(moveInfo(step, stepToQp(step, maps), calcFEN(maps, toWhoMove ? 2 : 1), score, std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPlayTime).count()), toWhoMove));
 
 
 		//出棋

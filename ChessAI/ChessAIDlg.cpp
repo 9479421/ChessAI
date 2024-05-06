@@ -143,6 +143,8 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_COMMAND(ID_CHANGESKIN, &CChessAIDlg::OnChangeskin)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB_SHOWINFO, &CChessAIDlg::OnTcnSelchangeTabShowinfo)
 	ON_BN_CLICKED(IDC_BUTTON_SHOWCONNECT, &CChessAIDlg::OnBnClickedButtonShowconnect)
+	ON_COMMAND(ID_SAVEDATA, &CChessAIDlg::OnSavedata)
+	ON_COMMAND(ID_OPENDATA, &CChessAIDlg::OnOpendata)
 END_MESSAGE_MAP()
 
 
@@ -372,6 +374,11 @@ std::string stepToQp(std::string step, T maps[10][9]) {
 			stepIdx.set(col_begin, 8 - row_begin, col_end, 8 - row_end);
 		}
 
+
+		if (maps[stepIdx.beginX][stepIdx.beginY].id == -1) //这种情况在游戏结束的罕见情况遇到过
+		{
+			return "";
+		}
 
 		bool toWhoMove;
 		if (maps[stepIdx.beginX][stepIdx.beginY].id <= 6)
@@ -1036,6 +1043,24 @@ BOOL CChessAIDlg::OnInitDialog()
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
+
+bool isRunStep(std::vector<std::string> originVec, std::vector<std::string> newVec) {
+	//如果newVec的所有成员，都能在originVec里找到，说明没变，或者是被对方吃棋，所以就是没有走棋
+	for ( auto i : newVec)
+	{
+		if (std::find(originVec.begin(), originVec.end(), i) != originVec.end())  //找到
+		{
+
+		}
+		else {
+			//有一个找不到，就说明走棋了
+			return true;
+		}
+	}
+	return false;
+
+}
+
 DWORD WINAPI drawThread(LPVOID lpParam) {
 
 	CChessAIDlg* dlg = (CChessAIDlg*)lpParam;
@@ -1057,6 +1082,9 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 	int runSteps = 0;  //每次判断棋局重置后，都将runstep置为0
+
+
+	stepIdx stepIdx;//走法
 
 	while (true) {
 
@@ -1104,14 +1132,14 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		Output maps[10][9];
 
 
-		float topY = height * 55 / 624;
-		float bottomY = height * 544 / 624;
+		float topY = height * 63 / 624;
+		float bottomY = height * 561 / 624;
 
 		float centerX = width * 420 / 838;
 
 
-		float marginX = width * 55 / 838;
-		float marginY = width * 55 / 838;
+		float marginX = width * 57 / 838;
+		float marginY = width * 57 / 838;
 
 		//给空格也计算出大概的位置
 		for (int i = 0; i < 10; i++)
@@ -1200,8 +1228,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		}
 
 
-
-		std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
+		//打印棋盘，暂时不需要了
+		/*std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
 		for (int i = 0; i < 10; i++)
 		{
 			for (int j = 0; j < 9; j++)
@@ -1215,284 +1243,281 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				}
 			}
 			printf("\n");
-		}
+		}*/
 
-		std::string fen = calcFEN(maps, 0);
-		printf("fen:%s\n", fen.c_str());
 
-		if (fen.find("rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR")!=-1)  //检测到开局的局面，就直接咔嚓
+		//产生变动立刻重新进行引擎计算和绘制，不变动不要重新计算，浪费时间，不变动超过2400ms后，进行自动走棋
+		bool blackChanged = isRunStep(blackPosVecObj, blackPosVec);
+		bool redChanged = isRunStep( redPosVecObj,redPosVec);
+		if (blackChanged || redChanged) //有一方产生改变就直接读  要判断是对方才会自动走
 		{
-			runSteps = 0;
-		}
-
-
-		game.setFen(fen); //直接显示到窗口棋盘里了
-
-
-
-		CListCtrl* yunkuList = ((CListCtrl*)dlg->m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
-		CListCtrl* openbookList = ((CListCtrl*)dlg->m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
-		yunkuList->DeleteAllItems();
-		openbookList->DeleteAllItems();
-
-
-
-		std::string* ret = new std::string();
-		std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
-			std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
-			return stepPair;
-			}, fen, ret, thinkTime, thinkDepth);
-
-		std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
-			if (Config::yunkuStatus)
+			if (blackChanged)
 			{
-				std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
-				return stepsVec;
+				blackPosVecObj = blackPosVec;
+			}
+			if (redChanged)
+			{
+				redPosVecObj = redPosVec;
+			}
+			runSteps++;
+
+			dlg->Log("棋局产生了变动");
+
+			validateTime = 0;
+			if ((isRed && blackChanged) || (!isRed && redChanged))
+			{
+				oppositeChangeFlag = true;
 			}
 			else {
-
-				return std::vector<yunkuResult>(); //返回空结果
+				oppositeChangeFlag = false;
 			}
-			}, fen);
+			
 
-		std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
-			if (Config::openBookStatus)
+		
+			std::string fen = calcFEN(maps, 0);
+			printf("fen:%s\n", fen.c_str());
+
+			if (fen.find("rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR") != -1)  //检测到开局的局面，就直接咔嚓
 			{
-				std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
-				return stepsVec;
+				runSteps = 0;
 			}
-			else {
-				return std::vector<openbookResult>(); //返回空结果
-			}
-			}, fen);
 
-		bool isOk = false;
-		while (true) {
-			std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
+			game.setFen(fen, false); //直接显示到窗口棋盘里了
 
-			std::future_status yunkuStatus = yunkuFuture.wait_for(std::chrono::milliseconds(100));
-			std::future_status openbookStatus = openbookFuture.wait_for(std::chrono::milliseconds(100));
 
-			if (status == std::future_status::ready
-				&& yunkuStatus == std::future_status::ready
-				&& openbookStatus == std::future_status::ready)
+			//先绘制方框，后面计算完引擎再绘制箭头
+			d3d.clearWithoutIndicate();
+
+			if (connectDlg.m_showRect.GetCheck())
 			{
-				isOk = true;
-			}
-
-			//读取引擎信息
-			std::string info;
-			std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
-			for (int i = 0; i < strList.size(); i++)
-			{
-				if (strList[i].find("pv") != std::string::npos)
+				//绘制棋子方框
+				for (int i = 0; i < result.size(); i++)
 				{
-					std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
-					std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
-					std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
-					std::string time = Utils::getCenterString(strList[i], "time ", " ");
+					COLORREF color;
+					if (result[i].id <= 6)
+					{
+						color = connectDlg.m_rectRed.GetColor();
+					}
+					else {
 
-					std::string pv = Utils::getRightString(strList[i], " pv ");
+						color = connectDlg.m_rectBlack.GetColor();
+					}
 
-					std::string stepListStr = stepListToQp(pv, game.maps);
-					info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+					d3d.drawHollowHalfRect(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color);
 				}
 			}
 
-			((CEdit*)dlg->m_info_engine.GetDlgItem(IDC_EDIT_ENGINEINFO))->SetWindowTextW(CA2W(info.c_str()));
+			if (connectDlg.m_showPrecision.GetCheck()) {
+				for (int i = 0; i < result.size(); i++)
+				{
+					COLORREF color;
+					if (result[i].id <= 6)
+					{
+						color = connectDlg.m_fontRed.GetColor();
+					}
+					else {
 
-			if (isOk)
-			{
-				break;
+						color = connectDlg.m_fontBlack.GetColor();
+					}
+					d3d.drawWord(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color, std::to_string(result[i].confidence));
+				}
 			}
-		}
-
-		std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
-
-		for (size_t i = 0; i < stepsVec_yunku.size(); i++)
-		{
-			int row = yunkuList->GetItemCount();
-			yunkuList->InsertItem(row, L"");
-			yunkuList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_yunku[i].move, game.maps).c_str()));
-			yunkuList->SetItemText(row, 2, CA2W(stepsVec_yunku[i].score.c_str()));
-			yunkuList->SetItemText(row, 3, CA2W(stepsVec_yunku[i].winrate.c_str()));
-		}
-		std::vector<openbookResult> stepsVec_openbook = openbookFuture.get();
-		for (size_t i = 0; i < stepsVec_openbook.size(); i++)
-		{
-			int row = openbookList->GetItemCount();
-			openbookList->InsertItem(row, L"");
-
-			openbookList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_openbook[i].move, game.maps).c_str()));
-			openbookList->SetItemText(row, 2, CA2W(stepsVec_openbook[i].vscore.c_str()));
-			openbookList->SetItemText(row, 3, CA2W(stepsVec_openbook[i].vwin.c_str()));
-			openbookList->SetItemText(row, 4, CA2W(stepsVec_openbook[i].vdraw.c_str()));
-			openbookList->SetItemText(row, 5, CA2W(stepsVec_openbook[i].vlost.c_str()));
-			openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
-			openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
-		}
-		std::pair<std::string, std::string> stepPair = calcFuture.get();
 
 
-		//指示正确走法
-		std::string step, ponder = "";
-		if (stepsVec_openbook.size() > 0 && Config::steps > runSteps/2) {  //脱谱步数判断
-			step = stepsVec_openbook[0].move;
-		}
-		else if (stepsVec_yunku.size() > 0 && Config::steps > runSteps/2)
-		{
-			step = stepsVec_yunku[0].move;
+
+
+			CListCtrl* yunkuList = ((CListCtrl*)dlg->m_info_yunku.GetDlgItem(IDC_LIST_YUNKUINFO));
+			CListCtrl* openbookList = ((CListCtrl*)dlg->m_info_openbook.GetDlgItem(IDC_LIST_OPENBOOKINFO));
+			yunkuList->DeleteAllItems();
+			openbookList->DeleteAllItems();
+
+			std::string* ret = new std::string();
+			std::future<std::pair<std::string, std::string>> calcFuture = std::async(std::launch::async, [](std::string fen, std::string* ret, float thinkTime, int thinkDepth) {
+				std::pair < std::string, std::string >stepPair = engine.calcStep(fen, thinkTime, thinkDepth, *ret);
+				return stepPair;
+				}, fen, ret, thinkTime, thinkDepth);
+
+			std::future<std::vector<yunkuResult>> yunkuFuture = std::async(std::launch::async, [](std::string fen) {
+				if (Config::yunkuStatus)
+				{
+					std::vector<yunkuResult> stepsVec = Yunku::calcSteps(fen);
+					return stepsVec;
+				}
+				else {
+
+					return std::vector<yunkuResult>(); //返回空结果
+				}
+				}, fen);
+
+			std::future<std::vector<openbookResult>> openbookFuture = std::async(std::launch::async, [](std::string fen) {
+				if (Config::openBookStatus)
+				{
+					std::vector<openbookResult> stepsVec = openbook.calcSteps(fen);
+					return stepsVec;
+				}
+				else {
+					return std::vector<openbookResult>(); //返回空结果
+				}
+				}, fen);
+
+			bool isOk = false;
+			while (true) {
+				std::future_status status = calcFuture.wait_for(std::chrono::milliseconds(100));
+
+				std::future_status yunkuStatus = yunkuFuture.wait_for(std::chrono::milliseconds(100));
+				std::future_status openbookStatus = openbookFuture.wait_for(std::chrono::milliseconds(100));
+
+				if (status == std::future_status::ready
+					&& yunkuStatus == std::future_status::ready
+					&& openbookStatus == std::future_status::ready)
+				{
+					isOk = true;
+				}
+
+				//读取引擎信息
+				std::string info;
+				std::vector<std::string> strList = Utils::splitStr(*ret, "\r\n");
+				for (int i = 0; i < strList.size(); i++)
+				{
+					if (strList[i].find("pv") != std::string::npos)
+					{
+						std::string depth = Utils::getCenterString(strList[i], "info depth ", " ");
+						std::string score = Utils::getCenterString(strList[i], "score cp ", " ");
+						std::string nps = Utils::getCenterString(strList[i], "nps ", " ");
+						std::string time = Utils::getCenterString(strList[i], "time ", " ");
+
+						std::string pv = Utils::getRightString(strList[i], " pv ");
+
+						std::string stepListStr = stepListToQp(pv, game.maps);
+						info = "深度：" + depth + " 得分：" + score + " 时间：" + time + " nps：" + nps + "\r\n" + stepListStr + "\r\n\r\n" + info;
+					}
+				}
+
+				((CEdit*)dlg->m_info_engine.GetDlgItem(IDC_EDIT_ENGINEINFO))->SetWindowTextW(CA2W(info.c_str()));
+
+				if (isOk)
+				{
+					break;
+				}
+			}
+
+			std::vector<yunkuResult> stepsVec_yunku = yunkuFuture.get();
+
+			for (size_t i = 0; i < stepsVec_yunku.size(); i++)
+			{
+				int row = yunkuList->GetItemCount();
+				yunkuList->InsertItem(row, L"");
+				yunkuList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_yunku[i].move, game.maps).c_str()));
+				yunkuList->SetItemText(row, 2, CA2W(stepsVec_yunku[i].score.c_str()));
+				yunkuList->SetItemText(row, 3, CA2W(stepsVec_yunku[i].winrate.c_str()));
+			}
+			std::vector<openbookResult> stepsVec_openbook = openbookFuture.get();
+			for (size_t i = 0; i < stepsVec_openbook.size(); i++)
+			{
+				int row = openbookList->GetItemCount();
+				openbookList->InsertItem(row, L"");
+
+				openbookList->SetItemText(row, 1, CA2W(stepToQp(stepsVec_openbook[i].move, game.maps).c_str()));
+				openbookList->SetItemText(row, 2, CA2W(stepsVec_openbook[i].vscore.c_str()));
+				openbookList->SetItemText(row, 3, CA2W(stepsVec_openbook[i].vwin.c_str()));
+				openbookList->SetItemText(row, 4, CA2W(stepsVec_openbook[i].vdraw.c_str()));
+				openbookList->SetItemText(row, 5, CA2W(stepsVec_openbook[i].vlost.c_str()));
+				openbookList->SetItemText(row, 6, CA2W(stepsVec_openbook[i].vvalid.c_str()));
+				openbookList->SetItemText(row, 7, CA2W(stepsVec_openbook[i].vmemo.c_str()));
+			}
+			std::pair<std::string, std::string> stepPair = calcFuture.get();
+
+
+			//指示正确走法
+			std::string step, ponder = "";
+			if (stepsVec_openbook.size() > 0 && Config::steps > runSteps / 2) {  //脱谱步数判断
+				step = stepsVec_openbook[0].move;
+			}
+			else if (stepsVec_yunku.size() > 0 && Config::steps > runSteps / 2)
+			{
+				step = stepsVec_yunku[0].move;
+			}
+			else {
+				step = stepPair.first;
+				ponder = stepPair.second;
+			}
+			game.addIndicate(step, ponder); //添加指示
+
+
+			stepIdx = Engine::getStepIdx(step, fen); //获得最佳走法的坐标系
+
+
+			d3d.clearIndicate();
+			if (connectDlg.m_showArrow.GetCheck())
+			{
+				COLORREF color;
+				if (fen.find("w") != std::string::npos)
+				{
+					//红棋
+					color = connectDlg.m_arrowRed.GetColor();
+				}
+				else {
+					color = connectDlg.m_arrowBlack.GetColor();
+				}
+
+				//绘制最佳行棋路线
+				d3d.drawLine(maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2,
+					maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2,
+					maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2,
+					maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2,
+					4.0f,
+					color //D3DCOLOR_XRGB(GetRValue(color), GetGValue(color), GetBValue(color)
+				);
+			}
 		}
 		else {
-			step = stepPair.first;
-			ponder = stepPair.second;
-		}
-		game.addIndicate(step, ponder); //添加指示
-
-
-		stepIdx stepIdx = Engine::getStepIdx(step, fen); //获得最佳走法的坐标系
-
-
-
-		d3d.clear();
-
-		if (connectDlg.m_showRect.GetCheck())
-		{
-			//绘制棋子方框
-			for (int i = 0; i < result.size(); i++)
+			//没变动
+			validateTime++;
+			dlg->Log("没有变动" + std::to_string(validateTime));
+			if (validateTime == 4)
 			{
-				COLORREF color;
-				if (result[i].id <= 6)
+				//4次不变，再判断如果是对方改变后的，就可以执行走棋了
+				//自动走判断
+				if (connectDlg.m_autoPlay.GetCheck())
 				{
-					color = connectDlg.m_rectRed.GetColor();
-				}
-				else {
+					printf("opp:%d\n", oppositeChangeFlag);
+					if (oppositeChangeFlag) //oppositeChangeFlag
+					{
 
-					color = connectDlg.m_rectBlack.GetColor();
+						CRect rect;
+						GetWindowRect(gameHwnd, rect);
+						int x = rect.left + maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2;
+						int y = rect.top + maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2;
+
+						SetCursorPos(x, y);
+
+
+						mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
+						mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+						/*		SendMessage((gameHwnd), WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
+								SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));*/
+
+
+						Sleep(500);
+						x = rect.left + maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2;
+						y = rect.top + maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2;
+
+						SetCursorPos(x, y);
+
+						mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
+						mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+
+						//SendMessage(gameHwnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
+						//SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));
+
+						Sleep(1000);
+					}
+
 				}
 
-				d3d.drawHollowHalfRect(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color);
-			}
-		}
-		if (connectDlg.m_showArrow.GetCheck())
-		{
-			COLORREF color;
-			if (fen.find("w") != std::string::npos)
-			{
-				//红棋
-				color = connectDlg.m_arrowRed.GetColor();
-			}
-			else {
-				color = connectDlg.m_arrowBlack.GetColor();
-			}
-
-			//绘制最佳行棋路线
-			d3d.drawLine(maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2,
-				maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2,
-				maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2,
-				maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2,
-				4.0f,
-				color //D3DCOLOR_XRGB(GetRValue(color), GetGValue(color), GetBValue(color)
-			);
-		}
-		if (connectDlg.m_showPrecision.GetCheck()) {
-			for (int i = 0; i < result.size(); i++)
-			{
-				COLORREF color;
-				if (result[i].id <= 6)
-				{
-					color = connectDlg.m_fontRed.GetColor();
-				}
-				else {
-
-					color = connectDlg.m_fontBlack.GetColor();
-				}
-				d3d.drawWord(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color, std::to_string(result[i].confidence));
 			}
 		}
 
-
-
-
-		//自动走判断
-		if (connectDlg.m_autoPlay.GetCheck())
-		{
-
-			bool blackChanged = !(blackPosVecObj == blackPosVec);
-			bool redChanged = !(redPosVecObj == redPosVec);
-
-			if (blackChanged || redChanged) //有一方产生改变就直接读  要判断是对方才会自动走
-			{
-				runSteps++;
-				dlg->Log("棋局产生了变动");
-				if (blackChanged)
-				{
-					blackPosVecObj = blackPosVec;
-				}
-				if (redChanged)
-				{
-					redPosVecObj = redPosVec;
-				}
-				validateTime = 0;
-				if ((isRed && blackChanged) || (!isRed && redChanged))
-				{
-					oppositeChangeFlag = true;
-				}
-				else {
-					oppositeChangeFlag = false;
-				}
-				continue;
-			}
-			else {
-				//没变动
-				validateTime++;
-				dlg->Log("没有变动" + std::to_string(validateTime));
-				if (validateTime == 4)
-				{
-					//变动后持续4次200ms没有变，说明可以了
-				}
-				else {
-					//既然没变动，那就过一会再检测一次，暂时还不能识别，直接continue
-					Sleep(200);
-					continue;
-				}
-			}
-
-
-
-			if (oppositeChangeFlag) //oppositeChangeFlag
-			{
-
-				CRect rect;
-				GetWindowRect(gameHwnd, rect);
-				int x = rect.left + maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2;
-				int y = rect.top + maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2;
-
-				SetCursorPos(x, y);
-
-
-				mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
-				mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
-				/*		SendMessage((gameHwnd), WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
-						SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));*/
-
-
-				Sleep(500);
-				x = rect.left + maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2;
-				y = rect.top + maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2;
-
-				SetCursorPos(x, y);
-
-				mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
-				mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
-
-				//SendMessage(gameHwnd, WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(x, y));
-				//SendMessage(gameHwnd, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(x, y));
-
-				Sleep(1000);
-			}
-
-		}
 
 		Sleep(10);
 
@@ -2320,30 +2345,33 @@ LRESULT CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 	{
 		isConnecting = false;
 		connectDlg.m_connect.SetWindowTextW(L"连线");
-		/*TerminateThread(drawThreadHandle, 0);
-		d3d.exit();*/
-		return 0;
 	}
 	else {
-		isConnecting = true;
-		connectDlg.m_connect.SetWindowTextW(L"取消");
+		gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
+		if (gameHwnd == NULL)
+		{
+			MessageBoxA(m_hWnd, "请打开游戏后再连线！", "提示", 0);
+			
+		}
+		else {
+			
+			if (connectDlg.m_front.GetCheck()) //判断是否置为最前窗口，如果是就直接置一次
+			{
+				CRect rect;
+				::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
+				::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
+			}
+
+			drawThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)drawThread, this, 0, &drawThreadId);
+			RECT rect;
+			::GetWindowRect(gameHwnd, &rect);
+			d3d.init(rect.right - rect.left, rect.bottom - rect.top);
+			d3d.showWindow(gameHwnd);
+
+			isConnecting = true;
+			connectDlg.m_connect.SetWindowTextW(L"取消");
+		}
 	}
-
-
-	// 检查OpenCV是否支持CUDA  
-	std::cout << cv::cuda::getCudaEnabledDeviceCount() << std::endl;
-
-
-
-	gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
-
-
-	drawThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)drawThread, this, 0, &drawThreadId);
-
-	RECT rect;
-	::GetWindowRect(gameHwnd, &rect);
-	d3d.init(rect.right - rect.left, rect.bottom - rect.top);
-	d3d.showWindow(gameHwnd);
 
 
 	return 0;
@@ -2793,11 +2821,6 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 		}, this, fen, thinkTime, thinkDepth);
 	thread.detach();
 
-
-
-
-
-
 }
 
 
@@ -2805,40 +2828,47 @@ void CChessAIDlg::OnBnClickedMfcbuttonExec()
 void CChessAIDlg::OnBnClickedButtonBoardpic()
 {
 
-	CImage image;
-	image.Load(L"./1008.png"); //这里是测试图片，后面换成剪切板图片
-	pic.setImage(image);
 
-
-	//pic.init(GetDC(), 457, 450);
-
-	//保存到本地供opencv识别
-	pic.getImage().Save(L"0.png");
-	cv::Mat img = cv::imread("0.png");
-
-	int width = img.size().width;
-	int height = img.size().height;
-
-	std::vector<Output> result;
-	yolo.Detect(img, net, result);
-
-	for (int i = 0; i < result.size(); i++)
+	if (OpenClipboard())
 	{
-		if (result[i].id == 14) {
-			pic.setX1(result[i].box.x * (1 / pic.getRateX()));
-			pic.setY1(result[i].box.y * (1 / pic.getRateY()));
-			pic.setX2((result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
-			pic.setY2((result[i].box.y + result[i].box.height) * (1 / pic.getRateY()));
+		HBITMAP hBitmap = (HBITMAP)GetClipboardData(CF_BITMAP);
+		if (hBitmap != NULL)
+		{
+			CImage image;
+			image.Attach(hBitmap);
+			pic.setImage(image);
+
+			DeleteObject(hBitmap);
+
+			//保存到本地供opencv识别
+			pic.getImage().Save(L"0.png");
+			cv::Mat img = cv::imread("0.png");
+
+			int width = img.size().width;
+			int height = img.size().height;
+
+			std::vector<Output> result;
+			yolo.Detect(img, net, result);
+
+			for (int i = 0; i < result.size(); i++)
+			{
+				if (result[i].id == 14) {
+					pic.setX1(result[i].box.x * (1 / pic.getRateX()));
+					pic.setY1(result[i].box.y * (1 / pic.getRateY()));
+					pic.setX2((result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
+					pic.setY2((result[i].box.y + result[i].box.height) * (1 / pic.getRateY()));
 
 
 
-			float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
-			pic.setTbRate(tbRate);
+					float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
+					pic.setTbRate(tbRate);
+				}
+			}
+
+			pic.show();
+			CloseClipboard();
 		}
 	}
-
-	pic.show();
-
 }
 
 
@@ -2973,7 +3003,7 @@ void CChessAIDlg::OnNMCustomdrawSliderRate(NMHDR* pNMHDR, LRESULT* pResult)
 	else {
 		pic.setTbRate((150 - pos) * 0.01);
 	}
-	//pic.show();
+	pic.show();
 }
 
 
@@ -3022,7 +3052,13 @@ void CChessAIDlg::OnBnClickedButtonRecognizepic()
 
 	for (int i = 0; i < result.size(); i++)
 	{
-		if (abs(result[i].box.y - bottomY) < abs(result[i].box.y - topY))
+		if (result[i].id == 14)   //忽略棋盘
+		{
+			continue;
+		}
+
+
+		if (abs(result[i].box.y + (result[i].box.height/2) - bottomY) < abs(result[i].box.y + (result[i].box.height / 2) - topY))
 		{
 			int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
 			int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / marginY);
@@ -3673,4 +3709,33 @@ void CChessAIDlg::OnTcnSelchangeTabShowinfo(NMHDR* pNMHDR, LRESULT* pResult)
 void CChessAIDlg::OnBnClickedButtonShowconnect()
 {
 	connectDlg.ShowWindow(true);
+}
+
+
+void CChessAIDlg::OnSavedata()
+{
+	qJsonArray jsonArray;
+	for (int i = 0; i < game.stepList.size(); i++)
+	{
+		qJsonObject json;
+		json.setString("step", game.stepList[i].getStep());
+		json.setString("qpStep", game.stepList[i].getQpStep());
+		json.setString("fen", game.stepList[i].getFen());
+		json.setString("score", game.stepList[i].getScore());
+		json.setString("time", game.stepList[i].getTime());
+		json.setBool("isRedRun", game.stepList[i].getIsRedRun());
+		jsonArray.addJsonObject(json);
+
+	}
+
+}
+
+
+void CChessAIDlg::OnOpendata()
+{
+
+	//if (i == game.stepList.size() - 1)
+	//{
+	//	game.setFen()
+	//}
 }

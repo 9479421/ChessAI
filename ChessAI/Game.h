@@ -5,10 +5,49 @@
 #include<vector>
 #include<gdiplus.h>
 #include"Utils.h"
-#include"moveInfo.h"
 #include "stepIdx.h"
 
 using namespace Gdiplus;
+
+class moveInfo
+{
+public:
+
+	moveInfo(std::string step, std::string qpstep, std::string fen, std::string score, std::string time, bool isRedRun) {
+		this->step = step;
+		this->qpstep = qpstep;
+		this->fen = fen;
+		this->score = score;
+		this->time = time;
+		this->isRedRun = isRedRun;
+	}
+	~moveInfo() {}
+	std::string getStep() {
+		return step;
+	}
+	std::string getQpStep() {
+		return qpstep;
+	}
+	std::string getFen() {
+		return fen;
+	}
+	std::string getScore() {
+		return score;
+	}
+	std::string getTime() {
+		return time;
+	}
+	bool getIsRedRun() {
+		return isRedRun;
+	}
+private:
+	std::string step;
+	std::string qpstep;
+	std::string fen;
+	std::string score;
+	std::string time;
+	bool isRedRun;
+};
 
 
 
@@ -41,7 +80,7 @@ public:
 	~Game();
 	void setChessSource(std::string sourcePath...);
 	void setBoardSource(std::string boardPath, int centerX, int topcenterY, int bottomcenterY, int gapX, int gapY, int chessWidth, int chessHeight);
-	void setFen(std::string fen);
+	void setFen(std::string fen, bool clearIndicate = true);
 	void setChess(int x, int y, std::string name);
 	void moveChess(std::string step, std::string score="0");
 

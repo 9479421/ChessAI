@@ -87,9 +87,6 @@
     <ClInclude Include="stepIdx.h">
       <Filter>头文件\pojo</Filter>
     </ClInclude>
-    <ClInclude Include="moveInfo.h">
-      <Filter>头文件\pojo</Filter>
-    </ClInclude>
     <ClInclude Include="Config.h">
       <Filter>头文件\pojo</Filter>
     </ClInclude>

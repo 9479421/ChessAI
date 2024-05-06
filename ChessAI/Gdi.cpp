@@ -416,6 +416,19 @@ void Gdi::clear()
 	words.clear();
 }
 
+void GdiClass::Gdi::clearWithoutIndicate()
+{
+	hollowRects.clear();
+	hollowHalfRects.clear();
+	words.clear();
+}
+
+void GdiClass::Gdi::clearIndicate()
+{
+	lines.clear();
+}
+
+
 
 void Gdi::drawLine(int start_left, int start_top, int end_left, int end_top, float weight, COLORREF color)
 {

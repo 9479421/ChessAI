@@ -17,7 +17,7 @@ std::vector<yunkuResult> Yunku::calcSteps(std::string fen)
 	http.addHeader("Accept-Encoding", "deflate");
 	http.get();
 	std::string body = http.getResponseText();
-	printf("body: %s\n", body.c_str());
+	//printf("body: %s\n", body.c_str());
 
     std::vector<std::string> results = Utils::splitStr(body, "|");
     for (size_t i = 0; i < results.size(); i++)
