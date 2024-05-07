@@ -1,4 +1,4 @@
-![QQ截图20240408003725](https://wqby-1304194722.cos.ap-nanjing.myqcloud.com/img/QQ%E6%88%AA%E5%9B%BE20240408003725.png)
+<img style='display:block;margin:auto' src='https://wqby-1304194722.cos.ap-nanjing.myqcloud.com/img/QQ%E6%88%AA%E5%9B%BE20240408003725.png'>
 
 <h1 style='text-align:center'>仙人象棋AI</h1>
 
@@ -9,6 +9,8 @@
 仙人象棋AI（XRChessAI），是基于Yolo实现的象棋学棋、拆棋以及支持连线功能的辅助工具
 
 本项目使用C++语言，客户端基于MFC、DirectX、Yolo、Gdi、Sqlite、Opencv等实现，服务器端(不开源)基于TCP协议，使用Epoll等编写，运行于Linux平台。
+
+官方QQ群：259293878
 
 ## 已开发功能
 
@@ -30,4 +32,5 @@
 4. 优化重写代码架构
 5. 适配JJ象棋等更多APP
 6. 支持揭棋模式
+7. 官网制作
 
