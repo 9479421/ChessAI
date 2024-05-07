@@ -708,12 +708,11 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 	return qpRet;
 }
 
-
 BOOL CChessAIDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-
+	//::SetProcessDpiAwareness(PROCESS_DPI_UNAWARE);
 
 	// 将“关于...”菜单项添加到系统菜单中。
 
