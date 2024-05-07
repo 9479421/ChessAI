@@ -1,8 +1,8 @@
 <div align='center'><img width='200' height='200' src='https://wqby-1304194722.cos.ap-nanjing.myqcloud.com/img/QQ%E6%88%AA%E5%9B%BE20240408003725.png'></div>
 
-<h1 style='text-align:center'>仙人象棋AI</h1>
+<h1 align='center'>仙人象棋AI</h1>
 
-<h3 style='text-align:center'>基于Yolo的象棋工具</h3>
+<h3 align='center'>基于Yolo的象棋工具</h3>
 
 > 项目介绍
 
