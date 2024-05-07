@@ -51,9 +51,6 @@
     <ClInclude Include="yolov7.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="http.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Engine.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -153,9 +150,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="yolov7.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="http.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Process.cpp">
@@ -267,6 +261,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="C:\Users\Administrator\Desktop\test.ico">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

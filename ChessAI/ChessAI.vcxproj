@@ -204,7 +204,6 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Gdi.h" />
-    <ClInclude Include="http.h" />
     <ClInclude Include="InputFenDlg.h" />
     <ClInclude Include="OpenBook.h" />
     <ClInclude Include="OpenBookDlg.h" />
@@ -242,7 +241,6 @@
     <ClCompile Include="EngineDlg.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Gdi.cpp" />
-    <ClCompile Include="http.cpp" />
     <ClCompile Include="InputFenDlg.cpp" />
     <ClCompile Include="OpenBook.cpp" />
     <ClCompile Include="OpenBookDlg.cpp" />
@@ -279,6 +277,7 @@
   <ItemGroup>
     <Image Include="C:\Users\Administrator\Desktop\1.bmp" />
     <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.bmp" />
+    <Image Include="C:\Users\Administrator\Desktop\test.ico" />
     <Image Include="res\begin.ico" />
     <Image Include="res\ChessAI.ico" />
     <Image Include="res\exec.ico" />

@@ -2,6 +2,12 @@
 // ChessAIDlg.cpp: 实现文件
 //
 
+
+
+#define Debug1
+
+
+
 #include "pch.h"
 #include "framework.h"
 #include "ChessAI.h"
@@ -17,7 +23,6 @@
 
 #include "yolov7.h"
 //#include "d3d9.h"
-#include "http.h"
 #include "Engine.h"
 #include "Process.h"
 #include "Config.h"
@@ -43,7 +48,7 @@
 
 
 #include"OpenBook.h"
-
+#include "QHttp.h"
 
 ConnectDlg connectDlg;
 
@@ -73,7 +78,7 @@ OpenBook openbook;
 CChessAIDlg::CChessAIDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CHESSAI_DIALOG, pParent)
 {
-	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_hIcon = AfxGetApp()->LoadIcon(IDI_ICON);
 
 
 }
@@ -147,10 +152,19 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_COMMAND(ID_OPENDATA, &CChessAIDlg::OnOpendata)
 END_MESSAGE_MAP()
 
-
-
-
 void CChessAIDlg::InitComponent() {
+#ifdef Debug
+	Config::g_ip = "192.168.89.136";   
+#else
+	//从http读最新的
+	QHttp http;
+	http.open("http://xr.wqby.vip/ip.txt");
+	http.get();
+	Config::g_ip = http.getResponseText();
+#endif
+
+
+
 	std::thread thread([](CChessAIDlg* dlg) {
 		//初始化版本号
 		QClientSocket* qClientSocket = QClientSocket::getInstance();
@@ -734,10 +748,13 @@ BOOL CChessAIDlg::OnInitDialog()
 	connectDlg.ShowWindow(SW_SHOW);
 
 
-	//设置控制台支持中文
 	setlocale(LC_ALL, "Chinese-simplified");
+#ifdef Debug
+	//设置控制台支持中文
+	
 	AllocConsole();//控制台调试窗口开启  
 	freopen("CONOUT$", "w", stdout);//开启中文控制台输出支持  
+#endif
 
 
 	m_showInfo.InsertItem(0, L"引擎");
@@ -3563,7 +3580,7 @@ void CChessAIDlg::OnChangeskin()
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	RegisterClass(&wc); //将以上所有赋值全部写入操作系统中
 	//在内存创建窗口
-	HWND skinConfHwnd = CreateWindowW(L"SkinConf", L"更换皮肤", WS_OVERLAPPEDWINDOW, 100, 100, 1070, 920, NULL, NULL
+	HWND skinConfHwnd = CreateWindowW(L"SkinConf", L"更换皮肤（如有个人喜欢的皮肤可以上传至官方群我们会云更新收录）", WS_OVERLAPPEDWINDOW, 100, 100, 1070, 920, NULL, NULL
 		, NULL
 		, NULL);
 
@@ -3728,8 +3745,8 @@ void CChessAIDlg::OnSavedata()
 	}
 
 		// 创建文件选择对话框
-		CFileDialog fileDlg(FALSE, _T("txt"), _T("*.txt"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-			_T("Text Files (*.txt)|*.txt|"), NULL);
+		CFileDialog fileDlg(FALSE, _T("xqp"), _T("*.xqp"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+			_T("仙人棋局信息格式 (*.xqp)|*.xqp|"), NULL);
 
 		if (fileDlg.DoModal() == IDOK)
 		{
@@ -3757,7 +3774,7 @@ void CChessAIDlg::OnOpendata()
 {
 	// 创建文件选择对话框
 	CFileDialog fileDlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-		_T("Text Files (*.txt)|*.txt|"), NULL);
+		_T("仙人棋局信息格式 (*.xqp)|*.xqp|"), NULL);
 	
 	CString strText;
 	if (fileDlg.DoModal() == IDOK)

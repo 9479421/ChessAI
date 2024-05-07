@@ -7,7 +7,6 @@
 #define IDD_ABOUTBOX                    100
 #define IDS_ABOUTBOX                    101
 #define IDD_CHESSAI_DIALOG              102
-#define IDR_MAINFRAME                   128
 #define IDD_DIALOG1                     144
 #define IDR_MENU1                       149
 #define IDB_BITMAP_LOGO                 159
@@ -25,6 +24,8 @@
 #define IDD_DIALOG_INFO_ENGINE          185
 #define IDD_DIALOG_INFO_YUNKU           186
 #define IDD_DIALOG_INFO_OPENBOOK        189
+#define IDI_ICON1                       191
+#define IDI_ICON                        128
 #define IDC_TAB                         1002
 #define IDC_BUTTON_CONNECT              1005
 #define IDC_BUTTON5                     1006
@@ -142,7 +143,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        191
+#define _APS_NEXT_RESOURCE_VALUE        192
 #define _APS_NEXT_COMMAND_VALUE         32802
 #define _APS_NEXT_CONTROL_VALUE         1090
 #define _APS_NEXT_SYMED_VALUE           101

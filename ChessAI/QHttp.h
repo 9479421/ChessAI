@@ -15,6 +15,10 @@ public:
 	bool open(std::string url);
 	bool get();
 	bool post(std::string data);
+	void setTimeout(int          nResolveTimeout,
+		int          nConnectTimeout,
+		int          nSendTimeout,
+		int          nReceiveTimeout);
 	BYTE* getResponse();
 	int getResponseSize();
 	std::string getResponseText();

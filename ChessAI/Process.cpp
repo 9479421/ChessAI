@@ -24,17 +24,18 @@ void Process::createProcess(std::string process)
 	STARTUPINFOA si = STARTUPINFOA();
 	si.cb = sizeof(si);
 	//si.wShowWindow = SW_NORMAL;
-	si.dwFlags = /*STARTF_USESHOWWINDOW |*/ STARTF_USESTDHANDLES;
+	si.dwFlags = /*STARTF_USESHOWWINDOW |*/ STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 	si.hStdInput = hInRead;
 	si.hStdOutput = hOutWrite;
 	//si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-
+	si.wShowWindow = SW_HIDE;
 	std::string currentDir;
 	int idx = process.find_last_of("\\");
 	currentDir = process.substr(0, idx);
 
 	
 	CreateProcessA(NULL, const_cast<char*>(process.c_str()), NULL, NULL, TRUE, CREATE_NEW_PROCESS_GROUP, NULL, currentDir.c_str(), &si, &pi);
+
 	/*
 	currentDir = "F:\\XRChess\\ChessAI\\ChessAI\\";
 	char cWinDir[MAX_PATH];

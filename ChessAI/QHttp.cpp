@@ -2,6 +2,7 @@
 
 QHttp::QHttp() {
     m_session = WinHttpOpen(L"My Agent", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+
 }
 
 QHttp::~QHttp()
@@ -96,6 +97,11 @@ bool QHttp::get()
         }
     }
     return false;
+}
+
+void QHttp::setTimeout(int nResolveTimeout, int nConnectTimeout, int nSendTimeout, int nReceiveTimeout)
+{
+    WinHttpSetTimeouts(m_session, nResolveTimeout, nConnectTimeout, nSendTimeout, nReceiveTimeout);
 }
 
 BYTE* QHttp::getResponse()

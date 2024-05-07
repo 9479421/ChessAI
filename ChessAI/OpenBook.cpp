@@ -12,6 +12,7 @@ std::vector<yunkuResult> Yunku::calcSteps(std::string fen)
     std::vector<yunkuResult> retVec;
 
 	QHttp http;
+    http.setTimeout(3000, 3000, 3000, 3000);
 	http.open("http://www.chessdb.cn/chessdb.php?action=queryall&showall=1&board=" + Utils::ReplaceAllText(fen, " ", "%20"));
 	http.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
 	http.addHeader("Accept-Encoding", "deflate");

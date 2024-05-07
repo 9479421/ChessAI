@@ -75,6 +75,14 @@ BOOL AboutDlg::OnInitDialog()
 
 	std::vector<updateInfo> updateInfoList;
 
+	updateInfoList.push_back({ "2024-05-07", "打包上线1.0版本" });
+	updateInfoList.push_back({ "2024-05-07", "新增保存和读取棋盘信息功能" });
+	updateInfoList.push_back({ "2024-05-06", "优化连线效率，完成剪切板识别，完善功能页面细节" });
+	updateInfoList.push_back({ "2024-05-05", "修复本地库查询补全问题" });
+	updateInfoList.push_back({ "2024-05-03", "新增云库和本地操作库类" });
+	updateInfoList.push_back({ "2024-05-02", "彻底完成了下载棋盘皮肤和棋子皮肤功能" });
+	updateInfoList.push_back({ "2024-04-30", "新增网络通信模块" });
+	updateInfoList.push_back({ "2024-04-26", "新增图片自定义标注，新增棋盘识别" });
 	updateInfoList.push_back({ "2024-04-22", "优化了连线定位方式，增加棋局流程控制，更新了复制FEN和输入FEN功能" });
 	updateInfoList.push_back({ "2024-04-19", "新增引擎读取翻译棋谱功能，同时改为异步实现，完善了棋局记录功能" });
 	updateInfoList.push_back({ "2024-04-18", "新增棋盘控制按钮，新增棋谱记录" });
