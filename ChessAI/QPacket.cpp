@@ -4,7 +4,7 @@ QPacket::QPacket()
 {
 }
 
-QPacket::QPacket(uint16_t nCmd, const unsigned char* pData, size_t nSize)
+QPacket::QPacket(uint16_t nCmd, const unsigned char* pData, int nSize)
 {
 	this->sHead = 0xFEFF;
 	this->nLength = nSize + 4;
@@ -24,9 +24,9 @@ QPacket::QPacket(uint16_t nCmd, const unsigned char* pData, size_t nSize)
 	}
 }
 
-QPacket::QPacket(const unsigned char* pData, size_t& nSize)
+QPacket::QPacket(const unsigned char* pData, int& nSize)
 {
-	size_t i = 0;
+	int i = 0;
 	for (; i < nSize; i++)
 	{
 		if (*(uint16_t*)(pData + i) == 0xFEFF)

@@ -74,7 +74,8 @@ BOOL AboutDlg::OnInitDialog()
 	// TODO:  在此添加额外的初始化
 
 	std::vector<updateInfo> updateInfoList;
-
+	updateInfoList.push_back({ "2024-05-11", "重构服务器后端，升级yolo识别机制" });
+	updateInfoList.push_back({ "2024-05-10", "优化yolo识别库，降低内存至个位数MB" });
 	updateInfoList.push_back({ "2024-05-07", "打包上线1.0版本" });
 	updateInfoList.push_back({ "2024-05-07", "新增保存和读取棋盘信息功能" });
 	updateInfoList.push_back({ "2024-05-06", "优化连线效率，完成剪切板识别，完善功能页面细节" });

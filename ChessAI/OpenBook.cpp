@@ -3,7 +3,10 @@
 #include"Utils.h"
 #include"QSqlite.h"
 
+#include <string>
 
+#include <sstream>
+#include <iomanip>
 std::vector<yunkuResult> Yunku::calcSteps(std::string fen)
 {
 

@@ -6,7 +6,7 @@
 #include<gdiplus.h>
 #include"Utils.h"
 #include "stepIdx.h"
-
+#include<chrono>
 using namespace Gdiplus;
 
 class moveInfo

@@ -87,8 +87,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);F:\opencv4.50_CUDA10.1\include</IncludePath>
-    <LibraryPath>$(WindowsSDK_LibraryPath_x64);$(VC_LibraryPath_x64);F:\opencv4.50_CUDA10.1\x64\vc15\lib</LibraryPath>
+    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);C:\Users\Administrator\Desktop\onnxruntime-win-x64-1.11.1\include</IncludePath>
+    <LibraryPath>$(WindowsSDK_LibraryPath_x64);$(VC_LibraryPath_x64);C:\Users\Administrator\Desktop\onnxruntime-win-x64-1.11.1\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -201,6 +201,7 @@
     <ClInclude Include="ChessAIDlg.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="ConnectDlg.h" />
+    <ClInclude Include="DownloadDlg.h" />
     <ClInclude Include="EditEngineDlg.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="EngineDlg.h" />
@@ -208,6 +209,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="Gdi.h" />
     <ClInclude Include="InputFenDlg.h" />
+    <ClInclude Include="md5.h" />
     <ClInclude Include="OpenBook.h" />
     <ClInclude Include="OpenBookDlg.h" />
     <ClInclude Include="pch.h" />
@@ -231,7 +233,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="unzip.h" />
     <ClInclude Include="Utils.h" />
-    <ClInclude Include="yolov7.h" />
+    <ClInclude Include="yolov7_OnnxRuntime.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AboutDlg.cpp" />
@@ -239,12 +241,14 @@
     <ClCompile Include="ChessAIDlg.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="ConnectDlg.cpp" />
+    <ClCompile Include="DownloadDlg.cpp" />
     <ClCompile Include="EditEngineDlg.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="EngineDlg.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Gdi.cpp" />
     <ClCompile Include="InputFenDlg.cpp" />
+    <ClCompile Include="md5.cpp" />
     <ClCompile Include="OpenBook.cpp" />
     <ClCompile Include="OpenBookDlg.cpp" />
     <ClCompile Include="pch.cpp">
@@ -269,7 +273,7 @@
     <ClCompile Include="SkinColors.cpp" />
     <ClCompile Include="unzip.cpp" />
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="yolov7.cpp" />
+    <ClCompile Include="yolov7_OnnxRuntime.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ChessAI.rc" />
@@ -278,13 +282,14 @@
     <None Include="res\ChessAI.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="C:\Users\Administrator\Desktop\1.bmp" />
-    <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.bmp" />
-    <Image Include="C:\Users\Administrator\Desktop\test.ico" />
+    <Image Include="1.bmp" />
+    <Image Include="res\1.bmp" />
     <Image Include="res\begin.ico" />
     <Image Include="res\ChessAI.ico" />
     <Image Include="res\exec.ico" />
     <Image Include="res\swap.ico" />
+    <Image Include="res\test.ico" />
+    <Image Include="test.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

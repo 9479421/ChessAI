@@ -16,6 +16,8 @@
 #include "OpenBookDlg.h"
 
 #include"QTab.h"
+
+#include "DownloadDlg.h"
 // CChessAIDlg 对话框
 class CChessAIDlg : public CDialogEx
 {

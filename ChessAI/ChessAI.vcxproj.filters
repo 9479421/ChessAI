@@ -48,9 +48,6 @@
     <ClInclude Include="Utils.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="yolov7.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Engine.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -138,6 +135,15 @@
     <ClInclude Include="QTab.h">
       <Filter>头文件\UI</Filter>
     </ClInclude>
+    <ClInclude Include="yolov7_OnnxRuntime.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="md5.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DownloadDlg.h">
+      <Filter>头文件\Dlg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessAI.cpp">
@@ -147,9 +153,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Utils.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="yolov7.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Process.cpp">
@@ -233,6 +236,15 @@
     <ClCompile Include="QTab.cpp">
       <Filter>源文件\UI</Filter>
     </ClCompile>
+    <ClCompile Include="yolov7_OnnxRuntime.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="md5.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DownloadDlg.cpp">
+      <Filter>源文件\Dlg</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ChessAI.rc">
@@ -248,9 +260,6 @@
     <Image Include="res\ChessAI.ico">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="C:\Users\Administrator\Desktop\1.bmp">
-      <Filter>资源文件</Filter>
-    </Image>
     <Image Include="res\begin.ico">
       <Filter>资源文件</Filter>
     </Image>
@@ -260,10 +269,16 @@
     <Image Include="res\exec.ico">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="C:\Users\Administrator\Desktop\QQ截图20240406005947.bmp">
+    <Image Include="test.ico">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="C:\Users\Administrator\Desktop\test.ico">
+    <Image Include="1.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\test.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\1.bmp">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

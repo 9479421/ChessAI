@@ -21,7 +21,7 @@
 #endif
 
 
-#include "yolov7.h"
+//#include "yolov7.h"
 //#include "d3d9.h"
 #include "Engine.h"
 #include "Process.h"
@@ -50,13 +50,23 @@
 #include"OpenBook.h"
 #include "QHttp.h"
 
+#include"yolov7_OnnxRuntime.h"
+
+
+#include<algorithm>
+#include<iostream>
+
 ConnectDlg connectDlg;
 
 
 GdiClass::Gdi d3d;
-Yolo yolo;
-cv::dnn::Net net;
+
 HWND gameHwnd;
+float topYRate;
+float bottomYRate;
+float centerXRate;
+float marginXRate;
+float marginYRate;
 
 //游戏大小，这个是可自由调节的
 #define gameWidth 375  //521 / 1.2
@@ -73,6 +83,10 @@ bool isConnecting = false;
 
 Engine engine;
 OpenBook openbook;	
+
+
+yolov7_OnnxRuntime yoloOnnx;
+
 
 // CChessAIDlg 对话框
 CChessAIDlg::CChessAIDlg(CWnd* pParent /*=nullptr*/)
@@ -166,31 +180,21 @@ void CChessAIDlg::InitComponent() {
 
 
 	std::thread thread([](CChessAIDlg* dlg) {
-		//初始化版本号
-		QClientSocket* qClientSocket = QClientSocket::getInstance();
-		qClientSocket->initSocket(Config::g_ip, Config::g_port);
-		bool ret = qClientSocket->ConnectServer();
-		if (!ret)
-		{
-			MessageBoxA(dlg->m_hWnd, "连接服务器失败！", "提示", 0);
-			ExitProcess(0);
-		}
-		qClientSocket->SendCommand(1, NULL, 0); //获取版本号和更新公告
-		int mCmd = qClientSocket->DealCommand();
-		qJsonObject json = qJson::parseJsonObject(qClientSocket->getPacket().getStrData());
-		if (json.getString("version").compare(Config::version) != 0)
-		{
-			MessageBoxA(dlg->m_hWnd, "当前版本已更新，请下载最新版", "提示", 0);
-			ShellExecute(NULL, NULL, CA2W(json.getString("uploadUrl").c_str()), NULL, NULL, SW_SHOWNORMAL);
-			ExitProcess(0);
+		
+
+		//初始化Yolo
+		dlg->Log("Yolo初始化中……");
+		if (yoloOnnx.readModel("best1.onnx", 15, "red_che", "red_ma", "red_xiang", "red_shi", "red_shuai", "red_pao", "red_bing", "black_che", "black_ma", "black_xiang",
+			"black_shi", "black_jiang", "black_pao", "black_zu", "board")) {
+			std::cout << "read net ok!" << std::endl;
+			dlg->Log("Yolo初始化完毕");
 		}
 		else {
-			//是最新版，读取是否有公告
-			if (!json.getString("msg").empty())
-			{
-				MessageBoxA(dlg->m_hWnd, ("服务器通知：\n" + Utils::utf8_to_ansi(json.getString("msg"))).c_str(), "提示", 0);
-			}
+			std::cout << "read onnx model failed!";
+			dlg->Log("Yolo初始化失败，部分功能将失效");
+			MessageBoxA(dlg->m_hWnd, "初始化Yolo识别库失败！部分功能将失效", "警告", 0);
 		}
+
 
 		//初始化Engine
 		if (dlg->m_engineList.GetCount() > 0 && dlg->m_engineList.GetCurSel() >= 0)
@@ -203,24 +207,7 @@ void CChessAIDlg::InitComponent() {
 			dlg->Log("当前无引擎，请配置");
 		}
 
-		//初始化Yolo
-		dlg->Log("初始化Yolo识别库中");
-		std::string modelPath = "best1.onnx";
-
-
-		int devices = cv::cuda::getCudaEnabledDeviceCount();
-		printf("cuda支持设备数：%d\n", devices);
-
-
-		if (yolo.readModel(net, modelPath, devices>0 ? true: false)) {
-			std::cout << "read net ok!" << std::endl;
-			dlg->Log("初始化Yolo识别库成功");
-		}
-		else {
-			std::cout << "read onnx model failed!";
-			dlg->Log("初始化Yolo识别库失败！部分功能将失效");
-			MessageBoxA(dlg->m_hWnd, "初始化Yolo识别库失败！部分功能将失效", "警告", 0);
-		}
+		
 		}, this);
 	thread.detach();
 }
@@ -708,6 +695,9 @@ std::string stepListToQp(std::string stepListStr, T sourceMaps[10][9]) {
 	return qpRet;
 }
 
+#include "MD5.h"
+
+
 BOOL CChessAIDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -742,6 +732,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 
 
+
 	//打开连线窗口
 	connectDlg.Create(IDD_DIALOG_CONNECT);
 	connectDlg.ShowWindow(SW_SHOW);
@@ -754,7 +745,53 @@ BOOL CChessAIDlg::OnInitDialog()
 	AllocConsole();//控制台调试窗口开启  
 	freopen("CONOUT$", "w", stdout);//开启中文控制台输出支持  
 #endif
+	qJsonObject json;
 
+	//初始化版本号
+	QClientSocket* qClientSocket = QClientSocket::getInstance();
+	qClientSocket->initSocket(Config::g_ip, Config::g_port);
+	bool ret = qClientSocket->ConnectServer();
+	if (!ret)
+	{
+		MessageBoxA(m_hWnd, "连接服务器失败！", "提示", 0);
+		ExitProcess(0);
+	}
+	qClientSocket->SendCommand(1, NULL, 0); //获取版本号和更新公告
+	qClientSocket->DealCommand();
+	json = qJson::parseJsonObject(qClientSocket->getPacket().getStrData());
+	if (json.getString("version").compare(Config::version) != 0)
+	{
+		MessageBoxA(m_hWnd, "当前版本已更新，请下载最新版", "提示", 0);
+		ShellExecute(NULL, NULL, CA2W(json.getString("uploadUrl").c_str()), NULL, NULL, SW_SHOWNORMAL);
+		ExitProcess(0);
+	}
+	else {
+		//是最新版，读取是否有公告
+		if (!json.getString("msg").empty())
+		{
+			MessageBoxA(m_hWnd, ("服务器通知：\n" + Utils::utf8_to_ansi(json.getString("msg"))).c_str(), "提示", 0);
+		}
+	}
+	//判断Onnx是否为最新或者没下载，没有的话从服务器端下载
+	std::ifstream of("best1.onnx", std::ios::in | std::ios::binary);
+	if (!of.is_open()) {
+		//文件不存在，直接下载
+		DownloadDlg downloadDlg;
+		downloadDlg.DoModal();
+	}
+	else {
+		//文件存在，判断md5值
+		MD5 fileMd5(of);
+		printf("%s\r\n", fileMd5.toString().c_str());
+		if (json.getString("onnxMd5").compare(fileMd5.toString()) != 0) {
+			DownloadDlg downloadDlg;
+			downloadDlg.DoModal();
+		}
+	}
+	
+
+
+	
 
 	m_showInfo.InsertItem(0, L"引擎");
 	m_showInfo.InsertItem(1, L"云库");
@@ -890,20 +927,6 @@ BOOL CChessAIDlg::OnInitDialog()
 	m_navigation.InsertColumn(5, L"FEN", LVCFMT_LEFT, 480, 0);
 	m_navigation.SetExtendedStyle(m_navigation.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
 
-
-
-	/*WCHAR szExecPath[MAX_PATH];
-	GetModuleFileName(NULL, szExecPath, MAX_PATH);
-	PathRemoveFileSpec(szExecPath);
-	std::string execPath = CW2A(szExecPath);
-	std::string settingPath = execPath + "\\setting.json";*/
-
-	//读取引擎目录配置，没有的话写入新的
-	//char programPath[MAX_PATH];
-	//SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES, NULL, 0, programPath);
-	//std::string programPathStr = programPath;
-	//std::string settingPath = programPathStr + "\\setting.json";
-
 	std::string settingPath = "./setting.json";
 	//setting
 	std::ifstream f;
@@ -958,7 +981,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	}
 	f.close();
 	//读入文件
-	qJsonObject json = qJson::parseJsonObject(std::string(CW2A(Utils::readFile(CString(settingPath.c_str())))));
+	json = qJson::parseJsonObject(std::string(CW2A(Utils::readFile(CString(settingPath.c_str())))));
 	m_thinkTime.SetWindowTextW(CA2W(json.getString("thinkTime").c_str()));
 	m_thinkDepth.SetWindowTextW(CA2W(json.getString("thinkDepth").c_str()));
 	connectDlg.m_front.SetCheck(json.getBool("isFront"));
@@ -1018,7 +1041,8 @@ BOOL CChessAIDlg::OnInitDialog()
 
 
 	//方案
-	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-QQ游戏大厅"));
+	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋"));
+	//connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-官网电脑版"));
 	//connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
 	connectDlg.m_schemeList.SetCurSel(0);
 	//if (IsProcessExists("QQChess2021.exe"))
@@ -1099,9 +1123,10 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 	int runSteps = 0;  //每次判断棋局重置后，都将runstep置为0
 
-
 	stepIdx stepIdx;//走法
 
+
+	bool isFirst = false;
 	while (true) {
 
 		if (isConnecting == false)
@@ -1114,27 +1139,40 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		HBITMAP bitmap = Utils::WindowCapture_Front(gameHwnd, false);
 
 
-		Utils::saveBitMap(L"1.png", bitmap);
-		cv::Mat img = cv::imread("1.png");
-
 		//显示缩略图
 		CImage image;
 		image.Attach(bitmap);
-		pic.setImage(image);
-		pic.show();
 
+		int width = image.GetWidth();
+		int height = image.GetHeight();
+
+		
+
+		std::vector<OutResult> result = yoloOnnx.Detect(0.7, bitmap);
+
+		pic.setImage(image);
 		DeleteObject(bitmap);
 
-		int width = img.size().width;
-		int height = img.size().height;
 
-		std::vector<Output> result;
-		yolo.Detect(img, net, result);
+
+		pic.show();
+
 
 		//删除棋盘
-		for (std::vector<Output>::iterator i = result.begin(); i != result.end();)
+		for (std::vector<OutResult>::iterator i = result.begin(); i != result.end();)
 		{
 			if (i->id == 14) {
+				if (!isFirst)
+				{
+					isFirst = true;
+					pic.setX1(i->x1 * (1 / pic.getRateX()));
+					pic.setY1(i->y1 * (1 / pic.getRateY()));
+					pic.setX2(i->x2 * (1 / pic.getRateX()));
+					pic.setY2(i->y2 * (1 / pic.getRateY()));
+					float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
+					pic.setTbRate(tbRate);
+				}
+				
 				result.erase(i);
 			}
 			else {
@@ -1145,17 +1183,24 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		bool isRed;
 
-		Output maps[10][9];
+		OutResult maps[10][9];
 
 
-		float topY = height * 63 / 624;
-		float bottomY = height * 561 / 624;
 
-		float centerX = width * 420 / 838;
+		//float topY = height * (63.0 / 624);
+		//float bottomY = height * (561.0 / 624);
+		//float centerX = width * (420.0 / 838);
+		//float marginX = width * (57.0 / 838);
+		//float marginY = width * (57.0 / 838);
 
+		float topY = pic.getOriTopY();
+		float bottomY = pic.getOriBottomY();
 
-		float marginX = width * 57 / 838;
-		float marginY = width * 57 / 838;
+		float centerX = pic.getOriCenterX();
+
+		float marginX = pic.getOriMarginHor();
+		float marginY = pic.getOriMarginVer();
+
 
 		//给空格也计算出大概的位置
 		for (int i = 0; i < 10; i++)
@@ -1171,18 +1216,20 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				}
 				int x = centerX + (j - 4) * marginX;
 
-				maps[i][j].box.x = x;
-				maps[i][j].box.y = y;
+				maps[i][j].x1 = x;
+				maps[i][j].x2 = x;
+				maps[i][j].y1 = y;
+				maps[i][j].y2 = y;
 			}
 		}
 
 		for (int i = 0; i < result.size(); i++)
 		{
 
-			if (abs(result[i].box.y - bottomY) < abs(result[i].box.y - topY))
+			if (abs(result[i].y1 - bottomY) < abs(result[i].y1 - topY))
 			{
-				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
-				int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / marginY);
+				int xIndex = 4 + (int)round(((result[i].x1 + result[i].x2) / 2 - centerX) / marginX);
+				int yIndex = 9 - (int)round((bottomY - (result[i].y1 + result[i].y2) / 2) / marginY);
 				if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
 				{
 					maps[yIndex][xIndex] = result[i];
@@ -1192,8 +1239,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				}
 			}
 			else {
-				int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
-				int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topY) / marginY);
+				int xIndex = 4 + (int)round(((result[i].x1 + result[i].x2) / 2 - centerX) / marginX);
+				int yIndex = (int)round(((result[i].y1 + result[i].y2) / 2 - topY) / marginY);
 				if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
 				{
 					maps[yIndex][xIndex] = result[i];
@@ -1245,7 +1292,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 		//打印棋盘，暂时不需要了
-		/*std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
+		std::vector<std::string> className = { "车", "马", "相", "仕", "帅", "炮", "兵", "车", "马", "象","士", "将", "炮", "卒" };
 		for (int i = 0; i < 10; i++)
 		{
 			for (int j = 0; j < 9; j++)
@@ -1259,7 +1306,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				}
 			}
 			printf("\n");
-		}*/
+		}
 
 
 		//产生变动立刻重新进行引擎计算和绘制，不变动不要重新计算，浪费时间，不变动超过2400ms后，进行自动走棋
@@ -1319,7 +1366,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 						color = connectDlg.m_rectBlack.GetColor();
 					}
 
-					d3d.drawHollowHalfRect(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color);
+					d3d.drawHollowHalfRect(result[i].x1, result[i].y1, result[i].x2- result[i].x1, result[i].y2- result[i].y1, 1.0f, color);
 				}
 			}
 
@@ -1335,7 +1382,7 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 						color = connectDlg.m_fontBlack.GetColor();
 					}
-					d3d.drawWord(result[i].box.x, result[i].box.y, result[i].box.width, result[i].box.height, 1.0f, color, std::to_string(result[i].confidence));
+					d3d.drawWord(result[i].x1, result[i].y1, result[i].x2 - result[i].x1, result[i].y2 - result[i].y1, 1.0f, color, std::to_string(result[i].accuracy));
 				}
 			}
 
@@ -1477,10 +1524,11 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 				}
 
 				//绘制最佳行棋路线
-				d3d.drawLine(maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2,
-					maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2,
-					maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2,
-					maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2,
+				d3d.drawLine(  (maps[stepIdx.beginX][stepIdx.beginY].x1 + maps[stepIdx.beginX][stepIdx.beginY].x2) / 2,
+					(maps[stepIdx.beginX][stepIdx.beginY].y1 + maps[stepIdx.beginX][stepIdx.beginY].y2) / 2,
+
+					(maps[stepIdx.endX][stepIdx.endY].x1 + maps[stepIdx.endX][stepIdx.endY].x2) / 2,
+					(maps[stepIdx.endX][stepIdx.endY].y1 + maps[stepIdx.endX][stepIdx.endY].y2) / 2,
 					4.0f,
 					color //D3DCOLOR_XRGB(GetRValue(color), GetGValue(color), GetBValue(color)
 				);
@@ -1502,8 +1550,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 						CRect rect;
 						GetWindowRect(gameHwnd, rect);
-						int x = rect.left + maps[stepIdx.beginX][stepIdx.beginY].box.x + maps[stepIdx.beginX][stepIdx.beginY].box.width / 2;
-						int y = rect.top + maps[stepIdx.beginX][stepIdx.beginY].box.y + maps[stepIdx.beginX][stepIdx.beginY].box.height / 2;
+						int x = rect.left + (maps[stepIdx.beginX][stepIdx.beginY].x1 + maps[stepIdx.beginX][stepIdx.beginY].x2) / 2;
+						int y = rect.top + (maps[stepIdx.beginX][stepIdx.beginY].y1 + maps[stepIdx.beginX][stepIdx.beginY].y2) / 2;
 
 						SetCursorPos(x, y);
 
@@ -1515,8 +1563,8 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 
 						Sleep(500);
-						x = rect.left + maps[stepIdx.endX][stepIdx.endY].box.x + maps[stepIdx.endX][stepIdx.endY].box.width / 2;
-						y = rect.top + maps[stepIdx.endX][stepIdx.endY].box.y + maps[stepIdx.endX][stepIdx.endY].box.height / 2;
+						x = rect.left + (maps[stepIdx.endX][stepIdx.endY].x1 + maps[stepIdx.endX][stepIdx.endY].x2) / 2;
+						y = rect.top + (maps[stepIdx.endX][stepIdx.endY].y1 + maps[stepIdx.endX][stepIdx.endY].y2) / 2;
 
 						SetCursorPos(x, y);
 
@@ -2363,7 +2411,30 @@ LRESULT CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 		connectDlg.m_connect.SetWindowTextW(L"连线");
 	}
 	else {
-		gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
+
+		int schemeIdx = connectDlg.m_schemeList.GetCurSel();
+		if (schemeIdx == 0)
+		{
+			topYRate = 63 / 624;
+			bottomYRate = 561 / 624;
+			centerXRate = 420 / 838;
+			marginXRate = 57 / 838;
+			marginYRate = 57 / 838;
+
+			gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
+		}
+		else if (schemeIdx == 1) {
+			topYRate = 63 / 624;
+			bottomYRate = 561 / 624;
+			centerXRate = 420 / 838;
+			marginXRate = 57 / 838;
+			marginYRate = 57 / 838;
+
+			//待定
+		}
+
+
+
 		if (gameHwnd == NULL)
 		{
 			MessageBoxA(m_hWnd, "请打开游戏后再连线！", "提示", 0);
@@ -2424,12 +2495,10 @@ void CChessAIDlg::OnInputfen()
 	m_navigation.DeleteAllItems();
 }
 
-
 void CChessAIDlg::OnBnClickedButtonChoosewindow()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	//Connect();
-	/*game.moveChess("a0b1");*/
+
 
 	m_choosewindow.EnableWindow(FALSE);
 	Utils::XSleep(2000);
@@ -2448,37 +2517,27 @@ void CChessAIDlg::OnBnClickedButtonChoosewindow()
 
 		CImage image;
 		image.Attach(bitmap);
-		pic.setImage(image);
 
-		//保存到本地供opencv识别
-		pic.getImage().Save(L"0.png");
-		cv::Mat img = cv::imread("0.png");
+		std::vector<OutResult>result =  yoloOnnx.Detect(0.7, bitmap);
 
-		int width = img.size().width;
-		int height = img.size().height;
-
-		std::vector<Output> result;
-		yolo.Detect(img, net, result);
+		pic.setImage(image);//自动销毁image
+		DeleteObject(bitmap);
 
 		for (int i = 0; i < result.size(); i++)
 		{
 			if (result[i].id == 14) {
-				pic.setX1(result[i].box.x * (1 / pic.getRateX()));
-				pic.setY1(result[i].box.y * (1 / pic.getRateY()));
-				pic.setX2((result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
-				pic.setY2((result[i].box.y + result[i].box.height) * (1 / pic.getRateY()));
-
-
-
+				pic.setX1(result[i].x1 * (1 / pic.getRateX()));
+				pic.setY1(result[i].y1 * (1 / pic.getRateY()));
+				pic.setX2(result[i].x2 * (1 / pic.getRateX()));
+				pic.setY2(result[i].y2 * (1 / pic.getRateY()));
 				float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
 				pic.setTbRate(tbRate);
 			}
 		}
 
+
 		pic.show();
 
-
-		DeleteObject(bitmap);
 	}
 
 
@@ -2852,36 +2911,29 @@ void CChessAIDlg::OnBnClickedButtonBoardpic()
 		{
 			CImage image;
 			image.Attach(hBitmap);
+			
+		
+			std::vector<OutResult> result;
+			yoloOnnx.Detect(0.7, hBitmap);
+			
 			pic.setImage(image);
 
 			DeleteObject(hBitmap);
 
-			//保存到本地供opencv识别
-			pic.getImage().Save(L"0.png");
-			cv::Mat img = cv::imread("0.png");
-
-			int width = img.size().width;
-			int height = img.size().height;
-
-			std::vector<Output> result;
-			yolo.Detect(img, net, result);
-
 			for (int i = 0; i < result.size(); i++)
 			{
 				if (result[i].id == 14) {
-					pic.setX1(result[i].box.x * (1 / pic.getRateX()));
-					pic.setY1(result[i].box.y * (1 / pic.getRateY()));
-					pic.setX2((result[i].box.x + result[i].box.width) * (1 / pic.getRateX()));
-					pic.setY2((result[i].box.y + result[i].box.height) * (1 / pic.getRateY()));
-
-
+					pic.setX1(result[i].x1 * (1 / pic.getRateX()));
+					pic.setY1(result[i].y1 * (1 / pic.getRateY()));
+					pic.setX2(result[i].x2 * (1 / pic.getRateX()));
+					pic.setY2(result[i].y2 * (1 / pic.getRateY()));
 
 					float tbRate = ((pic.getY2() - pic.getY1()) / 9.0) / ((pic.getX2() - pic.getX1()) / 8.0);
 					pic.setTbRate(tbRate);
 				}
 			}
-
 			pic.show();
+
 			CloseClipboard();
 		}
 	}
@@ -3025,18 +3077,19 @@ void CChessAIDlg::OnNMCustomdrawSliderRate(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CChessAIDlg::OnBnClickedButtonRecognizepic()
 {
+	if (isConnecting)
+	{
+		MessageBoxA(m_hWnd, "连线状态下禁止使用", "提示", 0);
+		return;
+	}
 
 
-	pic.getImage().Save(L"0.png");
-	cv::Mat img = cv::imread("0.png");
 
-	int width = img.size().width;
-	int height = img.size().height;
+	HBITMAP hBitmap = pic.getImage().Detach();
 
-	std::vector<Output> result;
-	yolo.Detect(img, net, result);
+	std::vector<OutResult> result = yoloOnnx.Detect(0.7, hBitmap);
 
-	Output maps[10][9];
+	OutResult maps[10][9];
 
 	float topY = pic.getOriTopY();
 	float bottomY = pic.getOriBottomY();
@@ -3061,8 +3114,10 @@ void CChessAIDlg::OnBnClickedButtonRecognizepic()
 			}
 			int x = centerX + (j - 4) * marginX;
 
-			maps[i][j].box.x = x;
-			maps[i][j].box.y = y;
+			maps[i][j].x1 = x;
+			maps[i][j].x2 = x;
+			maps[i][j].y1 = y;
+			maps[i][j].y2 = y;
 		}
 	}
 
@@ -3074,10 +3129,10 @@ void CChessAIDlg::OnBnClickedButtonRecognizepic()
 		}
 
 
-		if (abs(result[i].box.y + (result[i].box.height/2) - bottomY) < abs(result[i].box.y + (result[i].box.height / 2) - topY))
+		if (abs((result[i].y1 + result[i].y2) / 2 - bottomY) < abs((result[i].y1 + result[i].y2 / 2) - topY))
 		{
-			int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
-			int yIndex = 9 - (int)round((bottomY - (result[i].box.y + result[i].box.height / 2)) / marginY);
+			int xIndex = 4 + (int)round(((result[i].x1 + result[i].x2) / 2 - centerX) / marginX);
+			int yIndex = 9 - (int)round((bottomY - (result[i].y1 + result[i].y2) / 2) / marginY);
 			if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
 			{
 				maps[yIndex][xIndex] = result[i];
@@ -3087,8 +3142,8 @@ void CChessAIDlg::OnBnClickedButtonRecognizepic()
 			}
 		}
 		else {
-			int xIndex = 4 + (int)round((result[i].box.x + (result[i].box.width / 2) - centerX) / marginX);
-			int yIndex = (int)round(((result[i].box.y + result[i].box.height / 2) - topY) / marginY);
+			int xIndex = 4 + (int)round(((result[i].x1 + result[i].x2) / 2 - centerX) / marginX);
+			int yIndex = (int)round(((result[i].y1 + result[i].y2) / 2 - topY) / marginY);
 			if (yIndex <= 9 && yIndex >= 0 && xIndex <= 8 && xIndex >= 0)
 			{
 				maps[yIndex][xIndex] = result[i];
@@ -3402,9 +3457,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, msgID, wParam, lParam);
 }
 
-
-#include <algorithm>
-
 int scrollSpace = 100;
 
 LRESULT CALLBACK WndProc1(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
@@ -3539,8 +3591,8 @@ LRESULT CALLBACK WndProc1(HWND hWnd, UINT msgID, WPARAM wParam, LPARAM lParam)
 		}
 
 		//更新滑块位置，滑块位置在0～NUMLINES - 1之间
-
-		iVscrollPos = std::max(0, std::min(iVscrollPos, scrollSpace));
+		
+		iVscrollPos = (std::max)(0, (std::min)(iVscrollPos, scrollSpace));
 
 		//如果与当前滚动条滑块的位置不相等，重新设置滑块位置并重绘
 

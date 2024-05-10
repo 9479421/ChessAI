@@ -351,26 +351,6 @@ CString Utils::getTimeStamp(bool isMilliSecond)
 	return timestampStr;
 }
 
-bool Utils::HBitmap2Mat(HBITMAP& hBmp, cv::Mat& mat)
-{
-	BITMAP Bmp;
-
-	GetObject(hBmp, sizeof(BITMAP), &Bmp);
-	int nChannels = Bmp.bmBitsPixel == 1 ? 1 : Bmp.bmBitsPixel / 8;
-	//int depth = Bmp.bmBitsPixel == 1 ? IPL_DEPTH_1U : IPL_DEPTH_8U;
-
-
-	cv::Mat des_mat;
-
-	des_mat.create(cv::Size(Bmp.bmWidth, Bmp.bmHeight), CV_MAKETYPE(CV_8UC3, nChannels));
-	GetBitmapBits(hBmp, Bmp.bmHeight * Bmp.bmWidth * nChannels, des_mat.data);
-
-	mat = des_mat;
-
-	return true;
-
-}
-
 
 std::string Utils::ReplaceAllText(std::string str, std::string a, std::string b)
 {

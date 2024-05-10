@@ -11,8 +11,8 @@ class QPacket
 {
 public:
 	QPacket();
-	QPacket(uint16_t nCmd, const unsigned char* pData, size_t nSize); //组包
-	QPacket(const unsigned char* pData, size_t& nSize); //解包
+	QPacket(uint16_t nCmd, const unsigned char* pData, int nSize); //组包
+	QPacket(const unsigned char* pData, int& nSize); //解包
 	const unsigned char* Data();
 
 	int Size();

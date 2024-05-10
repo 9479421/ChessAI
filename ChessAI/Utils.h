@@ -9,8 +9,8 @@
 //#pragma comment (lib,"d3d9.lib")
 //#pragma comment (lib,"d3dx9.lib")
 
-#include<opencv2/opencv.hpp>
 #include<tlhelp32.h>
+#include<vector>
 
 struct XSleep_Structure
 {
@@ -47,7 +47,7 @@ public:
 
 	static void copyFile(CString filePath,CString distPath);
 	static CString getTimeStamp(bool isMilliSecond = FALSE);
-	static bool HBitmap2Mat(HBITMAP& hBmp, cv::Mat& mat);
+
 	static std::string ReplaceAllText(std::string str, std::string a, std::string b);
 	static int getTextTimes(std::string str, std::string flag);
 	static std::string trim(const std::string& str);
