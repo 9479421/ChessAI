@@ -54,6 +54,7 @@ BEGIN_MESSAGE_MAP(ConnectDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CHECK_FRONT, &ConnectDlg::OnBnClickedCheckFront)
 	ON_BN_CLICKED(IDC_CHECK_AUTONEXT, &ConnectDlg::OnBnClickedCheckAutonext)
 	ON_BN_CLICKED(IDC_BUTTON_HIDECONNECT, &ConnectDlg::OnBnClickedButtonHideconnect)
+	ON_BN_CLICKED(IDC_CHECK_AUTOPLAY, &ConnectDlg::OnBnClickedCheckAutoplay)
 END_MESSAGE_MAP()
 
 
@@ -242,4 +243,10 @@ void ConnectDlg::OnBnClickedCheckAutonext()
 void ConnectDlg::OnBnClickedButtonHideconnect()
 {
 	ShowWindow(false);
+}
+
+
+void ConnectDlg::OnBnClickedCheckAutoplay()
+{
+	// TODO: 在此添加控件通知处理程序代码
 }

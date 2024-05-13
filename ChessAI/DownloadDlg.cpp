@@ -29,6 +29,7 @@ void DownloadDlg::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(DownloadDlg, CDialogEx)
+	ON_MESSAGE(1000, &DownloadDlg::onDownloadCompleted)
 END_MESSAGE_MAP()
 
 
@@ -70,15 +71,12 @@ BOOL DownloadDlg::OnInitDialog()
 			}
 			fwrite(qClientSocket->getPacket().getStrData().c_str(), 1, qClientSocket->getPacket().getStrData().size(), pFile);
 			nCount += qClientSocket->getPacket().getStrData().size();
-
-			if (nCount == nlength)
-			{
-				//下载成功
-				dlg->EndDialog(0);
-			}
 		}
 
 		fclose(pFile);
+
+		//安全退出
+		dlg->PostMessage(1000);
 		}, this);
 	thread.detach();
 
@@ -87,4 +85,10 @@ BOOL DownloadDlg::OnInitDialog()
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 异常: OCX 属性页应返回 FALSE
+}
+
+LRESULT DownloadDlg::onDownloadCompleted(WPARAM wParam, LPARAM lParam)
+{
+	EndDialog(0);
+	return 0;
 }

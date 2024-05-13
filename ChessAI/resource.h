@@ -107,7 +107,6 @@
 #define IDC_BUTTON_SELECTFILE           1087
 #define IDC_LIST_YUNKUINFO              1088
 #define IDC_BUTTON_HIDECONNECT          1089
-#define IDC_PROGRESS1                   1090
 #define IDC_PROGRESS                    1090
 #define ID_32771                        32771
 #define ID_32772                        32772

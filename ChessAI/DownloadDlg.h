@@ -24,4 +24,6 @@ protected:
 public:
 	virtual BOOL OnInitDialog();
 	CProgressCtrl m_progress;
+
+	LRESULT onDownloadCompleted(WPARAM wParam, LPARAM lParam);
 };

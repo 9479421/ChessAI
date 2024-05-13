@@ -62,6 +62,8 @@ public:
 	static bool IsProcessExists(std::string processName);
 
 	static std::string utf8_to_ansi(std::string strUTF8);
+
+	static std::string string_To_UTF8(const std::string& str);
 };
 
 

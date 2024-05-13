@@ -10,6 +10,10 @@
 #include "Config.h"
 // OpenBookDlg 对话框
 
+#include"ChessAIDlg.h"
+
+CChessAIDlg* mainDlg1;
+
 IMPLEMENT_DYNAMIC(OpenBookDlg, CDialogEx)
 
 OpenBookDlg::OpenBookDlg(CWnd* pParent /*=nullptr*/)
@@ -49,6 +53,9 @@ void OpenBookDlg::OnBnClickedButtonSelectfile()
 		CString openBookPath = fileDialog.GetPathName();
 		Config::openBookPath = std::string(CW2A(openBookPath)); //保存全局配置
 		m_openbook.SetWindowTextW(fileDialog.GetPathName());
+
+		//保存
+		mainDlg1->SendMessage(10099, 0, 0); //通知主页面重新加载开局库
 	}
 }
 
@@ -82,6 +89,10 @@ BOOL OpenBookDlg::OnInitDialog()
 	m_useyunku.SetCheck(Config::yunkuStatus);
 	m_useopenbook.SetCheck(Config::openBookStatus);
 	m_steps.SetWindowTextW(CA2W(std::to_string(Config::steps).c_str()));
+
+
+	mainDlg1 = (CChessAIDlg*)GetParent();
+
 	return TRUE;
 }
 

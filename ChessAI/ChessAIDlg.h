@@ -69,6 +69,9 @@ public:
 	//QButton m_connect;
 
 	LRESULT  Connect(WPARAM wParam, LPARAM lParam);
+	LRESULT  LoadOpenBook(WPARAM wParam, LPARAM lParam);
+
+
 	void ClickedCheckFront();
 
 	afx_msg void OnInputfen();

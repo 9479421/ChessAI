@@ -32,4 +32,6 @@ public:
 	CComboBox m_steps;
 	afx_msg void OnCbnSelchangeComboSteps();
 	afx_msg void OnCbnEditchangeComboSteps();
+
+
 };

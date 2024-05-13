@@ -84,7 +84,6 @@ bool isConnecting = false;
 Engine engine;
 OpenBook openbook;	
 
-
 yolov7_OnnxRuntime yoloOnnx;
 
 
@@ -140,6 +139,7 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 	ON_MESSAGE(10086, &CChessAIDlg::Connect) //连线函数
 
 
+	ON_MESSAGE(10099, &CChessAIDlg::LoadOpenBook)
 
 	ON_COMMAND(ID_INPUTFEN, &CChessAIDlg::OnInputfen)
 	ON_BN_CLICKED(IDC_BUTTON_CHOOSEWINDOW, &CChessAIDlg::OnBnClickedButtonChoosewindow)
@@ -167,16 +167,6 @@ BEGIN_MESSAGE_MAP(CChessAIDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 void CChessAIDlg::InitComponent() {
-#ifdef Debug
-	Config::g_ip = "192.168.89.136";   
-#else
-	//从http读最新的
-	QHttp http;
-	http.open("http://xr.wqby.vip/ip.txt");
-	http.get();
-	Config::g_ip = http.getResponseText();
-#endif
-
 
 
 	std::thread thread([](CChessAIDlg* dlg) {
@@ -731,13 +721,18 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 
+#ifdef Debug
+	Config::g_ip = "192.168.89.136";
+#else
+	//从http读最新的
+	QHttp http;
+	http.open("http://xr.wqby.vip/ip.txt");
+	http.get();
+	Config::g_ip = http.getResponseText();
+#endif
 
 
-	//打开连线窗口
-	connectDlg.Create(IDD_DIALOG_CONNECT);
-	connectDlg.ShowWindow(SW_SHOW);
-
-
+	//std::locale::global(std::locale("zh_CN.utf8"));
 	setlocale(LC_ALL, "Chinese-simplified");
 #ifdef Debug
 	//设置控制台支持中文
@@ -790,6 +785,11 @@ BOOL CChessAIDlg::OnInitDialog()
 	}
 	
 
+
+
+	//打开连线窗口
+	connectDlg.Create(IDD_DIALOG_CONNECT);
+	connectDlg.ShowWindow(SW_SHOW);
 
 	
 
@@ -1014,7 +1014,7 @@ BOOL CChessAIDlg::OnInitDialog()
 	Config::yunkuStatus = json.getBool("yunkuStatus");
 	Config::steps = json.getInt("steps");
 
-	openbook.open(Config::openBookPath);
+	openbook.open(Utils::string_To_UTF8(Config::openBookPath));
 	//引擎配置
 	qJsonArray jsonArray_engineList = json.getJsonArray("engineList");
 	for (int i = 0; i < jsonArray_engineList.size(); i++)
@@ -1042,6 +1042,7 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	//方案
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋"));
+	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("中国象棋2017"));
 	//connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋-官网电脑版"));
 	//connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("JJ象棋"));
 	connectDlg.m_schemeList.SetCurSel(0);
@@ -1143,10 +1144,6 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 		CImage image;
 		image.Attach(bitmap);
 
-		int width = image.GetWidth();
-		int height = image.GetHeight();
-
-		
 
 		std::vector<OutResult> result = yoloOnnx.Detect(0.7, bitmap);
 
@@ -1185,13 +1182,6 @@ DWORD WINAPI drawThread(LPVOID lpParam) {
 
 		OutResult maps[10][9];
 
-
-
-		//float topY = height * (63.0 / 624);
-		//float bottomY = height * (561.0 / 624);
-		//float centerX = width * (420.0 / 838);
-		//float marginX = width * (57.0 / 838);
-		//float marginY = width * (57.0 / 838);
 
 		float topY = pic.getOriTopY();
 		float bottomY = pic.getOriBottomY();
@@ -2415,22 +2405,10 @@ LRESULT CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 		int schemeIdx = connectDlg.m_schemeList.GetCurSel();
 		if (schemeIdx == 0)
 		{
-			topYRate = 63 / 624;
-			bottomYRate = 561 / 624;
-			centerXRate = 420 / 838;
-			marginXRate = 57 / 838;
-			marginYRate = 57 / 838;
-
 			gameHwnd = FindWindowExA(FindWindowA(NULL, "天天象棋"), 0, "Intermediate D3D Window", "");
 		}
 		else if (schemeIdx == 1) {
-			topYRate = 63 / 624;
-			bottomYRate = 561 / 624;
-			centerXRate = 420 / 838;
-			marginXRate = 57 / 838;
-			marginYRate = 57 / 838;
-
-			//待定
+			gameHwnd = FindWindowA(NULL, "中国象棋2017");
 		}
 
 
@@ -2447,6 +2425,10 @@ LRESULT CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 				CRect rect;
 				::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
 				::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
+				
+				::GetWindowRect((gameHwnd), rect); //得到当前的窗口位置
+				::SetWindowPos((gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
+
 			}
 
 			drawThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)drawThread, this, 0, &drawThreadId);
@@ -2464,6 +2446,15 @@ LRESULT CChessAIDlg::Connect(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+LRESULT CChessAIDlg::LoadOpenBook(WPARAM wParam, LPARAM lParam)
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+	openbook.open(Utils::string_To_UTF8(Config::openBookPath));
+
+	return 0;
+}
+
 
 void CChessAIDlg::ClickedCheckFront()
 {
@@ -2472,15 +2463,18 @@ void CChessAIDlg::ClickedCheckFront()
 	{
 		CRect rect;
 		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
-		//::SetWindowPos(gameHwnd, HWND_TOPMOST, 0,0,0,0,NULL);
 		::SetWindowPos(::GetParent(gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
+		
+		::GetWindowRect((gameHwnd), rect); //得到当前的窗口位置
+		::SetWindowPos((gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
 	}
 	else {
 		CRect rect;
 		::GetWindowRect(::GetParent(gameHwnd), rect); //得到当前的窗口位置
-		//::SetWindowPos(gameHwnd, HWND_NOTOPMOST, 0,0,0,0, NULL);
 		::SetWindowPos(::GetParent(gameHwnd), HWND_NOTOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
 
+		::GetWindowRect((gameHwnd), rect); //得到当前的窗口位置
+		::SetWindowPos((gameHwnd), HWND_TOPMOST, rect.left, rect.top, rect.Size().cx, rect.Size().cy, NULL);
 	}
 
 }

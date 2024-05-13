@@ -62,4 +62,5 @@ public:
 	afx_msg void OnBnClickedCheckAutonext();
 	QButton m_hideconnect;
 	afx_msg void OnBnClickedButtonHideconnect();
+	afx_msg void OnBnClickedCheckAutoplay();
 };
