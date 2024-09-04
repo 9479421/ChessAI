@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Game">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BMAggIaBAAAIAAIAAAQIAAhUSAiIwAIAJAgAEEgCQAg=</HashCode>
+      <FileName>Game.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="qJson">
+    <Position X="2.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAA=</HashCode>
+      <FileName>qJson.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="qJsonArray">
+    <Position X="4" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AKAAAABAgAAAAAEgAIAgBCAAAAQAgAAAAAQAAAAAAgA=</HashCode>
+      <FileName>qJson.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="qJsonObject">
+    <Position X="2.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AqAAAABAgAAIAAAgAAIoDABAIAQAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>qJson.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="QClientSocket">
+    <Position X="5.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAQABAAAAIAAAAAAAAAAAAhBIAQIGCAAAAAAAAA=</HashCode>
+      <FileName>QClientSocket.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="yolov7_OnnxRuntime">
+    <Position X="4" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAABCAAAAgACKBBAQhAAAAQAACABIAAgAAAAEAIAQAg=</HashCode>
+      <FileName>yolov7_OnnxRuntime.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine">
+    <Position X="5.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAECAAAAAAAAAAAACAAAIIAAAAEBAAABAABIAAAAAA=</HashCode>
+      <FileName>Engine.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Microsoft YaHei UI" Size="9" />
+</ClassDiagram>

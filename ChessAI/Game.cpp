@@ -442,9 +442,6 @@ void Game::begin(boolean isRed)
 	}
 }
 
-#define h2a 180 / 3.1415926
-#define a2h 3.1415926 / 180 
-extern double calcFC(double a, double b, double c, bool add);
 void Game::show()
 {
 	//初始化缓冲区
@@ -522,10 +519,10 @@ void Game::show()
 		CPen pen;
 		if (i%2 == 0) //偶数
 		{
-			pen.CreatePen(PS_SOLID, 2, RGB(118, 0, 118));
+			pen.CreatePen(PS_SOLID, 3, RGB(118, 0, 118));
 		}
 		else {
-			pen.CreatePen(PS_SOLID, 2, RGB(118, 118, 0));
+			pen.CreatePen(PS_SOLID, 3, RGB(118, 118, 0));
 		}
 		
 		CPen* oldPen = gameCdc.SelectObject(&pen);

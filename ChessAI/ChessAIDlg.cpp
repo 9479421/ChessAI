@@ -392,6 +392,7 @@ std::string stepToQp(std::string step, T maps[10][9]) {
 		std::string qpstep;
 
 
+
 		if (isRed)
 		{
 			for (int i = 0; i < 10; i++)
@@ -1038,7 +1039,6 @@ BOOL CChessAIDlg::OnInitDialog()
 
 	// 加载引擎 Yolo 以及版本号检测
 	InitComponent();
-
 
 	//方案
 	connectDlg.m_schemeList.InsertString(connectDlg.m_schemeList.GetCount(), _T("天天象棋"));

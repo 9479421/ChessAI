@@ -279,6 +279,7 @@
     <ResourceCompile Include="ChessAI.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram1.cd" />
     <None Include="res\ChessAI.rc2" />
   </ItemGroup>
   <ItemGroup>

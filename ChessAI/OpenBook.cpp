@@ -10,8 +10,6 @@
 std::vector<yunkuResult> Yunku::calcSteps(std::string fen)
 {
 
-
-
     std::vector<yunkuResult> retVec;
 
 	QHttp http;
@@ -54,13 +52,6 @@ std::vector<yunkuResult> Yunku::calcSteps(std::string fen)
     }
 	return retVec;
 }
-/*std::string sql = "SELECT id, vkey, vmove, vscore, vwin, vdraw, vlost, vvalid, vmemo, vindex FROM bhobk WHERE cast(vkey as int) = " + std::to_string(key);
-if (key >> 63 != 0)
-{
-    double* keyPtr = (double*)&key;
-    double keyDbl = *keyPtr;
-    sql = "SELECT id, vkey, vmove, vscore, vwin, vdraw, vlost, vvalid, vmemo, vindex FROM bhobk WHERE cast(vkey as text) = " + std::to_string(keyDbl);
-}*/
 
 std::vector<openbookResult> OpenBook::calcSteps(std::string fen)
 {
